@@ -9,19 +9,41 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public var schemaVersion: Int
     public var presentations: [PresentationDocument]
     public var playlist: PlaylistDocument
+    /// Media files the project's slides reference. The files live in the media library folder.
+    public var mediaAssets: [MediaAsset]
 
     public init(
         id: UUID = UUID(),
         name: String,
         schemaVersion: Int = ProjectDocument.currentSchemaVersion,
         presentations: [PresentationDocument] = [],
-        playlist: PlaylistDocument = PlaylistDocument(title: "Service")
+        playlist: PlaylistDocument = PlaylistDocument(title: "Service"),
+        mediaAssets: [MediaAsset] = []
     ) {
         self.id = id
         self.name = name
         self.schemaVersion = schemaVersion
         self.presentations = presentations
         self.playlist = playlist
+        self.mediaAssets = mediaAssets
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, schemaVersion, presentations, playlist, mediaAssets
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        presentations = try container.decode([PresentationDocument].self, forKey: .presentations)
+        playlist = try container.decode(PlaylistDocument.self, forKey: .playlist)
+        mediaAssets = try container.decodeIfPresent([MediaAsset].self, forKey: .mediaAssets) ?? []
+    }
+
+    public func asset(withID assetID: UUID) -> MediaAsset? {
+        mediaAssets.first { $0.id == assetID }
     }
 
     public func presentation(withID presentationID: UUID) -> PresentationDocument? {
@@ -36,6 +58,13 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
 
     public func slide(at position: SlidePosition) -> SlideDocument? {
         presentation(forItem: position.itemID)?.slide(withID: position.slideID)
+    }
+
+    /// The slide with its background resolved: the slide's own, else its presentation's.
+    public func renderedSlide(at position: SlidePosition) -> RenderedSlide? {
+        guard let presentation = presentation(forItem: position.itemID),
+              let slide = presentation.slide(withID: position.slideID) else { return nil }
+        return presentation.rendered(slide)
     }
 }
 

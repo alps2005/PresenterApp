@@ -75,7 +75,7 @@ final class PresentationCoordinatorTests: XCTestCase {
         XCTAssertEqual(f.coordinator.takeLive(), .applied)
 
         XCTAssertEqual(f.coordinator.state.live?.position, f.position(f.itemA, f.a2))
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.a2))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a2)))
     }
 
     func testTakeLiveWithNothingCuedIsRejected() {
@@ -168,7 +168,7 @@ final class PresentationCoordinatorTests: XCTestCase {
         XCTAssertEqual(f.coordinator.audienceScene, .empty)
 
         XCTAssertEqual(f.coordinator.restoreOutput(), .applied)
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.a1))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a1)))
     }
 
     func testClearWithNothingLiveIsRejected() {
@@ -189,7 +189,7 @@ final class PresentationCoordinatorTests: XCTestCase {
         XCTAssertEqual(f.coordinator.audienceScene, .black)
 
         XCTAssertEqual(f.coordinator.restoreOutput(), .applied)
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.a2))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a2)))
     }
 
     func testRestoreWithNothingToRestoreIsRejected() {
@@ -206,7 +206,7 @@ final class PresentationCoordinatorTests: XCTestCase {
 
         XCTAssertNil(f.coordinator.state.cleared)
         XCTAssertEqual(f.coordinator.restoreOutput(), .rejected(.nothingToRestore))
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.b1))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.b1)))
     }
 
     // MARK: Editing never leaks to live
@@ -217,7 +217,7 @@ final class PresentationCoordinatorTests: XCTestCase {
 
         f.coordinator.updateSlideText("Edited", slideID: f.a1.id, inPresentation: f.presentationA.id)
 
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.a1))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a1)))
         XCTAssertEqual(f.coordinator.project.slide(at: f.position(f.itemA, f.a1))?.plainText, "Edited")
         XCTAssertTrue(f.coordinator.liveSlideHasPendingEdits)
 
@@ -232,7 +232,7 @@ final class PresentationCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(f.coordinator.deleteSlide(f.a1.id, inPresentation: f.presentationA.id), .applied)
 
-        XCTAssertEqual(f.coordinator.audienceScene, .slide(f.a1))
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a1)))
         XCTAssertNil(f.coordinator.state.preview)
         XCTAssertEqual(f.coordinator.nextSlide(), .rejected(.liveSlideMissing))
     }
@@ -257,7 +257,7 @@ final class PresentationCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(f.coordinator.project.playlist.items.last, item)
         XCTAssertEqual(f.coordinator.state.selectedItemID, item.id)
-        XCTAssertEqual(f.coordinator.previewSlide?.plainText, "")
+        XCTAssertEqual(f.coordinator.previewSlide?.slide.plainText, "")
         XCTAssertNil(f.coordinator.state.live)
     }
 

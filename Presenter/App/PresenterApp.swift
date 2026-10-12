@@ -14,6 +14,7 @@ struct PresenterApp: App {
                 minWidth: OperatorView.minimumWindowSize.width,
                 minHeight: OperatorView.minimumWindowSize.height
             )
+            .environment(appDelegate.environment.mediaLibrary)
         }
         .defaultSize(width: 1280, height: 800)
         // Make the window enforce the content's minimum size instead of letting panes get clipped.

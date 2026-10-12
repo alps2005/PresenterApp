@@ -25,7 +25,7 @@ public final class PresentationCoordinator {
     public var audienceScene: AudienceScene {
         if state.isBlackout { return .black }
         guard let live = state.live else { return .empty }
-        return .slide(live.slide)
+        return .slide(live.rendered)
     }
 
     /// The slide that `nextSlide()` would take live, following playlist order.
@@ -36,12 +36,12 @@ public final class PresentationCoordinator {
         return sequence[index + 1]
     }
 
-    public var upNextSlide: SlideDocument? {
-        upNextPosition.flatMap(project.slide(at:))
+    public var upNextSlide: RenderedSlide? {
+        upNextPosition.flatMap(project.renderedSlide(at:))
     }
 
-    public var previewSlide: SlideDocument? {
-        state.preview.flatMap(project.slide(at:))
+    public var previewSlide: RenderedSlide? {
+        state.preview.flatMap(project.renderedSlide(at:))
     }
 
     public var selectedPresentation: PresentationDocument? {
@@ -53,10 +53,11 @@ public final class PresentationCoordinator {
         state.isBlackout || (state.live == nil && state.cleared != nil)
     }
 
-    /// True when the live slide has been edited since it was taken live, so the audience sees an older version.
+    /// True when the live slide (or the background it inherits) has been edited since it was taken live,
+    /// so the audience sees an older version.
     public var liveSlideHasPendingEdits: Bool {
-        guard let live = state.live, let current = project.slide(at: live.position) else { return false }
-        return current != live.slide
+        guard let live = state.live, let current = project.renderedSlide(at: live.position) else { return false }
+        return current != live.rendered
     }
 
     // MARK: - Live commands
@@ -182,20 +183,64 @@ public final class PresentationCoordinator {
     /// Replaces the slide's text. A slide without a text element gets a body text element.
     @discardableResult
     public func updateSlideText(_ text: String, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.text = text }
+    }
+
+    // MARK: - Formatting commands
+
+    @discardableResult
+    public func setTextStyle(_ style: TextStyle, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.style = style }
+    }
+
+    /// Positions the slide's text. Nil returns it to the default centred layout.
+    @discardableResult
+    public func setTextBox(_ box: TextBox?, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.box = box }
+    }
+
+    /// Copies one slide's text style and position to every slide in its presentation. Text is untouched.
+    @discardableResult
+    public func applyTextFormatToAllSlides(from slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
         guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
-        guard presentation.index(ofSlide: slideID) != nil else { return reject(.unknownSlide) }
+        guard let source = presentation.slide(withID: slideID) else { return reject(.unknownSlide) }
+        let format = source.primaryTextElement ?? TextElement(text: "")
+        logger.info("Applied text format to all slides of \(presentationID, privacy: .public)")
         return editPresentation(presentationID) { presentation in
-            let index = presentation.index(ofSlide: slideID)!
-            var slide = presentation.slides[index]
-            if let textIndex = slide.elements.firstIndex(where: { if case .text = $0 { true } else { false } }),
-               case .text(var element) = slide.elements[textIndex] {
-                element.text = text
-                slide.elements[textIndex] = .text(element)
-            } else {
-                slide.elements.append(.text(TextElement(text: text)))
+            for index in presentation.slides.indices {
+                Self.editPrimaryText(of: &presentation.slides[index]) { element in
+                    element.style = format.style
+                    element.box = format.box
+                }
             }
-            presentation.slides[index] = slide
         }
+    }
+
+    /// Sets a slide's own background. Nil makes it inherit its presentation's background again.
+    @discardableResult
+    public func setSlideBackground(_ background: SlideBackground?, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+        guard let index = presentation.index(ofSlide: slideID) else { return reject(.unknownSlide) }
+        if let rejection = validate(background) { return reject(rejection) }
+        return editPresentation(presentationID) { $0.slides[index].background = background }
+    }
+
+    /// Sets the background for every slide of a presentation that doesn't set its own. Nil uses the default.
+    @discardableResult
+    public func setPresentationBackground(_ background: SlideBackground?, presentationID: UUID) -> CommandResult {
+        guard project.presentation(withID: presentationID) != nil else { return reject(.unknownPresentation) }
+        if let rejection = validate(background) { return reject(rejection) }
+        return editPresentation(presentationID) { $0.background = background }
+    }
+
+    /// Records an imported media file so backgrounds can reference it. Adding the same asset twice is a no-op.
+    @discardableResult
+    public func addMediaAsset(_ asset: MediaAsset) -> CommandResult {
+        if project.asset(withID: asset.id) == nil {
+            project.mediaAssets.append(asset)
+            logger.info("Added media asset \(asset.id, privacy: .public)")
+        }
+        return applied()
     }
 
     @discardableResult
@@ -238,8 +283,8 @@ public final class PresentationCoordinator {
     // MARK: - Private
 
     private func goLive(at position: SlidePosition) -> CommandResult {
-        guard let slide = project.slide(at: position) else { return reject(.unknownSlide) }
-        state.live = LiveSlide(position: position, slide: slide)
+        guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
+        state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
         logger.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
@@ -270,6 +315,34 @@ public final class PresentationCoordinator {
         edit(&project.presentations[index])
         project.presentations[index].updatedAt = .now
         return applied()
+    }
+
+    private func editPrimaryText(
+        slideID: UUID,
+        inPresentation presentationID: UUID,
+        _ edit: (inout TextElement) -> Void
+    ) -> CommandResult {
+        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+        guard let index = presentation.index(ofSlide: slideID) else { return reject(.unknownSlide) }
+        return editPresentation(presentationID) { Self.editPrimaryText(of: &$0.slides[index], edit) }
+    }
+
+    /// Edits the slide's first text element, adding a body text element if it has none.
+    private static func editPrimaryText(of slide: inout SlideDocument, _ edit: (inout TextElement) -> Void) {
+        if let textIndex = slide.elements.firstIndex(where: { if case .text = $0 { true } else { false } }),
+           case .text(var element) = slide.elements[textIndex] {
+            edit(&element)
+            slide.elements[textIndex] = .text(element)
+        } else {
+            var element = TextElement(text: "")
+            edit(&element)
+            slide.elements.append(.text(element))
+        }
+    }
+
+    private func validate(_ background: SlideBackground?) -> CommandRejection? {
+        if let assetID = background?.assetID, project.asset(withID: assetID) == nil { return .unknownMediaAsset }
+        return nil
     }
 
     private func applied() -> CommandResult {

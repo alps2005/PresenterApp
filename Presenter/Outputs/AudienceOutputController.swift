@@ -11,14 +11,16 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
     }
 
     private let coordinator: PresentationCoordinator
+    private let mediaLibrary: MediaLibrary
     private var window: NSWindow?
     private var mode: Mode?
 
     /// Called when the operator closes the windowed output with its close button.
     var onUserClosedWindow: (() -> Void)?
 
-    init(coordinator: PresentationCoordinator) {
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
         self.coordinator = coordinator
+        self.mediaLibrary = mediaLibrary
     }
 
     /// A normal resizable window, for rehearsing on a single display.
@@ -86,7 +88,8 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.hidesOnDeactivate = false
         window.backgroundColor = .black
-        let hostingView = NSHostingView(rootView: AudienceOutputView(coordinator: coordinator))
+        // A separate SwiftUI root: it doesn't inherit the operator window's environment.
+        let hostingView = NSHostingView(rootView: AudienceOutputView(coordinator: coordinator).environment(mediaLibrary))
         // The window decides its size; SwiftUI content must not resize it.
         hostingView.sizingOptions = []
         window.contentView = hostingView

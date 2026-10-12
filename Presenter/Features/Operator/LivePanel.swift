@@ -56,7 +56,7 @@ struct LivePanel: View {
         }
     }
 
-    private func slot(title: String, slide: SlideDocument?, placeholder: String) -> some View {
+    private func slot(title: String, slide: RenderedSlide?, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.subheadline.bold()).foregroundStyle(.secondary)
             if let slide {

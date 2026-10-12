@@ -3,10 +3,20 @@ import Foundation
 extension ProjectDocument {
     /// Original demo content for first launch. Contains no third-party lyrics or texts.
     public static func sample() -> ProjectDocument {
-        let welcome = PresentationDocument(title: "Welcome", slides: [
-            .text("Welcome", role: .title),
-            .text("We're glad you're here.\nPlease silence your phones.", notes: "Wait for the room to settle."),
-        ])
+        // Shows formatting without any imported media: a coloured background and a styled, repositioned title.
+        var welcomeTitle = TextElement(text: "Welcome", role: .title)
+        welcomeTitle.style.fontFamily = "Georgia"
+        welcomeTitle.style.fontSize = 160
+        welcomeTitle.style.alignment = .leading
+        welcomeTitle.box = .preset(.bottomLeading)
+        let welcome = PresentationDocument(
+            title: "Welcome",
+            slides: [
+                SlideDocument(elements: [.text(welcomeTitle)]),
+                .text("We're glad you're here.\nPlease silence your phones.", notes: "Wait for the room to settle."),
+            ],
+            background: .color(RGBAColor(red: 0.11, green: 0.23, blue: 0.36))
+        )
         let announcements = PresentationDocument(title: "Announcements", slides: [
             .text("Community Lunch\nSunday after the service"),
             .text("Volunteers Needed\nSign up at the welcome desk"),

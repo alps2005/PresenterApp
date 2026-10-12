@@ -72,7 +72,7 @@ struct SlideWorkspace: View {
                 ForEach(Array(presentation.slides.enumerated()), id: \.element.id) { index, slide in
                     let position = SlidePosition(itemID: itemID, slideID: slide.id)
                     SlideThumbnail(
-                        slide: slide,
+                        slide: presentation.rendered(slide),
                         number: index + 1,
                         isCued: coordinator.state.preview == position,
                         isLive: coordinator.state.live?.position == position
@@ -108,7 +108,7 @@ struct SlideWorkspace: View {
 }
 
 struct SlideThumbnail: View {
-    let slide: SlideDocument
+    let slide: RenderedSlide
     let number: Int
     let isCued: Bool
     let isLive: Bool

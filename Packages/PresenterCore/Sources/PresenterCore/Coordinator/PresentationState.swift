@@ -28,22 +28,37 @@ public struct PresentationState: Equatable, Sendable {
     }
 }
 
-/// A slide on the audience output, captured at the moment it was taken live.
+/// A slide with everything the renderer needs resolved, such as the background it inherits.
+public struct RenderedSlide: Equatable, Sendable {
+    public var slide: SlideDocument
+    /// The slide's own background, else its presentation's. Nil means the app's default background.
+    public var background: SlideBackground?
+
+    public init(slide: SlideDocument, background: SlideBackground? = nil) {
+        self.slide = slide
+        self.background = background
+    }
+}
+
+/// A slide on the audience output, captured at the moment it was taken live. The background is
+/// captured too, so changing a presentation's background doesn't leak onto the output.
 public struct LiveSlide: Equatable, Sendable {
     public var position: SlidePosition
-    public var slide: SlideDocument
+    public var rendered: RenderedSlide
 
-    public init(position: SlidePosition, slide: SlideDocument) {
+    public init(position: SlidePosition, rendered: RenderedSlide) {
         self.position = position
-        self.slide = slide
+        self.rendered = rendered
     }
+
+    public var slide: SlideDocument { rendered.slide }
 }
 
 /// What the audience renderer should draw. Derived from `PresentationState`, never stored.
 public enum AudienceScene: Equatable, Sendable {
     case black
     case empty
-    case slide(SlideDocument)
+    case slide(RenderedSlide)
 }
 
 public enum CommandResult: Equatable, Sendable {
@@ -64,6 +79,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
     /// The live slide was deleted from the playlist, so there is no sequence to move along.
     case liveSlideMissing
     case nothingToRestore
+    /// A background referenced a media asset that isn't in the project.
+    case unknownMediaAsset
 
     public var message: String {
         switch self {
@@ -76,6 +93,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .atStartOfPlaylist: "Already at the first slide."
         case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
         case .nothingToRestore: "Output is already showing normally."
+        case .unknownMediaAsset: "That image isn't in the project's media library."
         }
     }
 }
