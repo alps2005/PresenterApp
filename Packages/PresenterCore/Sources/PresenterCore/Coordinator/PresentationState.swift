@@ -1,0 +1,81 @@
+import Foundation
+
+/// Operator and output state, kept deliberately separate:
+/// - **selected**: the playlist item the operator is looking at / editing.
+/// - **preview**: the slide cued to go live next time the operator takes it.
+/// - **live**: what the audience sees, as a snapshot so later edits don't leak to the output.
+public struct PresentationState: Equatable, Sendable {
+    public var selectedItemID: UUID?
+    public var preview: SlidePosition?
+    public var live: LiveSlide?
+    /// The slide removed by `clearOutput()`, kept so `restoreOutput()` can bring it back.
+    public var cleared: LiveSlide?
+    /// Blackout overrides everything on the audience output until restored.
+    public var isBlackout: Bool
+
+    public init(
+        selectedItemID: UUID? = nil,
+        preview: SlidePosition? = nil,
+        live: LiveSlide? = nil,
+        cleared: LiveSlide? = nil,
+        isBlackout: Bool = false
+    ) {
+        self.selectedItemID = selectedItemID
+        self.preview = preview
+        self.live = live
+        self.cleared = cleared
+        self.isBlackout = isBlackout
+    }
+}
+
+/// A slide on the audience output, captured at the moment it was taken live.
+public struct LiveSlide: Equatable, Sendable {
+    public var position: SlidePosition
+    public var slide: SlideDocument
+
+    public init(position: SlidePosition, slide: SlideDocument) {
+        self.position = position
+        self.slide = slide
+    }
+}
+
+/// What the audience renderer should draw. Derived from `PresentationState`, never stored.
+public enum AudienceScene: Equatable, Sendable {
+    case black
+    case empty
+    case slide(SlideDocument)
+}
+
+public enum CommandResult: Equatable, Sendable {
+    case applied
+    case rejected(CommandRejection)
+
+    public var isApplied: Bool { self == .applied }
+}
+
+public enum CommandRejection: Error, Equatable, Sendable {
+    case unknownItem
+    case unknownSlide
+    case unknownPresentation
+    case nothingCued
+    case nothingLive
+    case atEndOfPlaylist
+    case atStartOfPlaylist
+    /// The live slide was deleted from the playlist, so there is no sequence to move along.
+    case liveSlideMissing
+    case nothingToRestore
+
+    public var message: String {
+        switch self {
+        case .unknownItem: "That playlist item no longer exists."
+        case .unknownSlide: "That slide no longer exists."
+        case .unknownPresentation: "That presentation no longer exists."
+        case .nothingCued: "Nothing is cued. Click a slide first."
+        case .nothingLive: "Nothing is live."
+        case .atEndOfPlaylist: "Already at the last slide."
+        case .atStartOfPlaylist: "Already at the first slide."
+        case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
+        case .nothingToRestore: "Output is already showing normally."
+        }
+    }
+}

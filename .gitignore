@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Xcode per-user state and build output
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local build output from the README command
+build/
+
+# Generated code graph analysis output
+graphify-out/
