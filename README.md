@@ -56,13 +56,28 @@ swift test
 
 **Editing is non-destructive.** Editing a live slide does not change what the audience sees until you take that slide live again. The Live panel warns you when this is the case.
 
+**Formatting slides.** Cue a slide, then use the tabs under the slide grid:
+
+- **Text:** the slide's words.
+- **Style:**
+  - font, weight, italic, size, colour, alignment and shadow;
+  - a 9-point **Position** grid with a margin slider, to place the text box;
+  - **Reset Position**, which returns to the default centred layout;
+  - **Apply to All Slides…**, which copies this slide's style and position to every slide in the presentation, leaving their text alone.
+- **Background:** this slide's own colour or image. **Presentation** means it inherits the presentation's background.
+
+The **Background** button in the slide grid's header sets the background for the whole presentation. Every slide that doesn't set its own background uses it.
+
+Images are copied into the app's media folder (`~/Library/Containers/<bundle id>/Data/Library/Application Support/Presenter/Media`), so moving or deleting the original file doesn't break a slide. If a copy goes missing, slides show the default background and the editor and Live panel show a warning.
+
 ## Project layout
 
 ```text
 Presenter.xcodeproj
 Presenter/                     macOS app target (SwiftUI + AppKit)
   App/                         App entry point, delegate, menu commands
-  Features/Operator/           Operator window: playlist, slide grid, editor, live panel, controls
+  Features/Operator/           Operator window: playlist, slide grid, slide editor and inspectors, live panel, controls
+  Media/                       Media library: imported images, decoded ahead of time
   Outputs/                     Display discovery, output placement, audience window
   Rendering/                   Shared slide renderer (used for thumbnails, preview and output)
   Support/                     Logging and AppKit helpers

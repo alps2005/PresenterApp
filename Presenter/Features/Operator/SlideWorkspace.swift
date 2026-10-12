@@ -7,6 +7,7 @@ struct SlideWorkspace: View {
     let coordinator: PresentationCoordinator
     @FocusState private var isGridFocused: Bool
     @State private var slidePendingDeletion: SlideDocument?
+    @State private var isEditingPresentationBackground = false
 
     private let columns = [GridItem(.adaptive(minimum: 180, maximum: 260), spacing: 14)]
 
@@ -18,7 +19,7 @@ struct SlideWorkspace: View {
                 Divider()
                 grid(presentation: presentation, itemID: itemID)
                 Divider()
-                SlideTextEditor(coordinator: coordinator)
+                SlideEditor(coordinator: coordinator)
             }
             // AppKit otherwise gives first focus to the title field, so Space/arrows meant for
             // slide navigation would overwrite the presentation title. (`.defaultFocus` is not enough.)
@@ -55,6 +56,21 @@ struct SlideWorkspace: View {
             .textFieldStyle(.plain)
             .font(.title2.bold())
             .onSubmit { isGridFocused = true }
+
+            Button {
+                isEditingPresentationBackground = true
+            } label: {
+                Label("Background", systemImage: "photo.on.rectangle")
+            }
+            .help("Background for every slide in this presentation that doesn't set its own")
+            .popover(isPresented: $isEditingPresentationBackground, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Presentation Background").font(.headline)
+                    BackgroundInspector(coordinator: coordinator, target: .presentation(presentation.id))
+                }
+                .padding(16)
+                .frame(width: 380)
+            }
 
             Button {
                 coordinator.addSlide(toItem: itemID)
