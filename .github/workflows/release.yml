@@ -26,11 +26,22 @@ jobs:
         run: swift test
 
       # Ad-hoc signed: no Apple Developer account needed. macOS asks users to confirm on first launch.
+      # A generic destination builds for Apple Silicon and Intel; 'platform=macOS' would build only for the
+      # runner's own chip. The version comes from the tag: v0.1.0-beta.1 → 0.1.0, with the run number as build.
       - name: Build Release app
         run: |
+          version="${GITHUB_REF_NAME#v}"
+          version="${version%%-*}"
           xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Release \
-            -destination 'platform=macOS' -derivedDataPath build \
-            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build
+            -destination 'generic/platform=macOS' -derivedDataPath build \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="${{ github.run_number }}" build
+
+      - name: Check the app runs on both Mac chips
+        run: |
+          archs=$(lipo -archs build/Build/Products/Release/Presenter.app/Contents/MacOS/Presenter)
+          echo "Architectures: $archs"
+          [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "::error::Expected arm64 and x86_64"; exit 1; }
 
       - name: Zip app
         run: |
