@@ -3,6 +3,8 @@ import PresenterCore
 
 struct PlaylistSidebar: View {
     let coordinator: PresentationCoordinator
+    /// Clicking an item asks the workspace to scroll to it.
+    @Binding var scrollRequest: UUID?
     @State private var itemPendingRemoval: PresentationItem?
 
     var body: some View {
@@ -50,7 +52,9 @@ struct PlaylistSidebar: View {
         Binding(
             get: { coordinator.state.selectedItemID },
             set: { itemID in
-                if let itemID { coordinator.selectItem(itemID) }
+                guard let itemID else { return }
+                coordinator.selectItem(itemID)
+                scrollRequest = itemID
             }
         )
     }

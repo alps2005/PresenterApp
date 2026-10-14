@@ -18,10 +18,12 @@ struct OperatorView: View {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
     let persistence: ProjectPersistence
+    /// A sidebar click asks the workspace to scroll to that item.
+    @State private var scrollRequest: UUID?
 
     var body: some View {
         NavigationSplitView {
-            PlaylistSidebar(coordinator: coordinator)
+            PlaylistSidebar(coordinator: coordinator, scrollRequest: $scrollRequest)
                 .navigationSplitViewColumnWidth(min: Self.sidebarMinWidth, ideal: 240, max: Self.sidebarMaxWidth)
         } detail: {
             // Plain SwiftUI stacks on purpose. HSplitView (AppKit-backed) ignored these minimum widths and
@@ -32,7 +34,7 @@ struct OperatorView: View {
                     // HStack would split space evenly and overflow; size the live panel from what's available.
                     let liveWidth = min(max(proxy.size.width * 0.34, Self.livePanelMinWidth), Self.livePanelMaxWidth)
                     HStack(spacing: 0) {
-                        SlideWorkspace(coordinator: coordinator)
+                        SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
                         LivePanel(coordinator: coordinator)

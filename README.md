@@ -67,8 +67,8 @@ swift test
 | Action | How |
 |---|---|
 | Cue a slide (preview only, audience unaffected) | Click it |
-| Take a slide live | Double-click it, press Return with the slide grid focused, or ⌘Return |
-| Next / previous slide | → or Space / ←, with the slide grid focused, or ⌥⌘→ / ⌥⌘← from anywhere |
+| Take a slide live | Double-click it, press Return with the workspace focused, or ⌘Return |
+| Next / previous slide (continues into the next or previous presentation) | → or Space / ←, with the workspace focused, or ⌥⌘→ / ⌥⌘← from anywhere |
 | Clear the slide from the output | ⌥⌘C |
 | Blackout | ⌥⌘B |
 | Restore after clear/blackout | ⌥⌘R |
@@ -87,7 +87,9 @@ swift test
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
 - If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and a sample project opens instead.
 
-**Formatting slides.** Cue a slide, then use the tabs under the slide grid:
+**One continuous workspace.** The workspace shows every presentation in the playlist one after another, so you can scroll ahead to see what's coming. The sidebar highlights the first presentation whose title is in view, and clicking a sidebar item scrolls to it. When Next or Previous moves the live slide off screen, the workspace scrolls just enough to show it again. While you're typing a presentation title, Space and the arrow keys edit the title instead of changing slides.
+
+**Formatting slides.** Cue a slide, then use the tabs under the workspace:
 
 - **Text:** the slide's words.
 - **Style:**
@@ -97,7 +99,7 @@ swift test
   - **Apply to All Slides…**, which copies this slide's style and position to every slide in the presentation, leaving their text alone.
 - **Background:** this slide's own colour or image. **Presentation** means it inherits the presentation's background.
 
-The **Background** button in the slide grid's header sets the background for the whole presentation. Every slide that doesn't set its own background uses it.
+The **Background** button next to each presentation's title sets the background for the whole presentation. Every slide that doesn't set its own background uses it.
 
 Images are copied into the app's media folder (`~/Library/Containers/<bundle id>/Data/Library/Application Support/Presenter/Media`), so moving or deleting the original file doesn't break a slide. If a copy goes missing, slides show the default background and the editor and Live panel show a warning.
 
