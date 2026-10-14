@@ -1,0 +1,56 @@
+import Foundation
+import ImageIO
+
+public enum MediaImportError: Error, Equatable, Sendable {
+    /// The file isn't an image ImageIO can decode.
+    case unreadableImage
+    case copyFailed(String)
+}
+
+/// Keeps copies of imported media in one folder, named by UUID, so backgrounds keep working when the
+/// operator moves or deletes the original file. UI-free; the app wraps it with decoding and caching.
+public struct MediaStore: Sendable {
+    public let directory: URL
+
+    public init(directory: URL) {
+        self.directory = directory
+    }
+
+    /// Checks that `source` is a readable image, copies it into the store and describes the copy.
+    public func importImage(at source: URL) throws -> MediaAsset {
+        guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil),
+              CGImageSourceGetCount(imageSource) > 0,
+              let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int else {
+            throw MediaImportError.unreadableImage
+        }
+
+        let id = UUID()
+        let fileExtension = source.pathExtension.isEmpty ? "img" : source.pathExtension.lowercased()
+        let storedFilename = "\(id.uuidString).\(fileExtension)"
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
+        } catch {
+            throw MediaImportError.copyFailed(error.localizedDescription)
+        }
+
+        return MediaAsset(
+            id: id,
+            kind: .image,
+            originalFilename: source.lastPathComponent,
+            storedFilename: storedFilename,
+            pixelWidth: width,
+            pixelHeight: height
+        )
+    }
+
+    public func url(for asset: MediaAsset) -> URL {
+        directory.appendingPathComponent(asset.storedFilename)
+    }
+
+    public func fileExists(for asset: MediaAsset) -> Bool {
+        FileManager.default.fileExists(atPath: url(for: asset).path)
+    }
+}

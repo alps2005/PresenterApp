@@ -8,12 +8,15 @@ struct PresenterApp: App {
         Window("Presenter", id: "operator") {
             OperatorView(
                 coordinator: appDelegate.environment.coordinator,
-                outputManager: appDelegate.environment.outputManager
+                outputManager: appDelegate.environment.outputManager,
+                persistence: appDelegate.environment.persistence,
+                ui: appDelegate.environment.operatorUI
             )
             .frame(
                 minWidth: OperatorView.minimumWindowSize.width,
                 minHeight: OperatorView.minimumWindowSize.height
             )
+            .environment(appDelegate.environment.mediaLibrary)
         }
         .defaultSize(width: 1280, height: 800)
         // Make the window enforce the content's minimum size instead of letting panes get clipped.
@@ -21,7 +24,9 @@ struct PresenterApp: App {
         .commands {
             PresenterCommands(
                 coordinator: appDelegate.environment.coordinator,
-                outputManager: appDelegate.environment.outputManager
+                outputManager: appDelegate.environment.outputManager,
+                persistence: appDelegate.environment.persistence,
+                ui: appDelegate.environment.operatorUI
             )
         }
     }

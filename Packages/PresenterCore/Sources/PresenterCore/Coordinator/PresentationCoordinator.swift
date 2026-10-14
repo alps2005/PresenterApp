@@ -12,6 +12,24 @@ public final class PresentationCoordinator {
     /// The most recent rejected command, for surfacing to the operator. Cleared by the next applied command.
     public private(set) var lastRejection: CommandRejection?
 
+    /// Project snapshots taken before each edit, newest last. Live commands are never recorded.
+    private var undoStack: [UndoEntry] = []
+    private var redoStack: [UndoEntry] = []
+    /// Consecutive edits with the same key within `coalescingInterval` (typing, dragging a slider) undo together.
+    @ObservationIgnored private var coalescingKey: String?
+    @ObservationIgnored private var lastEditTime = Date.distantPast
+    @ObservationIgnored private var recordingDepth = 0
+    /// The clock used for coalescing. Tests replace it.
+    @ObservationIgnored var now: () -> Date = { Date() }
+
+    static let undoLimit = 100
+    static let coalescingInterval: TimeInterval = 1
+
+    private struct UndoEntry {
+        let project: ProjectDocument
+        let actionName: String
+    }
+
     @ObservationIgnored
     private let logger = Logger(subsystem: "io.github.alps2005.Presenter", category: "PresentationCoordinator")
 
@@ -25,7 +43,7 @@ public final class PresentationCoordinator {
     public var audienceScene: AudienceScene {
         if state.isBlackout { return .black }
         guard let live = state.live else { return .empty }
-        return .slide(live.slide)
+        return .slide(live.rendered)
     }
 
     /// The slide that `nextSlide()` would take live, following playlist order.
@@ -36,12 +54,12 @@ public final class PresentationCoordinator {
         return sequence[index + 1]
     }
 
-    public var upNextSlide: SlideDocument? {
-        upNextPosition.flatMap(project.slide(at:))
+    public var upNextSlide: RenderedSlide? {
+        upNextPosition.flatMap(project.renderedSlide(at:))
     }
 
-    public var previewSlide: SlideDocument? {
-        state.preview.flatMap(project.slide(at:))
+    public var previewSlide: RenderedSlide? {
+        state.preview.flatMap(project.renderedSlide(at:))
     }
 
     public var selectedPresentation: PresentationDocument? {
@@ -53,10 +71,11 @@ public final class PresentationCoordinator {
         state.isBlackout || (state.live == nil && state.cleared != nil)
     }
 
-    /// True when the live slide has been edited since it was taken live, so the audience sees an older version.
+    /// True when the live slide (or the background it inherits) has been edited since it was taken live,
+    /// so the audience sees an older version.
     public var liveSlideHasPendingEdits: Bool {
-        guard let live = state.live, let current = project.slide(at: live.position) else { return false }
-        return current != live.slide
+        guard let live = state.live, let current = project.renderedSlide(at: live.position) else { return false }
+        return current != live.rendered
     }
 
     // MARK: - Live commands
@@ -139,107 +158,428 @@ public final class PresentationCoordinator {
         return applied()
     }
 
+    // MARK: - Undo
+
+    public var canUndo: Bool { !undoStack.isEmpty }
+    public var canRedo: Bool { !redoStack.isEmpty }
+    /// What Undo would revert, e.g. "Typing", for the Edit menu.
+    public var undoActionName: String? { undoStack.last?.actionName }
+    public var redoActionName: String? { redoStack.last?.actionName }
+
+    /// Restores the project to before the last edit. The audience output never changes: the live slide is a
+    /// snapshot, and only editing commands are recorded.
+    public func undo() {
+        guard let entry = undoStack.popLast() else { return }
+        redoStack.append(UndoEntry(project: project, actionName: entry.actionName))
+        restore(entry.project)
+        logger.info("Undo \(entry.actionName, privacy: .public)")
+    }
+
+    public func redo() {
+        guard let entry = redoStack.popLast() else { return }
+        undoStack.append(UndoEntry(project: project, actionName: entry.actionName))
+        restore(entry.project)
+        logger.info("Redo \(entry.actionName, privacy: .public)")
+    }
+
+    private func restore(_ snapshot: ProjectDocument) {
+        project = snapshot
+        coalescingKey = nil
+        // Keep selection and cue pointing at things that still exist; live state is left alone.
+        if let selected = state.selectedItemID, project.playlist.item(withID: selected) == nil {
+            state.selectedItemID = project.playlist.items.first?.id
+        }
+        if let preview = state.preview, project.slide(at: preview) == nil {
+            state.preview = nil
+        }
+        lastRejection = nil
+    }
+
+    /// Runs an editing command and, if it changed the project, records the previous project for Undo.
+    private func recordingUndo<Result>(_ actionName: String, coalescing key: String? = nil, _ body: () -> Result) -> Result {
+        // Commands that call other commands record once, for the outermost one.
+        guard recordingDepth == 0 else { return body() }
+        recordingDepth += 1
+        defer { recordingDepth -= 1 }
+        let before = project
+        let result = body()
+        guard project != before else { return result }
+        let time = now()
+        redoStack.removeAll()
+        if let key, key == coalescingKey, time.timeIntervalSince(lastEditTime) < Self.coalescingInterval, !undoStack.isEmpty {
+            lastEditTime = time
+            return result
+        }
+        undoStack.append(UndoEntry(project: before, actionName: actionName))
+        if undoStack.count > Self.undoLimit { undoStack.removeFirst() }
+        coalescingKey = key
+        lastEditTime = time
+        return result
+    }
+
+    // MARK: - Project commands
+
+    /// Swaps in a different project, e.g. one opened from disk. The audience output is left alone:
+    /// the live snapshot, cleared slide and blackout carry over until the operator takes something live.
+    /// Selection and cue move to the new project's first item.
+    public func replaceProject(_ newProject: ProjectDocument) {
+        project = newProject
+        // Undo can't reach back into a different project.
+        undoStack.removeAll()
+        redoStack.removeAll()
+        coalescingKey = nil
+        state.selectedItemID = newProject.playlist.items.first?.id
+        state.preview = nil
+        lastRejection = nil
+        logger.info("Opened project \(newProject.id, privacy: .public)")
+    }
+
     // MARK: - Editing commands
     // Edits change the project only. The live snapshot is untouched until the operator takes a slide live again.
 
     /// Creates a presentation with one blank slide, appends it to the playlist and selects it.
     @discardableResult
     public func addPresentation(title: String) -> PresentationItem {
-        let presentation = PresentationDocument(title: title, slides: [.text("")])
-        let item = PresentationItem(presentationID: presentation.id)
-        project.presentations.append(presentation)
-        project.playlist.items.append(item)
-        state.selectedItemID = item.id
-        state.preview = SlidePosition(itemID: item.id, slideID: presentation.slides[0].id)
-        lastRejection = nil
-        return item
+        recordingUndo("Add Presentation") {
+            let presentation = PresentationDocument(title: title, slides: [.text("")])
+            let item = PresentationItem(presentationID: presentation.id)
+            project.presentations.append(presentation)
+            project.playlist.items.append(item)
+            state.selectedItemID = item.id
+            state.preview = SlidePosition(itemID: item.id, slideID: presentation.slides[0].id)
+            lastRejection = nil
+            return item
+        }
+    }
+
+    /// Creates a presentation from pasted lyrics (see `LyricsParser`), adds it to the playlist and selects it.
+    /// Returns nil, changing nothing, when the lyrics contain no words.
+    @discardableResult
+    public func addSong(title: String, lyrics: String, maxLinesPerSlide: Int? = nil) -> PresentationItem? {
+        let slides = LyricsParser.slides(from: lyrics, maxLinesPerSlide: maxLinesPerSlide)
+        guard !slides.isEmpty else { return nil }
+        return recordingUndo("Add Song") {
+            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides)
+            let item = PresentationItem(presentationID: presentation.id)
+            project.presentations.append(presentation)
+            project.playlist.items.append(item)
+            state.selectedItemID = item.id
+            lastRejection = nil
+            logger.info("Added song \(presentation.id, privacy: .public) with \(slides.count) slides")
+            return item
+        }
+    }
+
+    /// Sets a slide's group label ("Verse 1", "Chorus"…). Empty text removes it.
+    @discardableResult
+    public func setLabel(_ label: String, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Group Label", coalescing: "label-\(slideID)") {
+            let trimmed = label.trimmingCharacters(in: .whitespaces)
+            return editSlide(slideID, inPresentation: presentationID) { $0.label = trimmed.isEmpty ? nil : trimmed }
+        }
     }
 
     @discardableResult
     public func renamePresentation(_ presentationID: UUID, to title: String) -> CommandResult {
-        editPresentation(presentationID) { $0.title = title }
+        recordingUndo("Rename", coalescing: "rename-\(presentationID)") {
+            editPresentation(presentationID) { $0.title = title }
+        }
     }
 
     /// Inserts a blank slide after the cued slide (if it belongs to this item) or at the end, and cues it.
     @discardableResult
     public func addSlide(toItem itemID: UUID) -> CommandResult {
-        guard let item = project.playlist.item(withID: itemID) else { return reject(.unknownItem) }
-        let slide = SlideDocument.text("")
-        let result = editPresentation(item.presentationID) { presentation in
-            if let preview = state.preview, preview.itemID == itemID,
-               let index = presentation.index(ofSlide: preview.slideID) {
-                presentation.slides.insert(slide, at: index + 1)
-            } else {
-                presentation.slides.append(slide)
+        recordingUndo("Add Slide") {
+            guard let item = project.playlist.item(withID: itemID) else { return reject(.unknownItem) }
+            let slide = SlideDocument.text("")
+            let result = editPresentation(item.presentationID) { presentation in
+                if let preview = state.preview, preview.itemID == itemID,
+                   let index = presentation.index(ofSlide: preview.slideID) {
+                    presentation.slides.insert(slide, at: index + 1)
+                } else {
+                    presentation.slides.append(slide)
+                }
             }
+            guard result.isApplied else { return result }
+            state.selectedItemID = itemID
+            state.preview = SlidePosition(itemID: itemID, slideID: slide.id)
+            return result
         }
-        guard result.isApplied else { return result }
-        state.selectedItemID = itemID
-        state.preview = SlidePosition(itemID: itemID, slideID: slide.id)
-        return result
+    }
+
+    /// Inserts a blank slide after `slideID` (or at the end when nil or unknown) and returns it.
+    /// Unlike `addSlide(toItem:)`, the cue is left alone: the slide editor selects slides without cueing them.
+    @discardableResult
+    public func insertSlide(after slideID: UUID?, inPresentation presentationID: UUID) -> SlideDocument? {
+        recordingUndo("Add Slide") {
+            let slide = SlideDocument.text("")
+            let result = editPresentation(presentationID) { presentation in
+                if let slideID, let index = presentation.index(ofSlide: slideID) {
+                    presentation.slides.insert(slide, at: index + 1)
+                } else {
+                    presentation.slides.append(slide)
+                }
+            }
+            return result.isApplied ? slide : nil
+        }
     }
 
     /// Replaces the slide's text. A slide without a text element gets a body text element.
     @discardableResult
     public func updateSlideText(_ text: String, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
-        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
-        guard presentation.index(ofSlide: slideID) != nil else { return reject(.unknownSlide) }
-        return editPresentation(presentationID) { presentation in
-            let index = presentation.index(ofSlide: slideID)!
-            var slide = presentation.slides[index]
-            if let textIndex = slide.elements.firstIndex(where: { if case .text = $0 { true } else { false } }),
-               case .text(var element) = slide.elements[textIndex] {
-                element.text = text
-                slide.elements[textIndex] = .text(element)
-            } else {
-                slide.elements.append(.text(TextElement(text: text)))
+        recordingUndo("Typing", coalescing: "text-\(slideID)") {
+            editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.text = text }
+        }
+    }
+
+    // MARK: - Formatting commands
+
+    @discardableResult
+    public func setTextStyle(_ style: TextStyle, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Text Style", coalescing: "style-\(slideID)") {
+            editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.style = style }
+        }
+    }
+
+    /// Positions the slide's text. Nil returns it to the default centred layout.
+    @discardableResult
+    public func setTextBox(_ box: TextBox?, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Text Position", coalescing: "box-\(slideID)") {
+            editPrimaryText(slideID: slideID, inPresentation: presentationID) { $0.box = box }
+        }
+    }
+
+    /// Copies one slide's text style and position to every slide in its presentation. Text is untouched.
+    @discardableResult
+    public func applyTextFormatToAllSlides(from slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Apply to All Slides") {
+            guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+            guard let source = presentation.slide(withID: slideID) else { return reject(.unknownSlide) }
+            let format = source.primaryTextElement ?? TextElement(text: "")
+            logger.info("Applied text format to all slides of \(presentationID, privacy: .public)")
+            return editPresentation(presentationID) { presentation in
+                for index in presentation.slides.indices {
+                    Self.editPrimaryText(of: &presentation.slides[index]) { element in
+                        element.style = format.style
+                        element.box = format.box
+                    }
+                }
             }
-            presentation.slides[index] = slide
+        }
+    }
+
+    /// Sets a slide's own background. Nil makes it inherit its presentation's background again.
+    @discardableResult
+    public func setSlideBackground(_ background: SlideBackground?, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Background", coalescing: "background-\(slideID)") {
+            guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+            guard let index = presentation.index(ofSlide: slideID) else { return reject(.unknownSlide) }
+            if let rejection = validate(background) { return reject(rejection) }
+            return editPresentation(presentationID) { $0.slides[index].background = background }
+        }
+    }
+
+    /// Sets the background for every slide of a presentation that doesn't set its own. Nil uses the default.
+    @discardableResult
+    public func setPresentationBackground(_ background: SlideBackground?, presentationID: UUID) -> CommandResult {
+        recordingUndo("Background", coalescing: "background-\(presentationID)") {
+            guard project.presentation(withID: presentationID) != nil else { return reject(.unknownPresentation) }
+            if let rejection = validate(background) { return reject(rejection) }
+            return editPresentation(presentationID) { $0.background = background }
+        }
+    }
+
+    /// Records an imported media file so backgrounds can reference it. Adding the same asset twice is a no-op.
+    @discardableResult
+    public func addMediaAsset(_ asset: MediaAsset) -> CommandResult {
+        if project.asset(withID: asset.id) == nil {
+            project.mediaAssets.append(asset)
+            logger.info("Added media asset \(asset.id, privacy: .public)")
+        }
+        return applied()
+    }
+
+    // MARK: - Element commands
+    // Text boxes, shapes and images placed on a slide. Later elements draw on top of earlier ones.
+
+    /// Adds an element on top of the slide's other elements.
+    @discardableResult
+    public func addElement(_ element: SlideElement, toSlide slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Add") {
+            if let assetID = element.assetID, project.asset(withID: assetID) == nil { return reject(.unknownMediaAsset) }
+            return editSlide(slideID, inPresentation: presentationID) { $0.elements.append(element) }
+        }
+    }
+
+    /// Replaces the element with the same ID.
+    @discardableResult
+    public func updateElement(_ element: SlideElement, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Change", coalescing: "element-\(element.id)") {
+            if let assetID = element.assetID, project.asset(withID: assetID) == nil { return reject(.unknownMediaAsset) }
+            guard project.presentation(withID: presentationID)?.slide(withID: slideID)?.element(withID: element.id) != nil else {
+                return rejectMissingElement(slideID: slideID, inPresentation: presentationID)
+            }
+            return editSlide(slideID, inPresentation: presentationID) { slide in
+                if let index = slide.elements.firstIndex(where: { $0.id == element.id }) { slide.elements[index] = element }
+            }
+        }
+    }
+
+    @discardableResult
+    public func deleteElement(_ elementID: UUID, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Delete") {
+            guard project.presentation(withID: presentationID)?.slide(withID: slideID)?.element(withID: elementID) != nil else {
+                return rejectMissingElement(slideID: slideID, inPresentation: presentationID)
+            }
+            return editSlide(slideID, inPresentation: presentationID) { $0.elements.removeAll { $0.id == elementID } }
+        }
+    }
+
+    /// The offset for a duplicate or a paste onto the same spot: 20 points on the 1920×1080 canvas.
+    public static let duplicateOffset = (dx: 20.0 / 1920, dy: 20.0 / 1080)
+
+    /// Copies an element, slightly offset, directly above the original, and returns the copy.
+    @discardableResult
+    public func duplicateElement(_ elementID: UUID, slideID: UUID, inPresentation presentationID: UUID) -> SlideElement? {
+        recordingUndo("Duplicate") {
+            guard let slide = project.presentation(withID: presentationID)?.slide(withID: slideID),
+                  let index = slide.elements.firstIndex(where: { $0.id == elementID }) else {
+                _ = rejectMissingElement(slideID: slideID, inPresentation: presentationID)
+                return nil
+            }
+            let copy = slide.elements[index].duplicated(offsetBy: Self.duplicateOffset.dx, Self.duplicateOffset.dy)
+            let result = editSlide(slideID, inPresentation: presentationID) { $0.elements.insert(copy, at: index + 1) }
+            return result.isApplied ? copy : nil
+        }
+    }
+
+    public enum ElementOrder: Sendable {
+        case forward, backward, front, back
+    }
+
+    /// Moves an element up or down the drawing order. Already at the top or bottom is a no-op.
+    @discardableResult
+    public func reorderElement(
+        _ elementID: UUID,
+        _ order: ElementOrder,
+        slideID: UUID,
+        inPresentation presentationID: UUID
+    ) -> CommandResult {
+        recordingUndo("Arrange") {
+            guard project.presentation(withID: presentationID)?.slide(withID: slideID)?.element(withID: elementID) != nil else {
+                return rejectMissingElement(slideID: slideID, inPresentation: presentationID)
+            }
+            return editSlide(slideID, inPresentation: presentationID) { slide in
+                guard let index = slide.elements.firstIndex(where: { $0.id == elementID }) else { return }
+                let last = slide.elements.count - 1
+                let target = switch order {
+                case .forward: min(index + 1, last)
+                case .backward: max(index - 1, 0)
+                case .front: last
+                case .back: 0
+                }
+                guard target != index else { return }
+                let element = slide.elements.remove(at: index)
+                slide.elements.insert(element, at: target)
+            }
+        }
+    }
+
+    // MARK: - Slide order and transitions
+
+    /// Moves slides within a presentation, with the same semantics as SwiftUI's `onMove`.
+    @discardableResult
+    public func moveSlides(inPresentation presentationID: UUID, fromOffsets source: IndexSet, toOffset destination: Int) -> CommandResult {
+        recordingUndo("Reorder Slides") {
+            guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+            guard source.allSatisfy(presentation.slides.indices.contains), (0...presentation.slides.count).contains(destination) else {
+                return reject(.unknownSlide)
+            }
+            return editPresentation(presentationID) { presentation in
+                let moving = source.map { presentation.slides[$0] }
+                let insertion = destination - source.count(in: 0..<destination)
+                for index in source.reversed() { presentation.slides.remove(at: index) }
+                presentation.slides.insert(contentsOf: moving, at: insertion)
+            }
+        }
+    }
+
+    /// Sets how the audience output changes to this slide. Nil cuts instantly.
+    @discardableResult
+    public func setTransition(_ transition: SlideTransition?, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Transition", coalescing: "transition-\(slideID)") {
+            editSlide(slideID, inPresentation: presentationID) { $0.transition = transition }
+        }
+    }
+
+    /// Copies one slide's transition to every slide in its presentation.
+    @discardableResult
+    public func applyTransitionToAllSlides(from slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Apply to All Slides") {
+            guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+            guard let source = presentation.slide(withID: slideID) else { return reject(.unknownSlide) }
+            return editPresentation(presentationID) { presentation in
+                for index in presentation.slides.indices { presentation.slides[index].transition = source.transition }
+            }
+        }
+    }
+
+    /// Sets a slide's presenter notes. Empty text clears them.
+    @discardableResult
+    public func setNotes(_ notes: String, slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Notes", coalescing: "notes-\(slideID)") {
+            editSlide(slideID, inPresentation: presentationID) { $0.notes = notes.isEmpty ? nil : notes }
         }
     }
 
     @discardableResult
     public func deleteSlide(_ slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
-        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
-        guard presentation.index(ofSlide: slideID) != nil else { return reject(.unknownSlide) }
-        let result = editPresentation(presentationID) { $0.slides.removeAll { $0.id == slideID } }
-        if state.preview?.slideID == slideID { state.preview = nil }
-        return result
+        recordingUndo("Delete Slide") {
+            guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+            guard presentation.index(ofSlide: slideID) != nil else { return reject(.unknownSlide) }
+            let result = editPresentation(presentationID) { $0.slides.removeAll { $0.id == slideID } }
+            if state.preview?.slideID == slideID { state.preview = nil }
+            return result
+        }
     }
 
     /// Removes an entry from the playlist. The presentation stays in the library.
     @discardableResult
     public func removeItem(_ itemID: UUID) -> CommandResult {
-        guard let index = project.playlist.index(ofItem: itemID) else { return reject(.unknownItem) }
-        project.playlist.items.remove(at: index)
-        if state.preview?.itemID == itemID { state.preview = nil }
-        if state.selectedItemID == itemID {
-            let items = project.playlist.items
-            state.selectedItemID = items.isEmpty ? nil : items[min(index, items.count - 1)].id
+        recordingUndo("Remove from Playlist") {
+            guard let index = project.playlist.index(ofItem: itemID) else { return reject(.unknownItem) }
+            project.playlist.items.remove(at: index)
+            if state.preview?.itemID == itemID { state.preview = nil }
+            if state.selectedItemID == itemID {
+                let items = project.playlist.items
+                state.selectedItemID = items.isEmpty ? nil : items[min(index, items.count - 1)].id
+            }
+            return applied()
         }
-        return applied()
     }
 
     /// Moves playlist items, with the same semantics as SwiftUI's `onMove`.
     @discardableResult
     public func moveItems(fromOffsets source: IndexSet, toOffset destination: Int) -> CommandResult {
-        var items = project.playlist.items
-        guard source.allSatisfy(items.indices.contains), (0...items.count).contains(destination) else {
-            return reject(.unknownItem)
+        recordingUndo("Reorder Playlist") {
+            var items = project.playlist.items
+            guard source.allSatisfy(items.indices.contains), (0...items.count).contains(destination) else {
+                return reject(.unknownItem)
+            }
+            let moving = source.map { items[$0] }
+            let insertion = destination - source.count(in: 0..<destination)
+            for index in source.reversed() { items.remove(at: index) }
+            items.insert(contentsOf: moving, at: insertion)
+            project.playlist.items = items
+            return applied()
         }
-        let moving = source.map { items[$0] }
-        let insertion = destination - source.count(in: 0..<destination)
-        for index in source.reversed() { items.remove(at: index) }
-        items.insert(contentsOf: moving, at: insertion)
-        project.playlist.items = items
-        return applied()
     }
 
     // MARK: - Private
 
     private func goLive(at position: SlidePosition) -> CommandResult {
-        guard let slide = project.slide(at: position) else { return reject(.unknownSlide) }
-        state.live = LiveSlide(position: position, slide: slide)
+        guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
+        state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
         logger.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
@@ -267,9 +607,57 @@ public final class PresentationCoordinator {
         guard let index = project.presentations.firstIndex(where: { $0.id == presentationID }) else {
             return reject(.unknownPresentation)
         }
+        let before = project.presentations[index]
         edit(&project.presentations[index])
-        project.presentations[index].updatedAt = .now
+        // Views can write back an unchanged value (e.g. a text field on appear); that isn't an edit.
+        if project.presentations[index] != before {
+            project.presentations[index].updatedAt = .now
+        }
         return applied()
+    }
+
+    private func editSlide(
+        _ slideID: UUID,
+        inPresentation presentationID: UUID,
+        _ edit: (inout SlideDocument) -> Void
+    ) -> CommandResult {
+        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+        guard let index = presentation.index(ofSlide: slideID) else { return reject(.unknownSlide) }
+        return editPresentation(presentationID) { edit(&$0.slides[index]) }
+    }
+
+    private func rejectMissingElement(slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+        guard presentation.slide(withID: slideID) != nil else { return reject(.unknownSlide) }
+        return reject(.unknownElement)
+    }
+
+    private func editPrimaryText(
+        slideID: UUID,
+        inPresentation presentationID: UUID,
+        _ edit: (inout TextElement) -> Void
+    ) -> CommandResult {
+        guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
+        guard let index = presentation.index(ofSlide: slideID) else { return reject(.unknownSlide) }
+        return editPresentation(presentationID) { Self.editPrimaryText(of: &$0.slides[index], edit) }
+    }
+
+    /// Edits the slide's first text element, adding a body text element if it has none.
+    private static func editPrimaryText(of slide: inout SlideDocument, _ edit: (inout TextElement) -> Void) {
+        if let textIndex = slide.elements.firstIndex(where: { if case .text = $0 { true } else { false } }),
+           case .text(var element) = slide.elements[textIndex] {
+            edit(&element)
+            slide.elements[textIndex] = .text(element)
+        } else {
+            var element = TextElement(text: "")
+            edit(&element)
+            slide.elements.append(.text(element))
+        }
+    }
+
+    private func validate(_ background: SlideBackground?) -> CommandRejection? {
+        if let assetID = background?.assetID, project.asset(withID: assetID) == nil { return .unknownMediaAsset }
+        return nil
     }
 
     private func applied() -> CommandResult {

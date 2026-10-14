@@ -4,6 +4,7 @@ import PresenterCore
 /// Shows exactly what the audience sees, plus what comes next and what is cued.
 struct LivePanel: View {
     let coordinator: PresentationCoordinator
+    @Environment(MediaLibrary.self) private var mediaLibrary
 
     var body: some View {
         ScrollView {
@@ -21,6 +22,9 @@ struct LivePanel: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .strokeBorder(coordinator.state.live == nil ? Color.secondary.opacity(0.4) : .red, lineWidth: 2)
                         }
+                    if hasMissingImage(coordinator.state.live?.rendered) {
+                        missingImageWarning
+                    }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
                               systemImage: "pencil.circle")
@@ -34,6 +38,17 @@ struct LivePanel: View {
             }
             .padding(16)
         }
+    }
+
+    private var missingImageWarning: some View {
+        Label("Background image missing. The default background is showing.", systemImage: "exclamationmark.triangle")
+            .font(.caption)
+            .foregroundStyle(.orange)
+    }
+
+    private func hasMissingImage(_ slide: RenderedSlide?) -> Bool {
+        guard let assetID = slide?.background?.assetID else { return false }
+        return mediaLibrary.isMissing(assetID)
     }
 
     private var upNextPlaceholder: String {
@@ -56,7 +71,7 @@ struct LivePanel: View {
         }
     }
 
-    private func slot(title: String, slide: SlideDocument?, placeholder: String) -> some View {
+    private func slot(title: String, slide: RenderedSlide?, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.subheadline.bold()).foregroundStyle(.secondary)
             if let slide {
@@ -64,6 +79,9 @@ struct LivePanel: View {
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .frame(maxWidth: 220)
+                if hasMissingImage(slide) {
+                    missingImageWarning
+                }
             } else {
                 Text(placeholder)
                     .font(.caption)

@@ -6,16 +6,6 @@ struct ControlBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Button { coordinator.previousSlide() } label: {
-                Label("Previous", systemImage: "chevron.left")
-            }
-            .help("Previous slide (← or ⌥⌘←)")
-
-            Button { coordinator.nextSlide() } label: {
-                Label("Next", systemImage: "chevron.right")
-            }
-            .help("Next slide (→, Space or ⌥⌘→)")
-
             Button { coordinator.takeLive() } label: {
                 Label("Take Live", systemImage: "play.fill")
             }
@@ -50,6 +40,10 @@ struct ControlBar: View {
                 Label(rejection.message, systemImage: "exclamationmark.circle")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+            } else {
+                Text("→ or Space next · ← previous")
+                    .foregroundStyle(.secondary)
+                    .help("Move through every presentation in the playlist. ⌥⌘→ / ⌥⌘← work from anywhere.")
             }
         }
         .controlSize(.large)

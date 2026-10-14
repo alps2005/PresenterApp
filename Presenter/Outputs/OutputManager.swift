@@ -30,8 +30,8 @@ final class OutputManager {
     @ObservationIgnored private let controller: AudienceOutputController
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
 
-    init(coordinator: PresentationCoordinator) {
-        controller = AudienceOutputController(coordinator: coordinator)
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
+        controller = AudienceOutputController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         controller.onUserClosedWindow = { [weak self] in
             self?.isEnabled = false
         }

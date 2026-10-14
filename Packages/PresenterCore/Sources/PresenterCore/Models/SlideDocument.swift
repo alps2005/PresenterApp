@@ -5,11 +5,31 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     public let id: UUID
     public var elements: [SlideElement]
     public var notes: String?
+    /// Overrides the presentation's background. Nil inherits it.
+    public var background: SlideBackground?
+    /// How the audience output changes to this slide. Nil cuts instantly.
+    public var transition: SlideTransition?
+    /// A group name such as "Verse 1" or "Chorus", shown on the slide's thumbnail. Never shown to the audience.
+    public var label: String?
 
-    public init(id: UUID = UUID(), elements: [SlideElement] = [], notes: String? = nil) {
+    public init(
+        id: UUID = UUID(),
+        elements: [SlideElement] = [],
+        notes: String? = nil,
+        background: SlideBackground? = nil,
+        transition: SlideTransition? = nil,
+        label: String? = nil
+    ) {
         self.id = id
         self.elements = elements
         self.notes = notes
+        self.background = background
+        self.transition = transition
+        self.label = label
+    }
+
+    public func element(withID elementID: UUID) -> SlideElement? {
+        elements.first { $0.id == elementID }
     }
 
     /// Convenience for the common case of a slide holding one block of body text.
@@ -23,6 +43,12 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         return ""
     }
 
+    /// The first text element: what the slide editor and inspector edit.
+    public var primaryTextElement: TextElement? {
+        for case .text(let element) in elements { return element }
+        return nil
+    }
+
     /// All text on the slide, joined by newlines.
     public var plainText: String {
         elements.compactMap { element in
@@ -33,13 +59,17 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
-/// A visual element on a slide. Only text exists today; images and video arrive with the media milestone.
+/// A visual element on a slide. Elements later in a slide's list draw on top of earlier ones.
 public enum SlideElement: Identifiable, Codable, Hashable, Sendable {
     case text(TextElement)
+    case shape(ShapeElement)
+    case image(ImageElement)
 
     public var id: UUID {
         switch self {
         case .text(let element): element.id
+        case .shape(let element): element.id
+        case .image(let element): element.id
         }
     }
 }
@@ -48,11 +78,30 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
     public let id: UUID
     public var text: String
     public var role: TextRole
+    public var style: TextStyle
+    /// Where the text sits on the canvas. Nil keeps the default centred flow layout.
+    public var box: TextBox?
 
-    public init(id: UUID = UUID(), text: String, role: TextRole = .body) {
+    public init(id: UUID = UUID(), text: String, role: TextRole = .body, style: TextStyle? = nil, box: TextBox? = nil) {
         self.id = id
         self.text = text
         self.role = role
+        self.style = style ?? .default(for: role)
+        self.box = box
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, text, role, style, box
+    }
+
+    /// Text saved before styling existed has no style; it gets its role's default look.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        text = try container.decode(String.self, forKey: .text)
+        role = try container.decode(TextRole.self, forKey: .role)
+        style = try container.decodeIfPresent(TextStyle.self, forKey: .style) ?? .default(for: role)
+        box = try container.decodeIfPresent(TextBox.self, forKey: .box)
     }
 }
 

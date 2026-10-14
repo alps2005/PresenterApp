@@ -11,14 +11,16 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
     }
 
     private let coordinator: PresentationCoordinator
+    private let mediaLibrary: MediaLibrary
     private var window: NSWindow?
     private var mode: Mode?
 
     /// Called when the operator closes the windowed output with its close button.
     var onUserClosedWindow: (() -> Void)?
 
-    init(coordinator: PresentationCoordinator) {
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
         self.coordinator = coordinator
+        self.mediaLibrary = mediaLibrary
     }
 
     /// A normal resizable window, for rehearsing on a single display.
@@ -86,7 +88,8 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.hidesOnDeactivate = false
         window.backgroundColor = .black
-        let hostingView = NSHostingView(rootView: AudienceOutputView(coordinator: coordinator))
+        // A separate SwiftUI root: it doesn't inherit the operator window's environment.
+        let hostingView = NSHostingView(rootView: AudienceOutputView(coordinator: coordinator).environment(mediaLibrary))
         // The window decides its size; SwiftUI content must not resize it.
         hostingView.sizingOptions = []
         window.contentView = hostingView
@@ -98,8 +101,49 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
 private struct AudienceOutputView: View {
     let coordinator: PresentationCoordinator
 
+    /// The scene on top, fading in during a dissolve.
+    @State private var shown: AudienceScene
+    /// The scene being dissolved away, underneath. Nil when nothing is fading.
+    @State private var outgoing: AudienceScene?
+    @State private var shownOpacity = 1.0
+
+    init(coordinator: PresentationCoordinator) {
+        self.coordinator = coordinator
+        _shown = State(initialValue: coordinator.audienceScene)
+    }
+
     var body: some View {
-        SlideRenderView(scene: coordinator.audienceScene)
-            .ignoresSafeArea()
+        ZStack {
+            Color.black
+            if let outgoing {
+                SlideRenderView(scene: outgoing)
+            }
+            // The incoming slide is opaque, so fading it in over the old one is a true cross-dissolve.
+            SlideRenderView(scene: shown)
+                .opacity(shownOpacity)
+        }
+        .ignoresSafeArea()
+        .onChange(of: coordinator.audienceScene) { _, scene in present(scene) }
+    }
+
+    /// Only a different slide with a dissolve fades in. Cuts, clear, blackout and re-taking the same
+    /// slide are always instant; a new change mid-fade starts from what's on screen now.
+    private func present(_ scene: AudienceScene) {
+        guard case .slide(let incoming) = scene, let transition = incoming.slide.transition,
+              case .slide(let current) = shown, current.slide.id != incoming.slide.id else {
+            outgoing = nil
+            shown = scene
+            shownOpacity = 1
+            return
+        }
+        outgoing = shown
+        shown = scene
+        shownOpacity = 0
+        withAnimation(.easeInOut(duration: transition.duration)) {
+            shownOpacity = 1
+        } completion: {
+            // Only clear the layer this fade added; a newer change may already have replaced it.
+            if shown == scene { outgoing = nil }
+        }
     }
 }
