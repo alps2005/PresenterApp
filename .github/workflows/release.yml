@@ -36,9 +36,14 @@ jobs:
         run: |
           ditto -c -k --keepParent build/Build/Products/Release/Presenter.app "Presenter-${GITHUB_REF_NAME}.zip"
 
+      # Tags with a suffix (v0.1.0-beta.1) are published as pre-releases. Hand-written notes in
+      # docs/release-notes/<tag>.md are used when present; otherwise GitHub lists the merged changes.
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "Presenter-${GITHUB_REF_NAME}.zip" \
-            --title "Presenter $GITHUB_REF_NAME" --generate-notes
+          args=(--title "Presenter $GITHUB_REF_NAME")
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then args+=(--prerelease); fi
+          notes="docs/release-notes/${GITHUB_REF_NAME}.md"
+          if [[ -f "$notes" ]]; then args+=(--notes-file "$notes"); else args+=(--generate-notes); fi
+          gh release create "$GITHUB_REF_NAME" "Presenter-${GITHUB_REF_NAME}.zip" "${args[@]}"
