@@ -1,12 +1,20 @@
 import Observation
 import PresenterCore
 
+/// Requests from menu commands to the operator window.
+@Observable
+final class OperatorUIState {
+    var isAddingSong = false
+}
+
 /// The app's long-lived services.
 final class AppEnvironment {
     let coordinator: PresentationCoordinator
     let mediaLibrary: MediaLibrary
     let outputManager: OutputManager
     let persistence: ProjectPersistence
+    /// Window-level UI requests that menu commands make, such as opening the New Song sheet.
+    let operatorUI = OperatorUIState()
 
     init() {
         let store = ProjectStore(fileURL: ProjectPersistence.defaultFileURL)

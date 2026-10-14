@@ -79,8 +79,9 @@ public enum CommandRejection: Error, Equatable, Sendable {
     /// The live slide was deleted from the playlist, so there is no sequence to move along.
     case liveSlideMissing
     case nothingToRestore
-    /// A background referenced a media asset that isn't in the project.
+    /// A background or image referenced a media asset that isn't in the project.
     case unknownMediaAsset
+    case unknownElement
 
     public var message: String {
         switch self {
@@ -94,6 +95,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
         case .nothingToRestore: "Output is already showing normally."
         case .unknownMediaAsset: "That image isn't in the project's media library."
+        case .unknownElement: "That item is no longer on the slide."
         }
     }
 }

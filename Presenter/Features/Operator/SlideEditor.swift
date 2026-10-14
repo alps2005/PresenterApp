@@ -1,8 +1,9 @@
 import SwiftUI
 import PresenterCore
 
-/// Edits the cued slide: its text, text style and position, and background. Edits change the project only;
-/// the audience output updates when the operator takes the slide live again.
+/// Quick Edit: the cued slide's text, text style and position, and background, below the workspace.
+/// Shown or hidden with the toolbar toggle (⌥⌘E). Edits change the project only; the audience output
+/// updates when the operator takes the slide live again. The full editor is the Edit button.
 struct SlideEditor: View {
     /// Fixed so switching tabs never resizes the slide grid above.
     static let contentHeight: CGFloat = 150
@@ -21,7 +22,7 @@ struct SlideEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Cued Slide")
+                Text("Quick Edit · Cued Slide")
                     .font(.headline)
                 Spacer()
                 Picker("Editor", selection: $tab) {

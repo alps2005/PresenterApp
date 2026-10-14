@@ -5,6 +5,7 @@ struct PlaylistSidebar: View {
     let coordinator: PresentationCoordinator
     /// Clicking an item asks the workspace to scroll to it.
     @Binding var scrollRequest: UUID?
+    let onNewSong: () -> Void
     @State private var itemPendingRemoval: PresentationItem?
 
     var body: some View {
@@ -23,10 +24,16 @@ struct PlaylistSidebar: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                coordinator.addPresentation(title: "Untitled")
-            } label: {
-                Label("New Presentation", systemImage: "plus")
+            VStack(alignment: .leading, spacing: 6) {
+                Button {
+                    coordinator.addPresentation(title: "Untitled")
+                } label: {
+                    Label("New Presentation", systemImage: "plus")
+                }
+                Button { onNewSong() } label: {
+                    Label("New Song…", systemImage: "music.note.list")
+                }
+                .help("Paste lyrics to make one slide per stanza (⌥⌘N)")
             }
             .buttonStyle(.borderless)
             .padding(10)

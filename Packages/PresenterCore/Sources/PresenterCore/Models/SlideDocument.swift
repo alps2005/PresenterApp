@@ -7,12 +7,29 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     public var notes: String?
     /// Overrides the presentation's background. Nil inherits it.
     public var background: SlideBackground?
+    /// How the audience output changes to this slide. Nil cuts instantly.
+    public var transition: SlideTransition?
+    /// A group name such as "Verse 1" or "Chorus", shown on the slide's thumbnail. Never shown to the audience.
+    public var label: String?
 
-    public init(id: UUID = UUID(), elements: [SlideElement] = [], notes: String? = nil, background: SlideBackground? = nil) {
+    public init(
+        id: UUID = UUID(),
+        elements: [SlideElement] = [],
+        notes: String? = nil,
+        background: SlideBackground? = nil,
+        transition: SlideTransition? = nil,
+        label: String? = nil
+    ) {
         self.id = id
         self.elements = elements
         self.notes = notes
         self.background = background
+        self.transition = transition
+        self.label = label
+    }
+
+    public func element(withID elementID: UUID) -> SlideElement? {
+        elements.first { $0.id == elementID }
     }
 
     /// Convenience for the common case of a slide holding one block of body text.
@@ -42,13 +59,17 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
-/// A visual element on a slide. Only text exists today; images and video arrive with the media milestone.
+/// A visual element on a slide. Elements later in a slide's list draw on top of earlier ones.
 public enum SlideElement: Identifiable, Codable, Hashable, Sendable {
     case text(TextElement)
+    case shape(ShapeElement)
+    case image(ImageElement)
 
     public var id: UUID {
         switch self {
         case .text(let element): element.id
+        case .shape(let element): element.id
+        case .image(let element): element.id
         }
     }
 }

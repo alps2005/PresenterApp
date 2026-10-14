@@ -107,8 +107,10 @@ final class ProjectPersistence {
 
         let opened: ProjectDocument
         do {
-            guard let project = try ProjectStore(fileURL: url).load() else { return }
-            opened = project
+            // An exported project carries its images; they go into the media folder so its slides show them.
+            // (If the operator then cancels, the copied files are simply unused.)
+            let data = try Data(contentsOf: url)
+            opened = try ProjectArchive.open(data, mediaDirectory: MediaLibrary.defaultDirectory)
         } catch {
             problem = (error as? ProjectStoreError)?.message ?? error.localizedDescription
             return
@@ -123,14 +125,15 @@ final class ProjectPersistence {
         Log.persistence.info("Opened project from \(url.path, privacy: .public)")
     }
 
-    /// Writes a copy of the project wherever the operator chooses. Media files aren't included.
+    /// Writes a copy of the project, with the images it uses, wherever the operator chooses.
     func exportProject() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
         panel.nameFieldStringValue = "\(coordinator.project.name).json"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            try ProjectStore(fileURL: url).save(coordinator.project)
+            let data = try ProjectArchive.export(coordinator.project, mediaDirectory: MediaLibrary.defaultDirectory)
+            try data.write(to: url, options: .atomic)
             Log.persistence.info("Exported project to \(url.path, privacy: .public)")
         } catch {
             problem = (error as? ProjectStoreError)?.message ?? error.localizedDescription

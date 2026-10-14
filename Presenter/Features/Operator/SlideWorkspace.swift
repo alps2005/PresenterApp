@@ -9,6 +9,9 @@ struct SlideWorkspace: View {
     let coordinator: PresentationCoordinator
     /// Set by the sidebar when the operator clicks an item; the workspace scrolls there and clears it.
     @Binding var scrollRequest: UUID?
+    /// Setting it opens the slide editor on a presentation.
+    @Binding var editSession: EditSession?
+    @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @FocusState private var isWorkspaceFocused: Bool
     /// The presentation whose title is being edited. Navigation keys pass through to the field while set.
     @FocusState private var editingTitle: UUID?
@@ -40,8 +43,10 @@ struct SlideWorkspace: View {
         } else {
             VStack(spacing: 0) {
                 slides
-                Divider()
-                SlideEditor(coordinator: coordinator)
+                if isQuickEditVisible {
+                    Divider()
+                    SlideEditor(coordinator: coordinator)
+                }
             }
             // AppKit otherwise gives first focus to the first title field, so Space/arrows meant for
             // slide navigation would overwrite a presentation title. (`.defaultFocus` is not enough.)
@@ -218,6 +223,15 @@ struct SlideWorkspace: View {
             } label: {
                 Label("Add Slide", systemImage: "plus.rectangle")
             }
+
+            Button {
+                // Open on the cued slide when it's in this presentation, else the first slide.
+                let cued = coordinator.state.preview.flatMap { $0.itemID == itemID ? $0.slideID : nil }
+                editSession = EditSession(itemID: itemID, presentationID: presentation.id, initialSlideID: cued)
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .help("Open this presentation in the slide editor")
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
@@ -306,6 +320,7 @@ struct SlideThumbnail: View {
                 Text("\(number)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
+                if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
                 if isCued { StateBadge(text: "CUED", color: .accentColor) }
                 if isLive { StateBadge(text: "LIVE", color: .red) }

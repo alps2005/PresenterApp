@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import PresenterCore
 
@@ -9,8 +8,6 @@ struct TextStyleInspector: View {
     let presentationID: UUID
     @State private var isConfirmingApplyToAll = false
 
-    private static let fontFamilies = NSFontManager.shared.availableFontFamilies.sorted()
-    private static let sizeRange: ClosedRange<Double> = 12...400
     private static let marginRange: ClosedRange<Double> = 0...0.3
 
     private var element: TextElement {
@@ -21,51 +18,13 @@ struct TextStyleInspector: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 20) {
-            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
-                GridRow {
-                    Text("Font").foregroundStyle(.secondary)
-                    HStack {
-                        fontPicker
-                        Picker("Weight", selection: binding(\.weight)) {
-                            ForEach(FontWeightValue.allCases, id: \.self) { Text($0.label).tag($0) }
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        Toggle(isOn: binding(\.isItalic)) { Image(systemName: "italic") }
-                            .toggleStyle(.button)
-                            .help("Italic")
-                    }
-                }
-                GridRow {
-                    Text("Size").foregroundStyle(.secondary)
-                    HStack {
-                        TextField("Size", value: sizeBinding, format: .number.precision(.fractionLength(0)))
-                            .frame(width: 56)
-                            .labelsHidden()
-                        Stepper("Size", value: sizeBinding, in: Self.sizeRange, step: 4)
-                            .labelsHidden()
-                        ColorPicker("Color", selection: colorBinding, supportsOpacity: true)
-                            .labelsHidden()
-                            .help("Text colour")
-                        Toggle("Shadow", isOn: binding(\.hasShadow))
-                    }
-                }
-                GridRow {
-                    Text("Align").foregroundStyle(.secondary)
-                    Picker("Alignment", selection: binding(\.alignment)) {
-                        Image(systemName: "text.alignleft").tag(HorizontalTextAlignment.leading)
-                        Image(systemName: "text.aligncenter").tag(HorizontalTextAlignment.center)
-                        Image(systemName: "text.alignright").tag(HorizontalTextAlignment.trailing)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
-                }
-                GridRow {
-                    Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
-                    Button("Apply to All Slides…") { isConfirmingApplyToAll = true }
-                        .help("Copy this slide's text style and position to every slide in the presentation")
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                TextStyleControls(style: Binding(
+                    get: { style },
+                    set: { coordinator.setTextStyle($0, slideID: slide.id, inPresentation: presentationID) }
+                ))
+                Button("Apply to All Slides…") { isConfirmingApplyToAll = true }
+                    .help("Copy this slide's text style and position to every slide in the presentation")
             }
 
             positionControls
@@ -78,20 +37,6 @@ struct TextStyleInspector: View {
         } message: {
             Text("The text on each slide stays the same.")
         }
-    }
-
-    private var fontPicker: some View {
-        Picker("Font", selection: binding(\.fontFamily)) {
-            Text("System").tag(String?.none)
-            Divider()
-            // Keep a family that isn't installed selectable, so the picker shows what the slide asks for.
-            if let family = style.fontFamily, !Self.fontFamilies.contains(family) {
-                Text("\(family) (missing)").tag(Optional(family))
-            }
-            ForEach(Self.fontFamilies, id: \.self) { Text($0).tag(Optional($0)) }
-        }
-        .labelsHidden()
-        .frame(width: 170)
     }
 
     // MARK: Position
@@ -156,32 +101,6 @@ struct TextStyleInspector: View {
             updated.alignment = anchor.horizontal
             coordinator.setTextStyle(updated, slideID: slide.id, inPresentation: presentationID)
         }
-    }
-
-    // MARK: Bindings
-
-    private func binding<Value>(_ keyPath: WritableKeyPath<TextStyle, Value>) -> Binding<Value> {
-        Binding(
-            get: { style[keyPath: keyPath] },
-            set: { value in
-                var updated = style
-                updated[keyPath: keyPath] = value
-                coordinator.setTextStyle(updated, slideID: slide.id, inPresentation: presentationID)
-            }
-        )
-    }
-
-    private var sizeBinding: Binding<Double> {
-        let size = binding(\.fontSize)
-        return Binding(
-            get: { size.wrappedValue },
-            set: { size.wrappedValue = min(max($0, Self.sizeRange.lowerBound), Self.sizeRange.upperBound) }
-        )
-    }
-
-    private var colorBinding: Binding<Color> {
-        let color = binding(\.color)
-        return Binding(get: { color.wrappedValue.color }, set: { color.wrappedValue = RGBAColor($0) })
     }
 }
 

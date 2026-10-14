@@ -18,12 +18,39 @@ struct OperatorView: View {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
     let persistence: ProjectPersistence
+    @Bindable var ui: OperatorUIState
     /// A sidebar click asks the workspace to scroll to that item.
     @State private var scrollRequest: UUID?
+    /// Set while the slide editor is open; it then fills the window in place of the show view.
+    @State private var editSession: EditSession?
+    @AppStorage("quickEditVisible") private var isQuickEditVisible = false
 
     var body: some View {
+        Group {
+            if let editSession {
+                PresentationEditor(coordinator: coordinator, session: editSession, onDone: { self.editSession = nil })
+            } else {
+                showView
+            }
+        }
+        .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
+        .sheet(isPresented: $ui.isAddingSong) {
+            NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
+        }
+        .alert("Project", isPresented: Binding(
+            get: { persistence.problem != nil },
+            set: { if !$0 { persistence.problem = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(persistence.problem ?? "")
+        }
+    }
+
+    /// The live show: playlist, continuous slide workspace, live panel and controls.
+    private var showView: some View {
         NavigationSplitView {
-            PlaylistSidebar(coordinator: coordinator, scrollRequest: $scrollRequest)
+            PlaylistSidebar(coordinator: coordinator, scrollRequest: $scrollRequest, onNewSong: { ui.isAddingSong = true })
                 .navigationSplitViewColumnWidth(min: Self.sidebarMinWidth, ideal: 240, max: Self.sidebarMaxWidth)
         } detail: {
             // Plain SwiftUI stacks on purpose. HSplitView (AppKit-backed) ignored these minimum widths and
@@ -34,7 +61,7 @@ struct OperatorView: View {
                     // HStack would split space evenly and overflow; size the live panel from what's available.
                     let liveWidth = min(max(proxy.size.width * 0.34, Self.livePanelMinWidth), Self.livePanelMaxWidth)
                     HStack(spacing: 0) {
-                        SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest)
+                        SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
                         LivePanel(coordinator: coordinator)
@@ -47,18 +74,14 @@ struct OperatorView: View {
         }
         .navigationTitle(coordinator.project.name)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Toggle(isOn: $isQuickEditVisible) {
+                    Label("Quick Edit", systemImage: "slider.horizontal.3")
+                }
+                .toggleStyle(.button)
+                .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
                 OutputMenu(outputManager: outputManager)
             }
-        }
-        .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
-        .alert("Project", isPresented: Binding(
-            get: { persistence.problem != nil },
-            set: { if !$0 { persistence.problem = nil } }
-        )) {
-            Button("OK") {}
-        } message: {
-            Text(persistence.problem ?? "")
         }
     }
 }

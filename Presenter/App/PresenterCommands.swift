@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import PresenterCore
 
@@ -7,6 +8,10 @@ struct PresenterCommands: Commands {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
     let persistence: ProjectPersistence
+    let ui: OperatorUIState
+    @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @Environment(\.openWindow) private var openWindow
+    @FocusedValue(\.editorElementActions) private var editorElementActions
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -23,6 +28,9 @@ struct PresenterCommands: Commands {
             .keyboardShortcut("n", modifiers: [.command, .shift])
             .disabled(coordinator.selectedPresentation == nil)
 
+            Button("New Song…") { ui.isAddingSong = true }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+
             Divider()
 
             Button("Open Project…") { persistence.openProject() }
@@ -35,6 +43,35 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("s")
             Button("Export Project…") { persistence.exportProject() }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
+        }
+
+        CommandGroup(after: .sidebar) {
+            Toggle("Quick Edit", isOn: $isQuickEditVisible)
+                .keyboardShortcut("e", modifiers: [.command, .option])
+        }
+
+        // Text fields and text editors undo their own typing while they have focus; everywhere else ⌘Z undoes
+        // the last change to the project. Live commands (Take Live, Blackout…) are never undone.
+        CommandGroup(replacing: .undoRedo) {
+            Button(coordinator.undoActionName.map { "Undo \($0)" } ?? "Undo") { undo() }
+                .keyboardShortcut("z")
+                .disabled(!coordinator.canUndo && !focusedTextCanUndo)
+            Button(coordinator.redoActionName.map { "Redo \($0)" } ?? "Redo") { redo() }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(!coordinator.canRedo && !focusedTextCanRedo)
+        }
+
+        CommandGroup(after: .pasteboard) {
+            Button("Duplicate") { editorElementActions?.duplicate() }
+                .keyboardShortcut("d")
+                .disabled(editorElementActions == nil)
+        }
+
+        // Closing the operator window leaves the app (and the audience output) running; this brings it back.
+        CommandGroup(before: .windowList) {
+            Button("Show Operator Window") { openWindow(id: "operator") }
+                .keyboardShortcut("0")
+            Divider()
         }
 
         CommandMenu("Live") {
@@ -60,4 +97,30 @@ struct PresenterCommands: Commands {
             .keyboardShortcut("o", modifiers: [.command, .option])
         }
     }
+
+    /// The text view being typed in, if any. Its own undo history covers the typing.
+    private var focusedTextView: NSTextView? {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable else { return nil }
+        return textView
+    }
+
+    private var focusedTextCanUndo: Bool { focusedTextView?.undoManager?.canUndo ?? false }
+    private var focusedTextCanRedo: Bool { focusedTextView?.undoManager?.canRedo ?? false }
+
+    private func undo() {
+        if let undoManager = focusedTextView?.undoManager, undoManager.canUndo {
+            undoManager.undo()
+        } else {
+            coordinator.undo()
+        }
+    }
+
+    private func redo() {
+        if let undoManager = focusedTextView?.undoManager, undoManager.canRedo {
+            undoManager.redo()
+        } else {
+            coordinator.redo()
+        }
+    }
+
 }

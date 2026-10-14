@@ -49,6 +49,25 @@ final class ModelCodingTests: XCTestCase {
         XCTAssertEqual(decoded, project)
     }
 
+    func testShapesImagesAndTransitionsRoundTripThroughJSON() throws {
+        let asset = MediaAsset(originalFilename: "logo.png", storedFilename: "l.png", pixelWidth: 10, pixelHeight: 10)
+        let slide = SlideDocument(
+            elements: [
+                .text(TextElement(text: "Hi", box: TextBox(frame: .centered(width: 0.5, height: 0.2)))),
+                .shape(ShapeElement(kind: .roundedRectangle, frame: .centered(width: 0.3, height: 0.3),
+                                    fill: nil, stroke: .white, strokeWidth: 4, cornerRadius: 12)),
+                .image(ImageElement(assetID: asset.id, frame: .centered(width: 0.2, height: 0.1), scaling: .fill, opacity: 0.5)),
+            ],
+            transition: .dissolve(duration: 0.8)
+        )
+        let project = ProjectDocument(name: "P", presentations: [PresentationDocument(title: "P", slides: [slide])],
+                                      mediaAssets: [asset])
+
+        let decoded = try JSONDecoder().decode(ProjectDocument.self, from: JSONEncoder().encode(project))
+
+        XCTAssertEqual(decoded, project)
+    }
+
     /// JSON written before styling, backgrounds and media existed still loads, with today's defaults.
     func testDecodesDocumentsWithoutFormattingFields() throws {
         let json = """

@@ -19,10 +19,13 @@ extension RGBAColor {
 }
 
 extension TextStyle {
+    /// Looked up once: asking NSFontManager for every family on each redraw made dragging on the canvas stutter.
+    private static let installedFamilies = Set(NSFontManager.shared.availableFontFamilies)
+
     /// The font family if it's installed, else the system font, so a project from another Mac still renders.
     var font: Font {
         var font: Font
-        if let fontFamily, NSFontManager.shared.availableFontFamilies.contains(fontFamily) {
+        if let fontFamily, Self.installedFamilies.contains(fontFamily) {
             font = .custom(fontFamily, fixedSize: fontSize)
         } else {
             font = .system(size: fontSize)
