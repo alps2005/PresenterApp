@@ -74,11 +74,21 @@ private struct Checkerboard: View {
     }
 }
 
+private struct ShowsLiveVideoKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 private struct SlideTransparencyKey: EnvironmentKey {
     static let defaultValue = SlideRenderView.Transparency.checkerboard
 }
 
 extension EnvironmentValues {
+    /// True on the audience output and its preview: video backgrounds show the playing video, not a still.
+    var showsLiveVideo: Bool {
+        get { self[ShowsLiveVideoKey.self] }
+        set { self[ShowsLiveVideoKey.self] = newValue }
+    }
+
     var slideTransparency: SlideRenderView.Transparency {
         get { self[SlideTransparencyKey.self] }
         set { self[SlideTransparencyKey.self] = newValue }
@@ -100,7 +110,9 @@ private struct DefaultBackground: View {
 private struct BackgroundLayer: View {
     let background: SlideBackground?
     @Environment(MediaLibrary.self) private var mediaLibrary: MediaLibrary?
+    @Environment(MediaPlaybackController.self) private var playback: MediaPlaybackController?
     @Environment(\.slideTransparency) private var transparency
+    @Environment(\.showsLiveVideo) private var showsLiveVideo
 
     var body: some View {
         switch background {
@@ -125,6 +137,22 @@ private struct BackgroundLayer: View {
             } else {
                 DefaultBackground()
             }
+        case .video(let video):
+            // The audience output and the Audience preview show the playing video; everything else shows its
+            // first frame. A missing file shows the default background.
+            ZStack {
+                Color.black
+                if showsLiveVideo, let playback, playback.assetID == video.assetID {
+                    VideoPlayerLayerView(player: playback.player, scaling: video.scaling)
+                        .frame(width: SlideRenderView.canvasSize.width, height: SlideRenderView.canvasSize.height)
+                } else if let poster = mediaLibrary?.image(for: video.assetID) {
+                    scaled(Image(decorative: poster, scale: 1), scaling: video.scaling)
+                } else {
+                    DefaultBackground()
+                }
+                Color.black.opacity(video.dimming)
+            }
+            .clipped()
         }
     }
 

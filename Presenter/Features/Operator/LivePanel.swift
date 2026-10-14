@@ -19,6 +19,7 @@ struct LivePanel: View {
                     }
                     SlideRenderView(scene: coordinator.audienceScene)
                         .overlay { OverlayLayers(coordinator: coordinator) }
+                        .environment(\.showsLiveVideo, true)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .overlay {
@@ -27,6 +28,9 @@ struct LivePanel: View {
                         }
                     if hasMissingImage(coordinator.state.liveBackground), !coordinator.state.isBlackout {
                         missingImageWarning
+                    }
+                    if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
+                        TransportControls()
                     }
                     if let notes = coordinator.state.live?.slide.notes, !notes.isEmpty {
                         Label(notes, systemImage: "note.text")

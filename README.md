@@ -105,6 +105,14 @@ swift test
   - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
 - **Notes:** the live slide's notes also appear under the Audience preview.
 
+**Video backgrounds and the media bin.**
+- **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.
+- **Media cues:** click an item to put it straight on the audience output's background layer, behind the words on screen, like a ProPresenter media cue. Right-click to make it the background of the cued slide or of its presentation instead.
+- **Video backgrounds:** a video plays on the background layer and keeps playing, without restarting, while transparent slides change the words over it. In the Background inspector, choose **Video** to pick one and set its fill, looping, mute and dimming.
+- **Transport:** while a video is live, controls under the Audience preview play and pause it, scrub, show the time left, mute it and set the volume.
+- **Missing files:** a missing or unplayable video shows the default background with a warning and never holds up slide changes.
+- **File size:** exported projects include their videos, so they can be large.
+
 **Messages and props.** Two more layers over the slides, managed from **Show Controls** in the Live panel:
 - **Messages:** a bar across the bottom (or top) of the audience output, like "Parent of child {Number}, please come to the nursery". Words in braces are blanks you fill in when you click **Show…**, and `{timer:Sermon}` shows a live timer. Edit the text, position, size and colours from the ⋯ menu. One message shows at a time.
 - **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images.

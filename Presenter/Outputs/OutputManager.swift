@@ -49,9 +49,14 @@ final class OutputManager {
     @ObservationIgnored private var controllers: [OutputRole: OutputWindowController] = [:]
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
 
-    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, playback: MediaPlaybackController) {
         controllers[.audience] = OutputWindowController(title: OutputRole.audience.title) {
-            AnyView(AudienceOutputView(coordinator: coordinator).environment(mediaLibrary))
+            AnyView(
+                AudienceOutputView(coordinator: coordinator)
+                    .environment(mediaLibrary)
+                    .environment(playback)
+                    .environment(\.showsLiveVideo, true)
+            )
         }
         controllers[.stage] = OutputWindowController(title: OutputRole.stage.title) {
             AnyView(StageOutputView(coordinator: coordinator).environment(mediaLibrary))

@@ -198,6 +198,21 @@ public final class PresentationCoordinator {
         return applied()
     }
 
+    // MARK: - Media (live: never undone)
+
+    /// Puts an image, video or colour straight onto the audience output's background layer, like clicking a
+    /// cue in ProPresenter's media bin. The words on screen stay. Transparent slides keep it; the next
+    /// opaque slide replaces it.
+    @discardableResult
+    public func showBackground(_ background: SlideBackground) -> CommandResult {
+        if let rejection = validate(background) { return reject(rejection) }
+        guard background != .transparent else { return reject(.nothingToClear) }
+        state.liveBackground = background
+        state.clearedBackground = nil
+        logger.info("Media cue on the background layer")
+        return applied()
+    }
+
     // MARK: - Messages and props (live: never undone)
 
     /// Shows a message over the slides, replacing any other message.

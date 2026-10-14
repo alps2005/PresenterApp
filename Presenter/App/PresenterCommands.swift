@@ -10,6 +10,7 @@ struct PresenterCommands: Commands {
     let persistence: ProjectPersistence
     let ui: OperatorUIState
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
     @Environment(\.openWindow) private var openWindow
     @FocusedValue(\.editorElementActions) private var editorElementActions
 
@@ -48,6 +49,8 @@ struct PresenterCommands: Commands {
         CommandGroup(after: .sidebar) {
             Toggle("Quick Edit", isOn: $isQuickEditVisible)
                 .keyboardShortcut("e", modifiers: [.command, .option])
+            Toggle("Media Bin", isOn: $isMediaBinVisible)
+                .keyboardShortcut("i", modifiers: [.command, .option])
         }
 
         // Text fields and text editors undo their own typing while they have focus; everywhere else ⌘Z undoes

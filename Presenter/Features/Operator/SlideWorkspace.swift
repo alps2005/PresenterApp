@@ -12,6 +12,7 @@ struct SlideWorkspace: View {
     /// Setting it opens the slide editor on a presentation.
     @Binding var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
     /// Thumbnail width, from the size slider at the bottom right of the workspace.
     @AppStorage("thumbnailWidth") private var thumbnailWidth = 180.0
     @State private var reflowPresentationID: UUID?
@@ -56,6 +57,10 @@ struct SlideWorkspace: View {
                 if isQuickEditVisible {
                     Divider()
                     SlideEditor(coordinator: coordinator)
+                }
+                if isMediaBinVisible {
+                    Divider()
+                    MediaBin(coordinator: coordinator)
                 }
             }
             // AppKit otherwise gives first focus to the first title field, so Space/arrows meant for
