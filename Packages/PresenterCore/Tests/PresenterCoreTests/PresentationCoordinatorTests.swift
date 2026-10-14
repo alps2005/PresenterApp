@@ -271,6 +271,35 @@ final class PresentationCoordinatorTests: XCTestCase {
         XCTAssertNil(f.coordinator.state.preview)
     }
 
+    func testReplacingProjectKeepsAudienceOutputAndResetsCue() {
+        let f = makeFixture()
+        f.coordinator.takeLive(slideID: f.a1.id, inItem: f.itemA.id)
+        f.coordinator.cueSlide(f.a2.id, inItem: f.itemA.id)
+        let liveBefore = f.coordinator.audienceScene
+        let opened = ProjectDocument.sample()
+
+        f.coordinator.replaceProject(opened)
+
+        XCTAssertEqual(f.coordinator.project, opened)
+        XCTAssertEqual(f.coordinator.audienceScene, liveBefore)
+        XCTAssertEqual(f.coordinator.state.selectedItemID, opened.playlist.items.first?.id)
+        XCTAssertNil(f.coordinator.state.preview)
+        // The live slide isn't in the opened project, so there's no sequence to step through.
+        XCTAssertNil(f.coordinator.upNextPosition)
+        XCTAssertEqual(f.coordinator.nextSlide(), .rejected(.liveSlideMissing))
+    }
+
+    func testRewritingUnchangedTextDoesNotTouchUpdatedAt() {
+        let f = makeFixture()
+        let before = f.coordinator.project.presentation(withID: f.presentationA.id)?.updatedAt
+
+        XCTAssertEqual(f.coordinator.updateSlideText("A1", slideID: f.a1.id, inPresentation: f.presentationA.id), .applied)
+        XCTAssertEqual(f.coordinator.project.presentation(withID: f.presentationA.id)?.updatedAt, before)
+
+        f.coordinator.updateSlideText("Changed", slideID: f.a1.id, inPresentation: f.presentationA.id)
+        XCTAssertNotEqual(f.coordinator.project.presentation(withID: f.presentationA.id)?.updatedAt, before)
+    }
+
     func testMoveItemsReordersPlaylist() {
         let f = makeFixture()
         XCTAssertEqual(f.coordinator.moveItems(fromOffsets: IndexSet(integer: 1), toOffset: 0), .applied)

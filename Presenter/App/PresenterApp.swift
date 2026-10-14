@@ -8,7 +8,8 @@ struct PresenterApp: App {
         Window("Presenter", id: "operator") {
             OperatorView(
                 coordinator: appDelegate.environment.coordinator,
-                outputManager: appDelegate.environment.outputManager
+                outputManager: appDelegate.environment.outputManager,
+                persistence: appDelegate.environment.persistence
             )
             .frame(
                 minWidth: OperatorView.minimumWindowSize.width,
@@ -22,7 +23,8 @@ struct PresenterApp: App {
         .commands {
             PresenterCommands(
                 coordinator: appDelegate.environment.coordinator,
-                outputManager: appDelegate.environment.outputManager
+                outputManager: appDelegate.environment.outputManager,
+                persistence: appDelegate.environment.persistence
             )
         }
     }

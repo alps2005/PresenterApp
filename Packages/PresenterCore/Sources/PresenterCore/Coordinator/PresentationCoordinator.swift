@@ -140,6 +140,19 @@ public final class PresentationCoordinator {
         return applied()
     }
 
+    // MARK: - Project commands
+
+    /// Swaps in a different project, e.g. one opened from disk. The audience output is left alone:
+    /// the live snapshot, cleared slide and blackout carry over until the operator takes something live.
+    /// Selection and cue move to the new project's first item.
+    public func replaceProject(_ newProject: ProjectDocument) {
+        project = newProject
+        state.selectedItemID = newProject.playlist.items.first?.id
+        state.preview = nil
+        lastRejection = nil
+        logger.info("Opened project \(newProject.id, privacy: .public)")
+    }
+
     // MARK: - Editing commands
     // Edits change the project only. The live snapshot is untouched until the operator takes a slide live again.
 
@@ -312,8 +325,12 @@ public final class PresentationCoordinator {
         guard let index = project.presentations.firstIndex(where: { $0.id == presentationID }) else {
             return reject(.unknownPresentation)
         }
+        let before = project.presentations[index]
         edit(&project.presentations[index])
-        project.presentations[index].updatedAt = .now
+        // Views can write back an unchanged value (e.g. a text field on appear); that isn't an edit.
+        if project.presentations[index] != before {
+            project.presentations[index].updatedAt = .now
+        }
         return applied()
     }
 

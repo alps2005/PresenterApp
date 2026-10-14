@@ -6,6 +6,7 @@ import PresenterCore
 struct PresenterCommands: Commands {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
+    let persistence: ProjectPersistence
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -21,6 +22,19 @@ struct PresenterCommands: Commands {
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
             .disabled(coordinator.selectedPresentation == nil)
+
+            Divider()
+
+            Button("Open Project…") { persistence.openProject() }
+                .keyboardShortcut("o")
+        }
+
+        // The project autosaves; Save just writes immediately.
+        CommandGroup(replacing: .saveItem) {
+            Button("Save") { persistence.saveNow() }
+                .keyboardShortcut("s")
+            Button("Export Project…") { persistence.exportProject() }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
         }
 
         CommandMenu("Live") {

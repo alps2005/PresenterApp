@@ -2,7 +2,30 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** early development. Milestone 1 is mostly built: a text-only presentation engine with a separate audience output window. Projects are not saved to disk yet. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the full roadmap.
+**Status:** early development. Milestone 1 is mostly built: a text-only presentation engine with a separate audience output window. Projects save automatically. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the full roadmap.
+
+## Install
+
+Download `Presenter-<version>.zip` from the [Releases](https://github.com/alps2005/PresenterApp/releases) page, unzip it and drag **Presenter** into **Applications**.
+
+The app isn't notarized by Apple, so macOS blocks it the first time. To open it anyway:
+
+1. Double-click Presenter, then click **Done** (or **Cancel**) on the warning.
+2. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to the Presenter message.
+3. Confirm with your password. After that it opens normally.
+
+On older macOS versions you can instead right-click Presenter in Applications and choose **Open**.
+
+### Publishing a release
+
+Push a version tag and GitHub Actions builds, tests and uploads the zip:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Every push and pull request to `develop` or `main` also runs the tests and a build (`.github/workflows/ci.yml`).
 
 ## Requirements
 
@@ -51,10 +74,18 @@ swift test
 | Restore after clear/blackout | ⌥⌘R |
 | Show/hide audience output | ⌥⌘O, or the **Output** toolbar menu |
 | New presentation / new slide | ⌘N / ⇧⌘N |
+| Save now (the project also autosaves) | ⌘S |
+| Open a project file / export a copy | ⌘O / ⇧⌘S |
 
 **Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects.
 
 **Editing is non-destructive.** Editing a live slide does not change what the audience sees until you take that slide live again. The Live panel warns you when this is the case.
+
+**Saving.** The project saves itself about a second after each change, and again when you quit. It lives at `~/Library/Containers/<bundle id>/Data/Library/Application Support/Presenter/Project.json`. Nothing is ever live when the app starts.
+
+- **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. Images aren't included yet, so on another Mac image backgrounds show as missing.
+- **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
+- If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and a sample project opens instead.
 
 **Formatting slides.** Cue a slide, then use the tabs under the slide grid:
 
@@ -81,7 +112,7 @@ Presenter/                     macOS app target (SwiftUI + AppKit)
   Outputs/                     Display discovery, output placement, audience window
   Rendering/                   Shared slide renderer (used for thumbnails, preview and output)
   Support/                     Logging and AppKit helpers
-Packages/PresenterCore/        UI-free domain models and PresentationCoordinator, with unit tests
+Packages/PresenterCore/        UI-free domain models, PresentationCoordinator and ProjectStore, with unit tests
 ```
 
 The `PresentationCoordinator` owns all live state and is the only thing that changes it. It keeps four ideas separate:

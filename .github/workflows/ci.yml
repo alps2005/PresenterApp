@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The project file needs Xcode 26 or later; use the newest stable Xcode on the runner.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Test PresenterCore
+        working-directory: Packages/PresenterCore
+        run: swift test
+
+      - name: Build app
+        run: |
+          xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Debug \
+            -destination 'platform=macOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build

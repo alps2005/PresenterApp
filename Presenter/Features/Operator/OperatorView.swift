@@ -17,6 +17,7 @@ struct OperatorView: View {
 
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
+    let persistence: ProjectPersistence
 
     var body: some View {
         NavigationSplitView {
@@ -49,5 +50,13 @@ struct OperatorView: View {
             }
         }
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
+        .alert("Project", isPresented: Binding(
+            get: { persistence.problem != nil },
+            set: { if !$0 { persistence.problem = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(persistence.problem ?? "")
+        }
     }
 }
