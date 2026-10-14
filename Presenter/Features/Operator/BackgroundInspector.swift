@@ -53,7 +53,8 @@ struct BackgroundInspector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Background", selection: Binding(get: { mode }, set: select)) {
+            // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
+            Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
                 Text(inheritLabel).tag(Mode.inherit)
                 Text("Color").tag(Mode.color)
                 Text("Image").tag(Mode.image)
