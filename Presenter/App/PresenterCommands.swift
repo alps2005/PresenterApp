@@ -99,6 +99,10 @@ struct PresenterCommands: Commands {
                 outputManager.toggle()
             }
             .keyboardShortcut("o", modifiers: [.command, .option])
+            Button(outputManager.isEnabled(.stage) ? "Hide Stage Display" : "Show Stage Display") {
+                outputManager.toggle(.stage)
+            }
+            .keyboardShortcut("d", modifiers: [.command, .option])
         }
     }
 

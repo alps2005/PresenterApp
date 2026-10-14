@@ -98,6 +98,13 @@ swift test
 - **Thumbnail size:** the slider at the bottom right of the workspace sets the thumbnail size.
 - **Renaming:** click a presentation's title to rename it.
 
+**Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
+- **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘D. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
+- **Show Controls** at the bottom of the Live panel:
+  - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
+  - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
+- **Notes:** the live slide's notes also appear under the Audience preview.
+
 **Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
 - **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
 - **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.

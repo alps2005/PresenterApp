@@ -4,6 +4,7 @@ import PresenterCore
 /// Shows exactly what the audience sees, plus what comes next and what is cued.
 struct LivePanel: View {
     let coordinator: PresentationCoordinator
+    let outputManager: OutputManager
     @Environment(MediaLibrary.self) private var mediaLibrary
 
     var body: some View {
@@ -25,6 +26,12 @@ struct LivePanel: View {
                     if hasMissingImage(coordinator.state.liveBackground), !coordinator.state.isBlackout {
                         missingImageWarning
                     }
+                    if let notes = coordinator.state.live?.slide.notes, !notes.isEmpty {
+                        Label(notes, systemImage: "note.text")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .help("This slide's notes. The audience never sees them.")
+                    }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
                               systemImage: "pencil.circle")
@@ -37,6 +44,9 @@ struct LivePanel: View {
                 slot(title: "Up Next", slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
                      placeholder: upNextPlaceholder)
                 slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued")
+
+                Divider()
+                ShowControls(coordinator: coordinator, outputManager: outputManager)
             }
             .padding(16)
         }
