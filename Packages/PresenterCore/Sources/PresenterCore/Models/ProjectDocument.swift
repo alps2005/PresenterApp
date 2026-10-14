@@ -11,6 +11,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public var playlist: PlaylistDocument
     /// Media files the project's slides reference. The files live in the media library folder.
     public var mediaAssets: [MediaAsset]
+    /// Timers for the stage display and messages.
+    public var timers: [TimerDefinition]
+    public var stage: StageSettings
 
     public init(
         id: UUID = UUID(),
@@ -18,7 +21,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         schemaVersion: Int = ProjectDocument.currentSchemaVersion,
         presentations: [PresentationDocument] = [],
         playlist: PlaylistDocument = PlaylistDocument(title: "Service"),
-        mediaAssets: [MediaAsset] = []
+        mediaAssets: [MediaAsset] = [],
+        timers: [TimerDefinition] = TimerDefinition.defaults(),
+        stage: StageSettings = StageSettings()
     ) {
         self.id = id
         self.name = name
@@ -26,10 +31,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.presentations = presentations
         self.playlist = playlist
         self.mediaAssets = mediaAssets
+        self.timers = timers
+        self.stage = stage
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, schemaVersion, presentations, playlist, mediaAssets
+        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage
     }
 
     public init(from decoder: any Decoder) throws {
@@ -40,6 +47,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         presentations = try container.decode([PresentationDocument].self, forKey: .presentations)
         playlist = try container.decode(PlaylistDocument.self, forKey: .playlist)
         mediaAssets = try container.decodeIfPresent([MediaAsset].self, forKey: .mediaAssets) ?? []
+        // Projects saved before timers existed get the default ones.
+        timers = try container.decodeIfPresent([TimerDefinition].self, forKey: .timers) ?? TimerDefinition.defaults()
+        stage = try container.decodeIfPresent(StageSettings.self, forKey: .stage) ?? StageSettings()
     }
 
     public func asset(withID assetID: UUID) -> MediaAsset? {

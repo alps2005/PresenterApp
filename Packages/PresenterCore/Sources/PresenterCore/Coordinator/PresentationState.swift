@@ -17,6 +17,8 @@ public struct PresentationState: Equatable, Sendable {
     public var liveBackground: SlideBackground?
     /// The background removed by `clearBackground()`, kept so `restoreOutput()` can bring it back.
     public var clearedBackground: SlideBackground?
+    /// A message to the people on stage, shown only on the stage display.
+    public var stageMessage: String?
 
     public init(
         selectedItemID: UUID? = nil,
@@ -94,6 +96,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case nothingToRestore
     case nothingToClear
     case unknownArrangement
+    case unknownTimer
     /// A background or image referenced a media asset that isn't in the project.
     case unknownMediaAsset
     case unknownElement
@@ -111,6 +114,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .nothingToRestore: "Output is already showing normally."
         case .nothingToClear: "Only the default background is showing."
         case .unknownArrangement: "That arrangement no longer exists."
+        case .unknownTimer: "That timer no longer exists."
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         }

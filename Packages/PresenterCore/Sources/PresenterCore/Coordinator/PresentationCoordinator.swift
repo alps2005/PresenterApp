@@ -12,6 +12,9 @@ public final class PresentationCoordinator {
     /// The most recent rejected command, for surfacing to the operator. Cleared by the next applied command.
     public private(set) var lastRejection: CommandRejection?
 
+    /// Each timer's running state, by timer ID. Timers without an entry are stopped at zero.
+    public private(set) var timerRuns: [UUID: TimerRun] = [:]
+
     /// Project snapshots taken before each edit, newest last. Live commands are never recorded.
     private var undoStack: [UndoEntry] = []
     private var redoStack: [UndoEntry] = []
@@ -194,6 +197,105 @@ public final class PresentationCoordinator {
         guard changed else { return reject(.nothingToRestore) }
         logger.info("Output restored")
         return applied()
+    }
+
+    // MARK: - Timers and stage (live: never undone)
+
+    public func timer(withID timerID: UUID) -> TimerDefinition? {
+        project.timers.first { $0.id == timerID }
+    }
+
+    public func timerRun(for timerID: UUID) -> TimerRun {
+        timerRuns[timerID] ?? TimerRun()
+    }
+
+    /// The timer's value at `date` (see `TimerDefinition.seconds`), or nil if it doesn't exist.
+    public func timerSeconds(_ timerID: UUID, at date: Date) -> Int? {
+        timer(withID: timerID).map { $0.seconds(run: timerRun(for: timerID), now: date) }
+    }
+
+    /// Starts or resumes a timer.
+    @discardableResult
+    public func startTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        var run = timerRun(for: timerID)
+        if !run.isRunning { run.startedAt = now() }
+        timerRuns[timerID] = run
+        return applied()
+    }
+
+    /// Pauses a timer, keeping its time.
+    @discardableResult
+    public func stopTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        let run = timerRun(for: timerID)
+        timerRuns[timerID] = TimerRun(startedAt: nil, accumulated: run.elapsed(at: now()))
+        return applied()
+    }
+
+    /// Stops a timer and returns it to its starting value.
+    @discardableResult
+    public func resetTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        timerRuns[timerID] = nil
+        return applied()
+    }
+
+    /// Shows a message on the stage display only. Empty text hides it.
+    @discardableResult
+    public func showStageMessage(_ text: String) -> CommandResult {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        state.stageMessage = trimmed.isEmpty ? nil : trimmed
+        return applied()
+    }
+
+    @discardableResult
+    public func hideStageMessage() -> CommandResult {
+        state.stageMessage = nil
+        return applied()
+    }
+
+    // MARK: - Timer and stage settings (edits: undoable)
+
+    @discardableResult
+    public func addTimer(name: String, kind: TimerDefinition.Kind) -> TimerDefinition {
+        recordingUndo("Add Timer") {
+            let timer = TimerDefinition(name: name.isEmpty ? "Timer" : name, kind: kind)
+            project.timers.append(timer)
+            lastRejection = nil
+            return timer
+        }
+    }
+
+    /// Changing a timer's kind or duration resets it.
+    @discardableResult
+    public func updateTimer(_ timer: TimerDefinition) -> CommandResult {
+        recordingUndo("Edit Timer", coalescing: "timer-\(timer.id)") {
+            guard let index = project.timers.firstIndex(where: { $0.id == timer.id }) else { return reject(.unknownTimer) }
+            if project.timers[index].kind != timer.kind { timerRuns[timer.id] = nil }
+            project.timers[index] = timer
+            return applied()
+        }
+    }
+
+    @discardableResult
+    public func deleteTimer(_ timerID: UUID) -> CommandResult {
+        recordingUndo("Delete Timer") {
+            guard project.timers.contains(where: { $0.id == timerID }) else { return reject(.unknownTimer) }
+            project.timers.removeAll { $0.id == timerID }
+            if project.stage.timerID == timerID { project.stage.timerID = nil }
+            timerRuns[timerID] = nil
+            return applied()
+        }
+    }
+
+    @discardableResult
+    public func setStageSettings(_ settings: StageSettings) -> CommandResult {
+        recordingUndo("Stage Settings") {
+            if let timerID = settings.timerID, timer(withID: timerID) == nil { return reject(.unknownTimer) }
+            project.stage = settings
+            return applied()
+        }
     }
 
     // MARK: - Undo
