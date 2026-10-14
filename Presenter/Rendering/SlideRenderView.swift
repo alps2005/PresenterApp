@@ -6,7 +6,15 @@ import PresenterCore
 struct SlideRenderView: View {
     static let canvasSize = CGSize(width: 1920, height: 1080)
 
+    /// How a transparent background is drawn: a checkerboard in the operator's previews, nothing at all on the
+    /// audience output's slide layer (the background layer underneath shows through).
+    enum Transparency {
+        case checkerboard
+        case clear
+    }
+
     let scene: AudienceScene
+    var transparency: Transparency = .checkerboard
 
     var body: some View {
         GeometryReader { proxy in
@@ -22,8 +30,10 @@ struct SlideRenderView: View {
                 .scaleEffect(scale)
                 .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .background(Color.black)
+        // Letterboxing: black, except on a transparent layer, where the layer below provides it.
+        .background(transparency == .clear ? Color.clear : Color.black)
         .clipped()
+        .environment(\.slideTransparency, transparency)
     }
 
     @ViewBuilder
@@ -33,12 +43,45 @@ struct SlideRenderView: View {
             Color.black
         case .empty:
             DefaultBackground()
+        case .background(let background):
+            BackgroundLayer(background: background)
         case .slide(let rendered):
             ZStack {
                 BackgroundLayer(background: rendered.background)
                 SlideContent(slide: rendered.slide)
             }
         }
+    }
+}
+
+/// How operator previews show a transparent background, as ProPresenter does.
+private struct Checkerboard: View {
+    private static let square: CGFloat = 60
+
+    var body: some View {
+        Canvas { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(white: 0.82)))
+            let columns = Int((size.width / Self.square).rounded(.up))
+            let rows = Int((size.height / Self.square).rounded(.up))
+            for row in 0..<rows {
+                for column in 0..<columns where (row + column).isMultiple(of: 2) {
+                    let rect = CGRect(x: CGFloat(column) * Self.square, y: CGFloat(row) * Self.square,
+                                      width: Self.square, height: Self.square)
+                    context.fill(Path(rect), with: .color(Color(white: 0.62)))
+                }
+            }
+        }
+    }
+}
+
+private struct SlideTransparencyKey: EnvironmentKey {
+    static let defaultValue = SlideRenderView.Transparency.checkerboard
+}
+
+extension EnvironmentValues {
+    var slideTransparency: SlideRenderView.Transparency {
+        get { self[SlideTransparencyKey.self] }
+        set { self[SlideTransparencyKey.self] = newValue }
     }
 }
 
@@ -57,11 +100,18 @@ private struct DefaultBackground: View {
 private struct BackgroundLayer: View {
     let background: SlideBackground?
     @Environment(MediaLibrary.self) private var mediaLibrary: MediaLibrary?
+    @Environment(\.slideTransparency) private var transparency
 
     var body: some View {
         switch background {
         case nil:
             DefaultBackground()
+        case .transparent:
+            if transparency == .checkerboard {
+                Checkerboard()
+            } else {
+                Color.clear
+            }
         case .color(let color):
             color.color
         case .image(let image):

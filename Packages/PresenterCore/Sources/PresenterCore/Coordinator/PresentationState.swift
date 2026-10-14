@@ -12,19 +12,28 @@ public struct PresentationState: Equatable, Sendable {
     public var cleared: LiveSlide?
     /// Blackout overrides everything on the audience output until restored.
     public var isBlackout: Bool
+    /// The background layer on the audience output, under the live slide. Nil shows the app's default
+    /// background. A slide with a transparent background leaves it as it is when taken live.
+    public var liveBackground: SlideBackground?
+    /// The background removed by `clearBackground()`, kept so `restoreOutput()` can bring it back.
+    public var clearedBackground: SlideBackground?
 
     public init(
         selectedItemID: UUID? = nil,
         preview: SlidePosition? = nil,
         live: LiveSlide? = nil,
         cleared: LiveSlide? = nil,
-        isBlackout: Bool = false
+        isBlackout: Bool = false,
+        liveBackground: SlideBackground? = nil,
+        clearedBackground: SlideBackground? = nil
     ) {
         self.selectedItemID = selectedItemID
         self.preview = preview
         self.live = live
         self.cleared = cleared
         self.isBlackout = isBlackout
+        self.liveBackground = liveBackground
+        self.clearedBackground = clearedBackground
     }
 }
 
@@ -57,7 +66,11 @@ public struct LiveSlide: Equatable, Sendable {
 /// What the audience renderer should draw. Derived from `PresentationState`, never stored.
 public enum AudienceScene: Equatable, Sendable {
     case black
+    /// Nothing on either layer: the app's default background.
     case empty
+    /// A background with no slide on it, e.g. after Clear Slide.
+    case background(SlideBackground)
+    /// A slide over its background. On the audience output the background is the background layer.
     case slide(RenderedSlide)
 }
 
@@ -79,6 +92,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     /// The live slide was deleted from the playlist, so there is no sequence to move along.
     case liveSlideMissing
     case nothingToRestore
+    case nothingToClear
     /// A background or image referenced a media asset that isn't in the project.
     case unknownMediaAsset
     case unknownElement
@@ -94,6 +108,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .atStartOfPlaylist: "Already at the first slide."
         case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
         case .nothingToRestore: "Output is already showing normally."
+        case .nothingToClear: "Only the default background is showing."
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         }

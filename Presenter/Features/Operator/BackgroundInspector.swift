@@ -9,12 +9,14 @@ enum BackgroundTarget: Equatable {
     case presentation(UUID)
 }
 
-/// Picks a colour or an imported image as a background, or clears it so it inherits.
+/// Picks a colour or an imported image as a background, clears it so it inherits, or makes it transparent so
+/// the background already on the audience output stays.
 struct BackgroundInspector: View {
     private enum Mode: Hashable {
         case inherit
         case color
         case image
+        case transparent
     }
 
     private static let defaultColor = RGBAColor(red: 0.11, green: 0.23, blue: 0.36)
@@ -48,6 +50,7 @@ struct BackgroundInspector: View {
         case nil: .inherit
         case .color: .color
         case .image: .image
+        case .transparent: .transparent
         }
     }
 
@@ -58,6 +61,7 @@ struct BackgroundInspector: View {
                 Text(inheritLabel).tag(Mode.inherit)
                 Text("Color").tag(Mode.color)
                 Text("Image").tag(Mode.image)
+                Text("None").tag(Mode.transparent)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -76,6 +80,10 @@ struct BackgroundInspector: View {
                 ), supportsOpacity: false)
             case .image(let image):
                 imageControls(image)
+            case .transparent:
+                Text("Transparent: when this slide goes live, whatever background is already on screen stays, like ProPresenter's empty background.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let importError {
@@ -130,6 +138,7 @@ struct BackgroundInspector: View {
         case .inherit: apply(nil)
         case .color: apply(.color(Self.defaultColor))
         case .image: chooseImage()
+        case .transparent: apply(.transparent)
         }
     }
 

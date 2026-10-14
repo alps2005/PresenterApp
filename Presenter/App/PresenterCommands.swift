@@ -82,8 +82,12 @@ struct PresenterCommands: Commands {
             Button("Previous Slide") { coordinator.previousSlide() }
                 .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
             Divider()
-            Button("Clear Output") { coordinator.clearOutput() }
+            Button("Clear Slide") { coordinator.clearOutput() }
                 .keyboardShortcut("c", modifiers: [.command, .option])
+            Button("Clear Background") { coordinator.clearBackground() }
+                .keyboardShortcut("x", modifiers: [.command, .option])
+            Button("Clear All") { coordinator.clearAll() }
+                .keyboardShortcut("a", modifiers: [.command, .option])
             Button("Blackout") { coordinator.blackout() }
                 .keyboardShortcut("b", modifiers: [.command, .option])
             Button("Restore Output") { coordinator.restoreOutput() }

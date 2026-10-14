@@ -4,6 +4,9 @@ import Foundation
 public enum SlideBackground: Codable, Hashable, Sendable {
     case color(RGBAColor)
     case image(ImageBackground)
+    /// No background of its own, like ProPresenter's empty (checkerboard) background: taking the slide live
+    /// leaves whatever background is already on the audience output.
+    case transparent
 
     /// The media asset this background needs, if any.
     public var assetID: UUID? {

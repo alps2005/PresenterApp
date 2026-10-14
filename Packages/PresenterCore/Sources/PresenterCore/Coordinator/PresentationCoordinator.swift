@@ -40,10 +40,21 @@ public final class PresentationCoordinator {
 
     // MARK: - Derived state
 
+    /// What the audience sees: the live slide over the background layer, which a transparent slide keeps.
     public var audienceScene: AudienceScene {
         if state.isBlackout { return .black }
-        guard let live = state.live else { return .empty }
-        return .slide(live.rendered)
+        if let live = state.live {
+            return .slide(RenderedSlide(slide: live.slide, background: state.liveBackground))
+        }
+        if let background = state.liveBackground { return .background(background) }
+        return .empty
+    }
+
+    /// How a slide would look on the audience output if taken live now: a transparent slide is shown over
+    /// the background that's on screen. Used for the Up Next preview.
+    public func outputPreview(of rendered: RenderedSlide) -> RenderedSlide {
+        guard rendered.background == .transparent else { return rendered }
+        return RenderedSlide(slide: rendered.slide, background: state.liveBackground)
     }
 
     /// The slide that `nextSlide()` would take live, following playlist order.
@@ -68,7 +79,9 @@ public final class PresentationCoordinator {
 
     /// True when `restoreOutput()` would change the audience output.
     public var canRestore: Bool {
-        state.isBlackout || (state.live == nil && state.cleared != nil)
+        state.isBlackout
+            || (state.live == nil && state.cleared != nil)
+            || (state.liveBackground == nil && state.clearedBackground != nil)
     }
 
     /// True when the live slide (or the background it inherits) has been edited since it was taken live,
@@ -125,11 +138,31 @@ public final class PresentationCoordinator {
 
     /// Removes the live slide from the audience output, leaving the empty background.
     @discardableResult
+    /// Clear Slide: removes the live slide's words and elements. The background layer stays, as in ProPresenter.
     public func clearOutput() -> CommandResult {
         guard let live = state.live else { return reject(.nothingLive) }
         state.cleared = live
         state.live = nil
-        logger.info("Output cleared")
+        logger.info("Slide cleared")
+        return applied()
+    }
+
+    /// Clear Background: removes the background layer, back to the app's default. The live slide stays.
+    @discardableResult
+    public func clearBackground() -> CommandResult {
+        guard let background = state.liveBackground else { return reject(.nothingToClear) }
+        state.clearedBackground = background
+        state.liveBackground = nil
+        logger.info("Background cleared")
+        return applied()
+    }
+
+    /// Clear All: removes the slide and the background.
+    @discardableResult
+    public func clearAll() -> CommandResult {
+        guard state.live != nil || state.liveBackground != nil else { return reject(.nothingLive) }
+        if state.live != nil { _ = clearOutput() }
+        if state.liveBackground != nil { _ = clearBackground() }
         return applied()
     }
 
@@ -151,6 +184,11 @@ public final class PresentationCoordinator {
         if state.live == nil, let cleared = state.cleared {
             state.live = cleared
             state.cleared = nil
+            changed = true
+        }
+        if state.liveBackground == nil, let background = state.clearedBackground {
+            state.liveBackground = background
+            state.clearedBackground = nil
             changed = true
         }
         guard changed else { return reject(.nothingToRestore) }
@@ -581,6 +619,11 @@ public final class PresentationCoordinator {
         guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
         state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
+        // An opaque slide replaces the background layer; a transparent one leaves what's on screen.
+        if rendered.background != .transparent {
+            state.liveBackground = rendered.background
+            state.clearedBackground = nil
+        }
         logger.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }

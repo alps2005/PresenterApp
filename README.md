@@ -69,9 +69,11 @@ swift test
 | Cue a slide (preview only, audience unaffected) | Click it |
 | Take a slide live | Double-click it, press Return with the workspace focused, or ⌘Return |
 | Next / previous slide (continues into the next or previous presentation) | → or Space / ←, with the workspace focused, or ⌥⌘→ / ⌥⌘← from anywhere |
-| Clear the slide from the output | ⌥⌘C |
+| Clear the slide's words, keeping the background | ⌥⌘C (Clear Slide) |
+| Clear the background, keeping the words | ⌥⌘X (Clear Background) |
+| Clear both | ⌥⌘A (Clear All) |
 | Blackout | ⌥⌘B |
-| Restore after clear/blackout | ⌥⌘R |
+| Restore after a clear or blackout | ⌥⌘R |
 | Show/hide audience output | ⌥⌘O, or the **Output** toolbar menu |
 | New presentation / new slide | ⌘N / ⇧⌘N |
 | New song from pasted lyrics | ⌥⌘N, or **New Song…** under the playlist |
@@ -87,6 +89,12 @@ swift test
 **Undo.** ⌘Z undoes the last change to your slides and playlist, and ⇧⌘Z redoes it. Typing and dragging a slider undo in one step. While you're typing in a text field, ⌘Z undoes the typing first. Taking slides live, Clear and Blackout are never undone, so Undo can't change what the audience sees.
 
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
+
+**Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
+- **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
+- **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.
+- **Example:** give the first slide of a song an image and set the rest to None. The image stays up for the whole song, and a Dissolve fades only the words.
+- **Clear per layer:** Clear Slide, Clear Background and Clear All work on the layers separately. The Clear button's arrow has all three.
 
 **Editing is non-destructive.** Editing a live slide does not change what the audience sees until you take that slide live again. The Live panel warns you when this is the case.
 
