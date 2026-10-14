@@ -72,9 +72,24 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
 public struct SlidePosition: Codable, Hashable, Sendable {
     public var itemID: UUID
     public var slideID: UUID
+    /// Which time the slide plays in its presentation's arrangement (0 = first). Repeats of a chorus are
+    /// distinct positions, so Next and Previous step through them.
+    public var occurrence: Int
 
-    public init(itemID: UUID, slideID: UUID) {
+    public init(itemID: UUID, slideID: UUID, occurrence: Int = 0) {
         self.itemID = itemID
         self.slideID = slideID
+        self.occurrence = occurrence
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case itemID, slideID, occurrence
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        itemID = try container.decode(UUID.self, forKey: .itemID)
+        slideID = try container.decode(UUID.self, forKey: .slideID)
+        occurrence = try container.decodeIfPresent(Int.self, forKey: .occurrence) ?? 0
     }
 }

@@ -54,6 +54,7 @@ struct PresentationEditor: View {
     @State private var isInspectorPresented = true
     @State private var zoom: EditorZoom = .fit
     @State private var importError: String?
+    @State private var isReflowing = false
 
     private var presentation: PresentationDocument? {
         coordinator.project.presentation(withID: session.presentationID)
@@ -131,6 +132,9 @@ struct PresentationEditor: View {
                 selectedSlideID = old
             }
         }
+        .sheet(isPresented: $isReflowing) {
+            ReflowSheet(coordinator: coordinator, presentationID: session.presentationID)
+        }
         .alert("Couldn't Add the Image", isPresented: Binding(
             get: { importError != nil },
             set: { if !$0 { importError = nil } }
@@ -164,6 +168,11 @@ struct PresentationEditor: View {
                 Label("Add Slide", systemImage: "plus.rectangle")
             }
             .help("Add a blank slide after this one")
+
+            Button { isReflowing = true } label: {
+                Label("Reflow", systemImage: "text.alignleft")
+            }
+            .help("Edit all of this presentation's words as one document")
 
             Button { addText() } label: {
                 Label("Text", systemImage: "character.textbox")

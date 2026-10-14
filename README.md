@@ -90,6 +90,14 @@ swift test
 
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
 
+**Song tools.**
+- **Reflow:** the **Reflow** button on a presentation (and in the slide editor) shows all its words as one document. Type, and the slides update as you go; they keep their style, and new slides copy the one before them. It uses the same format as New Song: a blank line starts a slide, and a section name (Verse 1, Coro…) labels the slides after it. ⌘Z undoes a run of typing in one step.
+- **Arrangements:** for a song with group labels, the arrangement menu next to Add Slide sets the order the groups play in, like ProPresenter, e.g. *Verse 1 · Chorus · Verse 2 · Chorus · Bridge · Chorus*. A repeated chorus plays again without copying its slides. The workspace shows the slides in that order, and → / Space step through each repeat. **Slide Order** plays every slide once, in order.
+- **Library:** under the playlist, the **Library** lists every presentation, including ones taken off the playlist. Click ⊕ (or double-click) to add one to the playlist; right-click to delete it.
+- **Search:** the field above the playlist filters the playlist and the library by title and by the words on the slides. It ignores case and accents.
+- **Thumbnail size:** the slider at the bottom right of the workspace sets the thumbnail size.
+- **Renaming:** click a presentation's title to rename it.
+
 **Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
 - **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
 - **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.

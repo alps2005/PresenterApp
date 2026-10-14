@@ -61,7 +61,7 @@ public final class PresentationCoordinator {
     public var upNextPosition: SlidePosition? {
         guard let live = state.live else { return nil }
         let sequence = slideSequence()
-        guard let index = sequence.firstIndex(of: live.position), index + 1 < sequence.count else { return nil }
+        guard let index = Self.index(of: live.position, in: sequence), index + 1 < sequence.count else { return nil }
         return sequence[index + 1]
     }
 
@@ -102,8 +102,8 @@ public final class PresentationCoordinator {
 
     /// Cues a slide for preview. Never changes the audience output.
     @discardableResult
-    public func cueSlide(_ slideID: UUID, inItem itemID: UUID) -> CommandResult {
-        let position = SlidePosition(itemID: itemID, slideID: slideID)
+    public func cueSlide(_ slideID: UUID, inItem itemID: UUID, occurrence: Int = 0) -> CommandResult {
+        let position = SlidePosition(itemID: itemID, slideID: slideID, occurrence: occurrence)
         guard project.playlist.item(withID: itemID) != nil else { return reject(.unknownItem) }
         guard project.slide(at: position) != nil else { return reject(.unknownSlide) }
         state.selectedItemID = itemID
@@ -120,8 +120,8 @@ public final class PresentationCoordinator {
 
     /// Cues and takes a slide live in one step (e.g. double-click).
     @discardableResult
-    public func takeLive(slideID: UUID, inItem itemID: UUID) -> CommandResult {
-        let result = cueSlide(slideID, inItem: itemID)
+    public func takeLive(slideID: UUID, inItem itemID: UUID, occurrence: Int = 0) -> CommandResult {
+        let result = cueSlide(slideID, inItem: itemID, occurrence: occurrence)
         guard result.isApplied else { return result }
         return takeLive()
     }
@@ -305,6 +305,140 @@ public final class PresentationCoordinator {
             lastRejection = nil
             logger.info("Added song \(presentation.id, privacy: .public) with \(slides.count) slides")
             return item
+        }
+    }
+
+    // MARK: - Reflow and arrangements
+
+    /// Rewrites a presentation's words from Reflow text (New Song format). Slides are matched by position, so each
+    /// keeps its identity, look, background and transition; new slides copy the look of the slide before them,
+    /// and slides past the end of the text are removed.
+    @discardableResult
+    public func reflow(_ text: String, presentationID: UUID) -> CommandResult {
+        recordingUndo("Reflow", coalescing: "reflow-\(presentationID)") {
+            let parsed = LyricsParser.slides(from: text)
+            let result = editPresentation(presentationID) { presentation in
+                var slides: [SlideDocument] = []
+                for (index, new) in parsed.enumerated() {
+                    if index < presentation.slides.count {
+                        var slide = presentation.slides[index]
+                        Self.editPrimaryText(of: &slide) { $0.text = new.primaryText }
+                        slide.label = new.label
+                        slides.append(slide)
+                    } else {
+                        slides.append(Self.slide(text: new.primaryText, label: new.label, lookingLike: slides.last))
+                    }
+                }
+                presentation.slides = slides
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    /// A new slide with `text` that copies `template`'s text style, position, background and transition.
+    private static func slide(text: String, label: String?, lookingLike template: SlideDocument?) -> SlideDocument {
+        guard let template else {
+            var slide = SlideDocument.text(text)
+            slide.label = label
+            return slide
+        }
+        let look = template.primaryTextElement
+        let element = TextElement(text: text, role: look?.role ?? .body, style: look?.style, box: look?.box)
+        return SlideDocument(elements: [.text(element)], background: template.background,
+                             transition: template.transition, label: label)
+    }
+
+    /// Adds an arrangement and makes it the one that plays.
+    @discardableResult
+    public func addArrangement(name: String, groups: [String], toPresentation presentationID: UUID) -> Arrangement? {
+        recordingUndo("Add Arrangement") {
+            let arrangement = Arrangement(name: name.isEmpty ? "Arrangement" : name, groups: groups)
+            let result = editPresentation(presentationID) { presentation in
+                presentation.arrangements.append(arrangement)
+                presentation.activeArrangementID = arrangement.id
+            }
+            repairCue()
+            return result.isApplied ? arrangement : nil
+        }
+    }
+
+    @discardableResult
+    public func updateArrangement(_ arrangement: Arrangement, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Edit Arrangement") {
+            guard project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangement.id }) == true else {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { presentation in
+                if let index = presentation.arrangements.firstIndex(where: { $0.id == arrangement.id }) {
+                    presentation.arrangements[index] = arrangement
+                }
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    @discardableResult
+    public func deleteArrangement(_ arrangementID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Delete Arrangement") {
+            guard project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangementID }) == true else {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { presentation in
+                presentation.arrangements.removeAll { $0.id == arrangementID }
+                if presentation.activeArrangementID == arrangementID { presentation.activeArrangementID = nil }
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    /// Chooses the arrangement that plays. Nil plays every slide in order.
+    @discardableResult
+    public func setActiveArrangement(_ arrangementID: UUID?, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Arrangement") {
+            if let arrangementID,
+               project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangementID }) != true {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { $0.activeArrangementID = arrangementID }
+            repairCue()
+            return result
+        }
+    }
+
+    // MARK: - Library
+
+    /// Adds a library presentation to the end of the playlist and selects it.
+    @discardableResult
+    public func addToPlaylist(_ presentationID: UUID) -> PresentationItem? {
+        guard project.presentation(withID: presentationID) != nil else {
+            _ = reject(.unknownPresentation)
+            return nil
+        }
+        return recordingUndo("Add to Playlist") {
+            let item = PresentationItem(presentationID: presentationID)
+            project.playlist.items.append(item)
+            state.selectedItemID = item.id
+            lastRejection = nil
+            return item
+        }
+    }
+
+    /// Deletes a presentation from the library and removes it from the playlist. If it's live, it stays on the
+    /// audience output until something else is taken live.
+    @discardableResult
+    public func deletePresentation(_ presentationID: UUID) -> CommandResult {
+        recordingUndo("Delete Presentation") {
+            guard project.presentation(withID: presentationID) != nil else { return reject(.unknownPresentation) }
+            project.presentations.removeAll { $0.id == presentationID }
+            project.playlist.items.removeAll { $0.presentationID == presentationID }
+            if let selected = state.selectedItemID, project.playlist.item(withID: selected) == nil {
+                state.selectedItemID = project.playlist.items.first?.id
+            }
+            if let preview = state.preview, project.slide(at: preview) == nil { state.preview = nil }
+            return applied()
         }
     }
 
@@ -631,19 +765,35 @@ public final class PresentationCoordinator {
     private func step(by offset: Int, boundary: CommandRejection) -> CommandResult {
         guard let live = state.live else { return reject(.nothingLive) }
         let sequence = slideSequence()
-        guard let index = sequence.firstIndex(of: live.position) else { return reject(.liveSlideMissing) }
+        guard let index = Self.index(of: live.position, in: sequence) else { return reject(.liveSlideMissing) }
         let target = index + offset
         guard sequence.indices.contains(target) else { return reject(boundary) }
         return goLive(at: sequence[target])
     }
 
-    /// Every slide in the playlist, in running order. Items with missing presentations are skipped.
+    /// Every slide in the playlist, in running order, following each presentation's active arrangement.
+    /// Items with missing presentations are skipped.
     private func slideSequence() -> [SlidePosition] {
         project.playlist.items.flatMap { item in
-            (project.presentation(withID: item.presentationID)?.slides ?? []).map {
-                SlidePosition(itemID: item.id, slideID: $0.id)
+            (project.presentation(withID: item.presentationID)?.arrangedSlides ?? []).map {
+                SlidePosition(itemID: item.id, slideID: $0.slideID, occurrence: $0.occurrence)
             }
         }
+    }
+
+    /// Where a position is in the sequence. If its exact repeat is gone (the arrangement changed), the slide's
+    /// first appearance in the same item, so Next and Previous keep working.
+    private static func index(of position: SlidePosition, in sequence: [SlidePosition]) -> Int? {
+        sequence.firstIndex(of: position)
+            ?? sequence.firstIndex { $0.itemID == position.itemID && $0.slideID == position.slideID }
+    }
+
+    /// Drops a cue whose slide or repeat no longer exists, e.g. after a reflow or an arrangement change.
+    private func repairCue() {
+        guard let preview = state.preview else { return }
+        let stillPlays = project.presentation(forItem: preview.itemID)?.arrangedSlides
+            .contains { $0.slideID == preview.slideID && $0.occurrence == preview.occurrence } ?? false
+        if !stillPlays { state.preview = nil }
     }
 
     private func editPresentation(_ presentationID: UUID, _ edit: (inout PresentationDocument) -> Void) -> CommandResult {
