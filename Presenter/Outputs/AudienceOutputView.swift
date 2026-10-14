@@ -36,6 +36,7 @@ struct AudienceOutputView: View {
                 backgroundView(background.shown).opacity(background.opacity)
                 if let outgoing = slide.outgoing { slideView(outgoing) }
                 slideView(slide.shown).opacity(slide.opacity)
+                OverlayLayers(coordinator: coordinator)
             }
         }
         .ignoresSafeArea()

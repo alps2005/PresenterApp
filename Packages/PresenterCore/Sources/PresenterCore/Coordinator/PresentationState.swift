@@ -19,6 +19,13 @@ public struct PresentationState: Equatable, Sendable {
     public var clearedBackground: SlideBackground?
     /// A message to the people on stage, shown only on the stage display.
     public var stageMessage: String?
+    /// The message over the slides on the audience output, and the one Clear Messages removed.
+    public var activeMessage: ActiveMessage?
+    public var clearedMessage: ActiveMessage?
+    /// Props on the audience output, in the order they were shown (later ones draw on top), and the ones
+    /// Clear Props removed.
+    public var activeProps: [UUID] = []
+    public var clearedProps: [UUID] = []
 
     public init(
         selectedItemID: UUID? = nil,
@@ -97,6 +104,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case nothingToClear
     case unknownArrangement
     case unknownTimer
+    case unknownMessage
+    case unknownProp
     /// A background or image referenced a media asset that isn't in the project.
     case unknownMediaAsset
     case unknownElement
@@ -115,6 +124,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .nothingToClear: "Only the default background is showing."
         case .unknownArrangement: "That arrangement no longer exists."
         case .unknownTimer: "That timer no longer exists."
+        case .unknownMessage: "That message no longer exists."
+        case .unknownProp: "That prop no longer exists."
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         }

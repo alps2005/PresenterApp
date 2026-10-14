@@ -105,6 +105,11 @@ swift test
   - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
 - **Notes:** the live slide's notes also appear under the Audience preview.
 
+**Messages and props.** Two more layers over the slides, managed from **Show Controls** in the Live panel:
+- **Messages:** a bar across the bottom (or top) of the audience output, like "Parent of child {Number}, please come to the nursery". Words in braces are blanks you fill in when you click **Show…**, and `{timer:Sermon}` shows a live timer. Edit the text, position, size and colours from the ⋯ menu. One message shows at a time.
+- **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images.
+- **Clearing:** Clear Messages (⌥⌘G) and Clear Props (⌥⌘P) are in the Clear button's menu. Clear All (⌥⌘A) clears every layer and Restore brings them back. Blackout hides everything.
+
 **Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
 - **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
 - **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.

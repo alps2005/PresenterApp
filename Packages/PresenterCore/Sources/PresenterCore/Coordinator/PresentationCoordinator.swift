@@ -85,6 +85,31 @@ public final class PresentationCoordinator {
         state.isBlackout
             || (state.live == nil && state.cleared != nil)
             || (state.liveBackground == nil && state.clearedBackground != nil)
+            || (state.activeMessage == nil && state.clearedMessage != nil)
+            || (state.activeProps.isEmpty && !state.clearedProps.isEmpty)
+    }
+
+    /// Props on the audience output, bottom to top. Hidden by blackout.
+    public var audienceProps: [SlideDocument] {
+        guard !state.isBlackout else { return [] }
+        return state.activeProps.compactMap { project.prop(withID: $0) }
+    }
+
+    /// The message on the audience output, if any. Hidden by blackout.
+    public var audienceMessage: (message: MessageDefinition, values: [String: String])? {
+        guard !state.isBlackout, let active = state.activeMessage, let message = project.message(withID: active.messageID) else {
+            return nil
+        }
+        return (message, active.values)
+    }
+
+    /// The message's text right now, with blanks filled in and timers at `date`.
+    public func messageText(_ message: MessageDefinition, values: [String: String], at date: Date) -> String {
+        message.rendered(values: values) { name in
+            project.timers.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+                .flatMap { timerSeconds($0.id, at: date) }
+                .map { TimerDefinition.format($0) }
+        }
     }
 
     /// True when the live slide (or the background it inherits) has been edited since it was taken live,
@@ -163,9 +188,55 @@ public final class PresentationCoordinator {
     /// Clear All: removes the slide and the background.
     @discardableResult
     public func clearAll() -> CommandResult {
-        guard state.live != nil || state.liveBackground != nil else { return reject(.nothingLive) }
+        guard state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty else {
+            return reject(.nothingLive)
+        }
         if state.live != nil { _ = clearOutput() }
         if state.liveBackground != nil { _ = clearBackground() }
+        if state.activeMessage != nil { _ = clearMessages() }
+        if !state.activeProps.isEmpty { _ = clearProps() }
+        return applied()
+    }
+
+    // MARK: - Messages and props (live: never undone)
+
+    /// Shows a message over the slides, replacing any other message.
+    @discardableResult
+    public func showMessage(_ messageID: UUID, values: [String: String] = [:]) -> CommandResult {
+        guard project.message(withID: messageID) != nil else { return reject(.unknownMessage) }
+        state.activeMessage = ActiveMessage(messageID: messageID, values: values)
+        state.clearedMessage = nil
+        return applied()
+    }
+
+    /// Clear Messages.
+    @discardableResult
+    public func clearMessages() -> CommandResult {
+        guard let active = state.activeMessage else { return reject(.nothingToClear) }
+        state.clearedMessage = active
+        state.activeMessage = nil
+        return applied()
+    }
+
+    /// Shows a prop if hidden, hides it if shown. Several props can be on screen at once.
+    @discardableResult
+    public func toggleProp(_ propID: UUID) -> CommandResult {
+        guard project.prop(withID: propID) != nil else { return reject(.unknownProp) }
+        if state.activeProps.contains(propID) {
+            state.activeProps.removeAll { $0 == propID }
+        } else {
+            state.activeProps.append(propID)
+            state.clearedProps = []
+        }
+        return applied()
+    }
+
+    /// Clear Props.
+    @discardableResult
+    public func clearProps() -> CommandResult {
+        guard !state.activeProps.isEmpty else { return reject(.nothingToClear) }
+        state.clearedProps = state.activeProps
+        state.activeProps = []
         return applied()
     }
 
@@ -192,6 +263,16 @@ public final class PresentationCoordinator {
         if state.liveBackground == nil, let background = state.clearedBackground {
             state.liveBackground = background
             state.clearedBackground = nil
+            changed = true
+        }
+        if state.activeMessage == nil, let message = state.clearedMessage {
+            state.activeMessage = message
+            state.clearedMessage = nil
+            changed = true
+        }
+        if state.activeProps.isEmpty, !state.clearedProps.isEmpty {
+            state.activeProps = state.clearedProps
+            state.clearedProps = []
             changed = true
         }
         guard changed else { return reject(.nothingToRestore) }
@@ -253,6 +334,74 @@ public final class PresentationCoordinator {
     public func hideStageMessage() -> CommandResult {
         state.stageMessage = nil
         return applied()
+    }
+
+    // MARK: - Message and prop library (edits: undoable)
+
+    @discardableResult
+    public func addMessage(name: String, text: String) -> MessageDefinition {
+        recordingUndo("Add Message") {
+            let message = MessageDefinition(name: name.isEmpty ? "Message" : name, text: text)
+            project.messages.append(message)
+            lastRejection = nil
+            return message
+        }
+    }
+
+    @discardableResult
+    public func updateMessage(_ message: MessageDefinition) -> CommandResult {
+        recordingUndo("Edit Message", coalescing: "message-\(message.id)") {
+            guard let index = project.messages.firstIndex(where: { $0.id == message.id }) else { return reject(.unknownMessage) }
+            project.messages[index] = message
+            return applied()
+        }
+    }
+
+    /// Deleting the message on screen leaves the output alone until it's cleared.
+    @discardableResult
+    public func deleteMessage(_ messageID: UUID) -> CommandResult {
+        recordingUndo("Delete Message") {
+            guard project.messages.contains(where: { $0.id == messageID }) else { return reject(.unknownMessage) }
+            project.messages.removeAll { $0.id == messageID }
+            return applied()
+        }
+    }
+
+    /// Adds a prop with a text box, ready to edit in the slide editor.
+    @discardableResult
+    public func addProp(name: String) -> SlideDocument {
+        recordingUndo("Add Prop") {
+            var prop = SlideDocument(
+                elements: [.text(TextElement(text: name.isEmpty ? "Prop" : name, role: .caption,
+                                             box: TextBox(frame: .centered(width: 0.4, height: 0.15))))],
+                background: .transparent
+            )
+            prop.label = name.isEmpty ? "Prop" : name
+            project.props.slides.append(prop)
+            lastRejection = nil
+            return prop
+        }
+    }
+
+    @discardableResult
+    public func renameProp(_ propID: UUID, to name: String) -> CommandResult {
+        recordingUndo("Rename Prop", coalescing: "prop-name-\(propID)") {
+            guard let index = project.props.index(ofSlide: propID) else { return reject(.unknownProp) }
+            project.props.slides[index].label = name.trimmingCharacters(in: .whitespaces).isEmpty ? nil : name
+            return applied()
+        }
+    }
+
+    /// Deleting a prop that's on screen takes it off.
+    @discardableResult
+    public func deleteProp(_ propID: UUID) -> CommandResult {
+        recordingUndo("Delete Prop") {
+            guard project.props.index(ofSlide: propID) != nil else { return reject(.unknownProp) }
+            project.props.slides.removeAll { $0.id == propID }
+            state.activeProps.removeAll { $0 == propID }
+            state.clearedProps.removeAll { $0 == propID }
+            return applied()
+        }
     }
 
     // MARK: - Timer and stage settings (edits: undoable)
@@ -515,7 +664,7 @@ public final class PresentationCoordinator {
     /// Adds a library presentation to the end of the playlist and selects it.
     @discardableResult
     public func addToPlaylist(_ presentationID: UUID) -> PresentationItem? {
-        guard project.presentation(withID: presentationID) != nil else {
+        guard presentationID != project.props.id, project.presentation(withID: presentationID) != nil else {
             _ = reject(.unknownPresentation)
             return nil
         }
@@ -533,7 +682,9 @@ public final class PresentationCoordinator {
     @discardableResult
     public func deletePresentation(_ presentationID: UUID) -> CommandResult {
         recordingUndo("Delete Presentation") {
-            guard project.presentation(withID: presentationID) != nil else { return reject(.unknownPresentation) }
+            guard presentationID != project.props.id, project.presentation(withID: presentationID) != nil else {
+                return reject(.unknownPresentation)
+            }
             project.presentations.removeAll { $0.id == presentationID }
             project.playlist.items.removeAll { $0.presentationID == presentationID }
             if let selected = state.selectedItemID, project.playlist.item(withID: selected) == nil {
@@ -899,6 +1050,13 @@ public final class PresentationCoordinator {
     }
 
     private func editPresentation(_ presentationID: UUID, _ edit: (inout PresentationDocument) -> Void) -> CommandResult {
+        // The props library is edited like any presentation, so the slide editor works on props.
+        if presentationID == project.props.id {
+            let before = project.props
+            edit(&project.props)
+            if project.props != before { project.props.updatedAt = .now }
+            return applied()
+        }
         guard let index = project.presentations.firstIndex(where: { $0.id == presentationID }) else {
             return reject(.unknownPresentation)
         }

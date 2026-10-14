@@ -14,6 +14,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// Timers for the stage display and messages.
     public var timers: [TimerDefinition]
     public var stage: StageSettings
+    public var messages: [MessageDefinition]
+    /// Props are the slides of this presentation (see `PresentationDocument.propsLibrary`).
+    public var props: PresentationDocument
 
     public init(
         id: UUID = UUID(),
@@ -23,7 +26,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         playlist: PlaylistDocument = PlaylistDocument(title: "Service"),
         mediaAssets: [MediaAsset] = [],
         timers: [TimerDefinition] = TimerDefinition.defaults(),
-        stage: StageSettings = StageSettings()
+        stage: StageSettings = StageSettings(),
+        messages: [MessageDefinition] = MessageDefinition.defaults(),
+        props: PresentationDocument = .propsLibrary()
     ) {
         self.id = id
         self.name = name
@@ -33,10 +38,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.mediaAssets = mediaAssets
         self.timers = timers
         self.stage = stage
+        self.messages = messages
+        self.props = props
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage
+        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage, messages, props
     }
 
     public init(from decoder: any Decoder) throws {
@@ -50,14 +57,26 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         // Projects saved before timers existed get the default ones.
         timers = try container.decodeIfPresent([TimerDefinition].self, forKey: .timers) ?? TimerDefinition.defaults()
         stage = try container.decodeIfPresent(StageSettings.self, forKey: .stage) ?? StageSettings()
+        messages = try container.decodeIfPresent([MessageDefinition].self, forKey: .messages) ?? MessageDefinition.defaults()
+        props = try container.decodeIfPresent(PresentationDocument.self, forKey: .props) ?? .propsLibrary()
     }
 
     public func asset(withID assetID: UUID) -> MediaAsset? {
         mediaAssets.first { $0.id == assetID }
     }
 
+    /// A library presentation, or the props library (so the slide editor can edit props).
     public func presentation(withID presentationID: UUID) -> PresentationDocument? {
-        presentations.first { $0.id == presentationID }
+        if presentationID == props.id { return props }
+        return presentations.first { $0.id == presentationID }
+    }
+
+    public func prop(withID propID: UUID) -> SlideDocument? {
+        props.slide(withID: propID)
+    }
+
+    public func message(withID messageID: UUID) -> MessageDefinition? {
+        messages.first { $0.id == messageID }
     }
 
     /// The presentation a playlist item points at, or nil if the item or presentation is missing.

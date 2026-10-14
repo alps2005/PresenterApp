@@ -7,12 +7,15 @@ import PresenterCore
 struct ShowControls: View {
     enum Tab: String, CaseIterable, Identifiable {
         case timers = "Timers"
+        case messages = "Messages"
+        case props = "Props"
         case stage = "Stage"
         var id: Self { self }
     }
 
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
+    let onEditProps: (UUID?) -> Void
     @AppStorage("showControlsTab") private var tab: Tab = .timers
 
     var body: some View {
@@ -25,6 +28,8 @@ struct ShowControls: View {
 
             switch tab {
             case .timers: TimersTab(coordinator: coordinator)
+            case .messages: MessagesTab(coordinator: coordinator)
+            case .props: PropsTab(coordinator: coordinator, onEdit: onEditProps)
             case .stage: StageTab(coordinator: coordinator, outputManager: outputManager)
             }
         }

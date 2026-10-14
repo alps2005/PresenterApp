@@ -5,7 +5,8 @@ import PresenterCore
 struct SlideThumbnailSidebar: View {
     let coordinator: PresentationCoordinator
     let presentation: PresentationDocument
-    let itemID: UUID
+    /// Nil for the props library, which has no playlist entry.
+    let itemID: UUID?
     @Binding var selection: UUID?
     let onAddSlide: () -> Void
     @State private var slidePendingDeletion: SlideDocument?
@@ -16,10 +17,12 @@ struct SlideThumbnailSidebar: View {
                 row(index: index, slide: slide)
                     .tag(slide.id)
                     .contextMenu {
-                        Button("Send to Live") {
-                            coordinator.takeLive(slideID: slide.id, inItem: itemID)
+                        if let itemID {
+                            Button("Send to Live") {
+                                coordinator.takeLive(slideID: slide.id, inItem: itemID)
+                            }
+                            Divider()
                         }
-                        Divider()
                         Button("Delete Slide…", role: .destructive) {
                             slidePendingDeletion = slide
                         }
@@ -52,9 +55,9 @@ struct SlideThumbnailSidebar: View {
     }
 
     private func row(index: Int, slide: SlideDocument) -> some View {
-        let position = SlidePosition(itemID: itemID, slideID: slide.id)
-        let isLive = coordinator.state.live?.position == position
-        let isCued = coordinator.state.preview == position
+        let position = itemID.map { SlidePosition(itemID: $0, slideID: slide.id) }
+        let isLive = position != nil && coordinator.state.live?.position == position
+        let isCued = position != nil && coordinator.state.preview == position
         return HStack(alignment: .top, spacing: 6) {
             Text("\(index + 1)")
                 .font(.caption)

@@ -22,8 +22,13 @@ struct ControlBar: View {
                     .disabled(coordinator.state.live == nil)
                 Button("Clear Background  ⌥⌘X") { coordinator.clearBackground() }
                     .disabled(coordinator.state.liveBackground == nil)
+                Button("Clear Messages  ⌥⌘G") { coordinator.clearMessages() }
+                    .disabled(coordinator.state.activeMessage == nil)
+                Button("Clear Props  ⌥⌘P") { coordinator.clearProps() }
+                    .disabled(coordinator.state.activeProps.isEmpty)
+                Divider()
                 Button("Clear All  ⌥⌘A") { coordinator.clearAll() }
-                    .disabled(coordinator.state.live == nil && coordinator.state.liveBackground == nil)
+                    .disabled(!hasAnythingToClear)
             } label: {
                 Label("Clear", systemImage: "xmark.rectangle")
             } primaryAction: {
@@ -31,7 +36,7 @@ struct ControlBar: View {
             }
             .menuStyle(.button)
             .fixedSize()
-            .disabled(coordinator.state.live == nil && coordinator.state.liveBackground == nil)
+            .disabled(!hasAnythingToClear)
             .help("Click to clear the slide, keeping its background (⌥⌘C). Use the arrow for Clear Background (⌥⌘X) or Clear All (⌥⌘A).")
 
             Button { coordinator.blackout() } label: {
@@ -63,5 +68,10 @@ struct ControlBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    private var hasAnythingToClear: Bool {
+        let state = coordinator.state
+        return state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty
     }
 }

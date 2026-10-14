@@ -64,7 +64,9 @@ struct OperatorView: View {
                         SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
-                        LivePanel(coordinator: coordinator, outputManager: outputManager)
+                        LivePanel(coordinator: coordinator, outputManager: outputManager) { propID in
+                            editSession = EditSession(itemID: nil, presentationID: coordinator.project.props.id, initialSlideID: propID)
+                        }
                             .frame(width: liveWidth)
                     }
                 }

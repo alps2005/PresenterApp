@@ -86,6 +86,10 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("c", modifiers: [.command, .option])
             Button("Clear Background") { coordinator.clearBackground() }
                 .keyboardShortcut("x", modifiers: [.command, .option])
+            Button("Clear Messages") { coordinator.clearMessages() }
+                .keyboardShortcut("g", modifiers: [.command, .option])
+            Button("Clear Props") { coordinator.clearProps() }
+                .keyboardShortcut("p", modifiers: [.command, .option])
             Button("Clear All") { coordinator.clearAll() }
                 .keyboardShortcut("a", modifiers: [.command, .option])
             Button("Blackout") { coordinator.blackout() }

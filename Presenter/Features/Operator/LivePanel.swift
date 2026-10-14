@@ -5,6 +5,7 @@ import PresenterCore
 struct LivePanel: View {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
+    let onEditProps: (UUID?) -> Void
     @Environment(MediaLibrary.self) private var mediaLibrary
 
     var body: some View {
@@ -17,6 +18,7 @@ struct LivePanel: View {
                         liveBadge
                     }
                     SlideRenderView(scene: coordinator.audienceScene)
+                        .overlay { OverlayLayers(coordinator: coordinator) }
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .overlay {
@@ -46,7 +48,7 @@ struct LivePanel: View {
                 slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued")
 
                 Divider()
-                ShowControls(coordinator: coordinator, outputManager: outputManager)
+                ShowControls(coordinator: coordinator, outputManager: outputManager, onEditProps: onEditProps)
             }
             .padding(16)
         }
