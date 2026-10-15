@@ -686,6 +686,8 @@ Do not collapse these into a single `currentSlide` variable.
 
 ### Recommended initial license
 
+**Decision (October 2026):** Presenter is licensed under GPL-3.0-or-later, copyright Adrian Palma. See `LICENSE`.
+
 Choose the license deliberately before publishing. GPL-3.0 is a reasonable option if the project aims to keep distributed derivative versions open source. MIT is more permissive. AGPL-3.0 may be relevant if a network-hosted version becomes important.
 
 This document does not constitute legal advice. Review the license and its obligations before release.
