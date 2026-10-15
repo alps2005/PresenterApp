@@ -10,6 +10,7 @@ struct PresenterCommands: Commands {
     let persistence: ProjectPersistence
     let ui: OperatorUIState
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
     @Environment(\.openWindow) private var openWindow
     @FocusedValue(\.editorElementActions) private var editorElementActions
 
@@ -48,6 +49,8 @@ struct PresenterCommands: Commands {
         CommandGroup(after: .sidebar) {
             Toggle("Quick Edit", isOn: $isQuickEditVisible)
                 .keyboardShortcut("e", modifiers: [.command, .option])
+            Toggle("Media Bin", isOn: $isMediaBinVisible)
+                .keyboardShortcut("i", modifiers: [.command, .option])
         }
 
         // Text fields and text editors undo their own typing while they have focus; everywhere else ⌘Z undoes
@@ -82,8 +85,16 @@ struct PresenterCommands: Commands {
             Button("Previous Slide") { coordinator.previousSlide() }
                 .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
             Divider()
-            Button("Clear Output") { coordinator.clearOutput() }
+            Button("Clear Slide") { coordinator.clearOutput() }
                 .keyboardShortcut("c", modifiers: [.command, .option])
+            Button("Clear Background") { coordinator.clearBackground() }
+                .keyboardShortcut("x", modifiers: [.command, .option])
+            Button("Clear Messages") { coordinator.clearMessages() }
+                .keyboardShortcut("g", modifiers: [.command, .option])
+            Button("Clear Props") { coordinator.clearProps() }
+                .keyboardShortcut("p", modifiers: [.command, .option])
+            Button("Clear All") { coordinator.clearAll() }
+                .keyboardShortcut("a", modifiers: [.command, .option])
             Button("Blackout") { coordinator.blackout() }
                 .keyboardShortcut("b", modifiers: [.command, .option])
             Button("Restore Output") { coordinator.restoreOutput() }
@@ -95,6 +106,14 @@ struct PresenterCommands: Commands {
                 outputManager.toggle()
             }
             .keyboardShortcut("o", modifiers: [.command, .option])
+            // A checkmark item with a fixed title: when this item's title switched between Show and Hide,
+            // the menu lost its shortcut once the stage display was on.
+            // ⌥⌘S, not ⌥⌘D: macOS keeps ⌥⌘D for hiding the Dock, so the app would never see it.
+            Toggle("Stage Display", isOn: Binding(
+                get: { outputManager.isEnabled(.stage) },
+                set: { _ in outputManager.toggle(.stage) }
+            ))
+            .keyboardShortcut("s", modifiers: [.command, .option])
         }
     }
 

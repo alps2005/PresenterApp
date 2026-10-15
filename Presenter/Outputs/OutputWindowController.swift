@@ -1,26 +1,25 @@
 import AppKit
 import os
 import SwiftUI
-import PresenterCore
 
-/// Owns the audience output NSWindow. Its lifetime belongs to `OutputManager`, never to a SwiftUI view.
-final class AudienceOutputController: NSObject, NSWindowDelegate {
+/// Owns one output NSWindow (audience or stage). Its lifetime belongs to `OutputManager`, never to a SwiftUI view.
+final class OutputWindowController: NSObject, NSWindowDelegate {
     private enum Mode: Equatable {
         case windowed
         case fullScreen(CGDirectDisplayID)
     }
 
-    private let coordinator: PresentationCoordinator
-    private let mediaLibrary: MediaLibrary
+    private let title: String
+    private let makeContent: () -> AnyView
     private var window: NSWindow?
     private var mode: Mode?
 
     /// Called when the operator closes the windowed output with its close button.
     var onUserClosedWindow: (() -> Void)?
 
-    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
-        self.coordinator = coordinator
-        self.mediaLibrary = mediaLibrary
+    init(title: String, makeContent: @escaping () -> AnyView) {
+        self.title = title
+        self.makeContent = makeContent
     }
 
     /// A normal resizable window, for rehearsing on a single display.
@@ -34,14 +33,14 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
             contentRect: NSRect(x: 0, y: 0, width: 960, height: 540),
             styleMask: [.titled, .closable, .miniaturizable, .resizable]
         )
-        window.title = "Audience Output"
+        window.title = title
         window.contentAspectRatio = NSSize(width: 16, height: 9)
         window.delegate = self
         window.center()
         window.orderFront(nil)
         self.window = window
         mode = .windowed
-        Log.output.info("Showing windowed output")
+        Log.output.info("Showing \(self.title, privacy: .public) in a window")
     }
 
     /// A borderless window covering the whole screen, including its menu bar. It never becomes key,
@@ -54,19 +53,20 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
         }
         tearDown()
         let window = makeWindow(contentRect: screen.frame, styleMask: [.borderless])
+        window.title = title
         window.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 1)
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         window.setFrame(screen.frame, display: true)
         window.orderFrontRegardless()
         self.window = window
         mode = .fullScreen(displayID)
-        Log.output.info("Showing full-screen output on \(screen.localizedName, privacy: .public)")
+        Log.output.info("Showing \(self.title, privacy: .public) full screen on \(screen.localizedName, privacy: .public)")
     }
 
     func hide() {
         guard window != nil else { return }
         tearDown()
-        Log.output.info("Output hidden")
+        Log.output.info("\(self.title, privacy: .public) hidden")
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -89,61 +89,10 @@ final class AudienceOutputController: NSObject, NSWindowDelegate {
         window.hidesOnDeactivate = false
         window.backgroundColor = .black
         // A separate SwiftUI root: it doesn't inherit the operator window's environment.
-        let hostingView = NSHostingView(rootView: AudienceOutputView(coordinator: coordinator).environment(mediaLibrary))
+        let hostingView = NSHostingView(rootView: makeContent())
         // The window decides its size; SwiftUI content must not resize it.
         hostingView.sizingOptions = []
         window.contentView = hostingView
         return window
-    }
-}
-
-/// What the audience sees. Uses the same renderer as the operator's live preview.
-private struct AudienceOutputView: View {
-    let coordinator: PresentationCoordinator
-
-    /// The scene on top, fading in during a dissolve.
-    @State private var shown: AudienceScene
-    /// The scene being dissolved away, underneath. Nil when nothing is fading.
-    @State private var outgoing: AudienceScene?
-    @State private var shownOpacity = 1.0
-
-    init(coordinator: PresentationCoordinator) {
-        self.coordinator = coordinator
-        _shown = State(initialValue: coordinator.audienceScene)
-    }
-
-    var body: some View {
-        ZStack {
-            Color.black
-            if let outgoing {
-                SlideRenderView(scene: outgoing)
-            }
-            // The incoming slide is opaque, so fading it in over the old one is a true cross-dissolve.
-            SlideRenderView(scene: shown)
-                .opacity(shownOpacity)
-        }
-        .ignoresSafeArea()
-        .onChange(of: coordinator.audienceScene) { _, scene in present(scene) }
-    }
-
-    /// Only a different slide with a dissolve fades in. Cuts, clear, blackout and re-taking the same
-    /// slide are always instant; a new change mid-fade starts from what's on screen now.
-    private func present(_ scene: AudienceScene) {
-        guard case .slide(let incoming) = scene, let transition = incoming.slide.transition,
-              case .slide(let current) = shown, current.slide.id != incoming.slide.id else {
-            outgoing = nil
-            shown = scene
-            shownOpacity = 1
-            return
-        }
-        outgoing = shown
-        shown = scene
-        shownOpacity = 0
-        withAnimation(.easeInOut(duration: transition.duration)) {
-            shownOpacity = 1
-        } completion: {
-            // Only clear the layer this fade added; a newer change may already have replaced it.
-            if shown == scene { outgoing = nil }
-        }
     }
 }

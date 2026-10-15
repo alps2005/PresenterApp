@@ -12,6 +12,8 @@ final class AppEnvironment {
     let coordinator: PresentationCoordinator
     let mediaLibrary: MediaLibrary
     let outputManager: OutputManager
+    /// Plays video backgrounds on the audience output, independent of any window.
+    let playback: MediaPlaybackController
     let persistence: ProjectPersistence
     /// Window-level UI requests that menu commands make, such as opening the New Song sheet.
     let operatorUI = OperatorUIState()
@@ -23,7 +25,8 @@ final class AppEnvironment {
         coordinator = PresentationCoordinator(project: initial.project)
         persistence = ProjectPersistence(coordinator: coordinator, store: store, loadProblem: initial.problem)
         mediaLibrary = MediaLibrary()
-        outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary)
+        playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
+        outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         preloadProjectMedia()
     }
 

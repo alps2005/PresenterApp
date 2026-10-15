@@ -12,6 +12,13 @@ struct SlideWorkspace: View {
     /// Setting it opens the slide editor on a presentation.
     @Binding var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    /// Thumbnail width, from the size slider at the bottom right of the workspace.
+    @AppStorage("thumbnailWidth") private var thumbnailWidth = 180.0
+    @State private var reflowPresentationID: UUID?
+    /// The presentation whose title is being renamed in place.
+    @State private var renamingPresentationID: UUID?
+    @State private var arrangementDraft: ArrangementDraft?
     @FocusState private var isWorkspaceFocused: Bool
     /// The presentation whose title is being edited. Navigation keys pass through to the field while set.
     @FocusState private var editingTitle: UUID?
@@ -28,7 +35,11 @@ struct SlideWorkspace: View {
         var id: UUID { slide.id }
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 180, maximum: 260), spacing: 14)]
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: thumbnailWidth, maximum: thumbnailWidth * 1.45), spacing: 14)]
+    }
+
+    static let thumbnailWidths: ClosedRange<Double> = 120...420
     private static let coordinateSpace = "workspace"
     /// How much of a section's title must still show for it to count as on screen.
     private static let titleHeight: CGFloat = 40
@@ -47,10 +58,27 @@ struct SlideWorkspace: View {
                     Divider()
                     SlideEditor(coordinator: coordinator)
                 }
+                if isMediaBinVisible {
+                    Divider()
+                    MediaBin(coordinator: coordinator)
+                }
             }
             // AppKit otherwise gives first focus to the first title field, so Space/arrows meant for
             // slide navigation would overwrite a presentation title. (`.defaultFocus` is not enough.)
             .task { isWorkspaceFocused = true }
+            .sheet(isPresented: Binding(
+                get: { reflowPresentationID != nil },
+                set: { if !$0 { reflowPresentationID = nil } }
+            )) {
+                if let reflowPresentationID {
+                    ReflowSheet(coordinator: coordinator, presentationID: reflowPresentationID)
+                }
+            }
+            .sheet(item: $arrangementDraft) { draft in
+                ArrangementSheet(coordinator: coordinator, draft: draft)
+            }
+            .onChange(of: reflowPresentationID) { _, id in if id == nil { isWorkspaceFocused = true } }
+            .onChange(of: arrangementDraft?.id) { _, id in if id == nil { isWorkspaceFocused = true } }
             .confirmationDialog(
                 "Delete this slide?",
                 isPresented: Binding(
@@ -69,6 +97,28 @@ struct SlideWorkspace: View {
     }
 
     private var slides: some View {
+        slideScroll
+            .overlay(alignment: .bottomTrailing) { sizeSlider }
+    }
+
+    /// Like ProPresenter's slide size slider, bottom right of the slide view.
+    private var sizeSlider: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "square.grid.3x3").font(.caption)
+            Slider(value: $thumbnailWidth, in: Self.thumbnailWidths)
+                .frame(width: 110)
+                .controlSize(.mini)
+            Image(systemName: "square.grid.2x2").font(.caption)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.regularMaterial, in: Capsule())
+        .padding(10)
+        .help("Thumbnail size")
+    }
+
+    private var slideScroll: some View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
@@ -121,10 +171,10 @@ struct SlideWorkspace: View {
                 // Keep the live and cued slides on screen. Next/Previous crossing into another presentation
                 // brings it into view this way.
                 .onChange(of: coordinator.state.live?.position) { _, position in
-                    if let position { reveal(position.slideID, viewportHeight: viewport.size.height, proxy: proxy) }
+                    if let position { reveal(position, viewportHeight: viewport.size.height, proxy: proxy) }
                 }
                 .onChange(of: coordinator.state.preview) { _, position in
-                    if let position { reveal(position.slideID, viewportHeight: viewport.size.height, proxy: proxy) }
+                    if let position { reveal(position, viewportHeight: viewport.size.height, proxy: proxy) }
                 }
             }
         }
@@ -139,15 +189,16 @@ struct SlideWorkspace: View {
     /// Scrolls only if the slide isn't fully visible: a slide below the view lands at the bottom edge, one
     /// above it near the top, leaving room for its presentation's title. (`scrollTo` without an anchor jumps
     /// even when the slide is already visible.) A slide that isn't laid out yet is centred.
-    private func reveal(_ slideID: UUID, viewportHeight: CGFloat, proxy: ScrollViewProxy) {
+    private func reveal(_ position: SlidePosition, viewportHeight: CGFloat, proxy: ScrollViewProxy) {
+        let key = position.thumbnailKey
         let anchor: UnitPoint
-        if let frame = slideFrames.frames[slideID] {
+        if let frame = slideFrames.frames[key] {
             if frame.minY >= 0 && frame.maxY <= viewportHeight { return }
             anchor = frame.minY < 0 ? UnitPoint(x: 0.5, y: 0.3) : .bottom
         } else {
             anchor = .center
         }
-        withAnimation { proxy.scrollTo(slideID, anchor: anchor) }
+        withAnimation { proxy.scrollTo(key, anchor: anchor) }
     }
 
     /// The first presentation whose title is visible. When a long presentation fills the view and no
@@ -187,6 +238,34 @@ struct SlideWorkspace: View {
 
     private func header(presentation: PresentationDocument, itemID: UUID) -> some View {
         HStack {
+            title(presentation)
+                .layoutPriority(1)
+
+            if coordinator.state.live?.position.itemID == itemID {
+                StateBadge(text: "LIVE", color: .red)
+            }
+
+            Spacer(minLength: 8)
+
+            // Full labels when they fit; icons only (with tooltips) when the workspace is narrow, so the
+            // presentation's title is never squeezed.
+            ViewThatFits(in: .horizontal) {
+                headerButtons(presentation: presentation, itemID: itemID)
+                    .labelStyle(.titleAndIcon)
+                headerButtons(presentation: presentation, itemID: itemID)
+                    .labelStyle(.iconOnly)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 4)
+    }
+
+    /// The title is plain text until clicked. An always-present text field would get keyboard focus whenever a
+    /// sheet closed, and Space and the arrow keys meant for the slides would type into it.
+    @ViewBuilder
+    private func title(_ presentation: PresentationDocument) -> some View {
+        if renamingPresentationID == presentation.id {
             TextField("Title", text: Binding(
                 get: { presentation.title },
                 set: { coordinator.renamePresentation(presentation.id, to: $0) }
@@ -194,12 +273,30 @@ struct SlideWorkspace: View {
             .textFieldStyle(.plain)
             .font(.title2.bold())
             .focused($editingTitle, equals: presentation.id)
-            .onSubmit { isWorkspaceFocused = true }
-
-            if coordinator.state.live?.position.itemID == itemID {
-                StateBadge(text: "LIVE", color: .red)
+            .onAppear { editingTitle = presentation.id }
+            .onSubmit { finishRenaming() }
+            .onChange(of: editingTitle) { _, focused in
+                if focused != presentation.id { finishRenaming() }
             }
+        } else {
+            Text(presentation.title.isEmpty ? "Untitled" : presentation.title)
+                .font(.title2.bold())
+                .lineLimit(1)
+                .foregroundStyle(presentation.title.isEmpty ? .secondary : .primary)
+                .contentShape(Rectangle())
+                .onTapGesture { renamingPresentationID = presentation.id }
+                .help("Click to rename")
+        }
+    }
 
+    private func finishRenaming() {
+        renamingPresentationID = nil
+        editingTitle = nil
+        isWorkspaceFocused = true
+    }
+
+    private func headerButtons(presentation: PresentationDocument, itemID: UUID) -> some View {
+        HStack {
             Button {
                 presentationEditingBackground = presentation.id
             } label: {
@@ -223,6 +320,18 @@ struct SlideWorkspace: View {
             } label: {
                 Label("Add Slide", systemImage: "plus.rectangle")
             }
+            .help("Add a slide")
+
+            if !presentation.groupNames.isEmpty || !presentation.arrangements.isEmpty {
+                arrangementMenu(presentation: presentation)
+            }
+
+            Button {
+                reflowPresentationID = presentation.id
+            } label: {
+                Label("Reflow", systemImage: "text.alignleft")
+            }
+            .help("Edit all of this presentation's words as one document")
 
             Button {
                 // Open on the cued slide when it's in this presentation, else the first slide.
@@ -233,50 +342,106 @@ struct SlideWorkspace: View {
             }
             .help("Open this presentation in the slide editor")
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 4)
+        .fixedSize()
     }
 
     private func grid(presentation: PresentationDocument, itemID: UUID) -> some View {
         LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(Array(presentation.slides.enumerated()), id: \.element.id) { index, slide in
-                let position = SlidePosition(itemID: itemID, slideID: slide.id)
-                SlideThumbnail(
-                    slide: presentation.rendered(slide),
-                    number: index + 1,
-                    isCued: coordinator.state.preview == position,
-                    isLive: coordinator.state.live?.position == position
-                )
-                .id(slide.id)
-                .background {
-                    GeometryReader { geometry in
-                        Color.clear.preference(
-                            key: SlideFramesKey.self,
-                            value: [slide.id: geometry.frame(in: .named(Self.coordinateSpace))]
-                        )
-                    }
-                }
-                .onTapGesture {
-                    isWorkspaceFocused = true
-                    coordinator.cueSlide(slide.id, inItem: itemID)
-                }
-                .simultaneousGesture(TapGesture(count: 2).onEnded {
-                    coordinator.takeLive(slideID: slide.id, inItem: itemID)
-                })
-                .contextMenu {
-                    Button("Take Live") {
-                        coordinator.takeLive(slideID: slide.id, inItem: itemID)
-                    }
-                    Divider()
-                    Button("Delete Slide…", role: .destructive) {
-                        slidePendingDeletion = SlideDeletion(slide: slide, presentationID: presentation.id)
-                    }
+            // In play order: the active arrangement's order, with repeated slides shown again.
+            ForEach(Array(presentation.arrangedSlides.enumerated()), id: \.element) { index, arranged in
+                if let slide = presentation.slide(withID: arranged.slideID) {
+                    thumbnail(slide, number: index + 1, occurrence: arranged.occurrence, presentation: presentation, itemID: itemID)
                 }
             }
         }
         .padding(16)
     }
+
+    private func thumbnail(
+        _ slide: SlideDocument,
+        number: Int,
+        occurrence: Int,
+        presentation: PresentationDocument,
+        itemID: UUID
+    ) -> some View {
+        let position = SlidePosition(itemID: itemID, slideID: slide.id, occurrence: occurrence)
+        return SlideThumbnail(
+                    slide: presentation.rendered(slide),
+            number: number,
+            isCued: coordinator.state.preview == position,
+            isLive: coordinator.state.live?.position == position
+        )
+        .id(position.thumbnailKey)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(
+                    key: SlideFramesKey.self,
+                    value: [position.thumbnailKey: geometry.frame(in: .named(Self.coordinateSpace))]
+                )
+            }
+        }
+        .onTapGesture {
+            if renamingPresentationID != nil { finishRenaming() }
+            isWorkspaceFocused = true
+            coordinator.cueSlide(slide.id, inItem: itemID, occurrence: occurrence)
+        }
+        .simultaneousGesture(TapGesture(count: 2).onEnded {
+            coordinator.takeLive(slideID: slide.id, inItem: itemID, occurrence: occurrence)
+        })
+        .contextMenu {
+            Button("Take Live") {
+                coordinator.takeLive(slideID: slide.id, inItem: itemID, occurrence: occurrence)
+            }
+            Divider()
+            Button("Delete Slide…", role: .destructive) {
+                slidePendingDeletion = SlideDeletion(slide: slide, presentationID: presentation.id)
+            }
+        }
+    }
+
+    // MARK: Arrangements
+
+    private func arrangementMenu(presentation: PresentationDocument) -> some View {
+        Menu {
+            Picker("Arrangement", selection: Binding(
+                get: { presentation.activeArrangementID },
+                set: { coordinator.setActiveArrangement($0, inPresentation: presentation.id) }
+            )) {
+                Text("Slide Order").tag(UUID?.none)
+                ForEach(presentation.arrangements) { arrangement in
+                    Text(arrangement.name).tag(Optional(arrangement.id))
+                }
+            }
+            .pickerStyle(.inline)
+            Divider()
+            Button("New Arrangement…") {
+                arrangementDraft = ArrangementDraft(presentationID: presentation.id, arrangement: nil)
+            }
+            if let active = presentation.activeArrangement {
+                Button("Edit “\(active.name)”…") {
+                    arrangementDraft = ArrangementDraft(presentationID: presentation.id, arrangement: active)
+                }
+            }
+        } label: {
+            Label(presentation.activeArrangement?.name ?? "Slide Order", systemImage: "list.number")
+        }
+        .fixedSize()
+        .help("The order this presentation's groups play in")
+    }
+}
+
+/// Which presentation's arrangement is being created or edited.
+struct ArrangementDraft: Identifiable {
+    let presentationID: UUID
+    /// Nil for a new arrangement.
+    let arrangement: Arrangement?
+    var id: String { "\(presentationID)-\(arrangement?.id.uuidString ?? "new")" }
+}
+
+extension SlidePosition {
+    /// Identifies a thumbnail in the workspace: the same slide can appear in two playlist items, and more than
+    /// once in an arrangement.
+    var thumbnailKey: String { "\(itemID)-\(slideID)-\(occurrence)" }
 }
 
 /// Each on-screen section's top edge, relative to the top of the workspace's visible area.
@@ -290,15 +455,15 @@ private struct SectionOffsetsKey: PreferenceKey {
 
 /// Each on-screen slide's frame, relative to the workspace's visible area.
 private struct SlideFramesKey: PreferenceKey {
-    static let defaultValue: [UUID: CGRect] = [:]
+    static let defaultValue: [String: CGRect] = [:]
 
-    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue()) { $1 }
     }
 }
 
 private final class SlideFrames {
-    var frames: [UUID: CGRect] = [:]
+    var frames: [String: CGRect] = [:]
 }
 
 struct SlideThumbnail: View {

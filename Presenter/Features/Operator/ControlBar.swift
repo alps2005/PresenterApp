@@ -16,11 +16,28 @@ struct ControlBar: View {
 
             Divider().frame(height: 22)
 
-            Button { coordinator.clearOutput() } label: {
+            // Per layer, like ProPresenter: the slide's words, the background under them, or both.
+            Menu {
+                Button("Clear Slide  ⌥⌘C") { coordinator.clearOutput() }
+                    .disabled(coordinator.state.live == nil)
+                Button("Clear Background  ⌥⌘X") { coordinator.clearBackground() }
+                    .disabled(coordinator.state.liveBackground == nil)
+                Button("Clear Messages  ⌥⌘G") { coordinator.clearMessages() }
+                    .disabled(coordinator.state.activeMessage == nil)
+                Button("Clear Props  ⌥⌘P") { coordinator.clearProps() }
+                    .disabled(coordinator.state.activeProps.isEmpty)
+                Divider()
+                Button("Clear All  ⌥⌘A") { coordinator.clearAll() }
+                    .disabled(!hasAnythingToClear)
+            } label: {
                 Label("Clear", systemImage: "xmark.rectangle")
+            } primaryAction: {
+                coordinator.clearOutput()
             }
-            .disabled(coordinator.state.live == nil)
-            .help("Remove the slide from the audience output (⌥⌘C)")
+            .menuStyle(.button)
+            .fixedSize()
+            .disabled(!hasAnythingToClear)
+            .help("Click to clear the slide, keeping its background (⌥⌘C). Use the arrow for Clear Background (⌥⌘X) or Clear All (⌥⌘A).")
 
             Button { coordinator.blackout() } label: {
                 Label("Blackout", systemImage: "rectangle.fill")
@@ -32,7 +49,7 @@ struct ControlBar: View {
                 Label("Restore", systemImage: "arrow.uturn.backward")
             }
             .disabled(!coordinator.canRestore)
-            .help("Lift blackout and bring back a cleared slide (⌥⌘R)")
+            .help("Lift blackout and bring back what was cleared (⌥⌘R)")
 
             Spacer()
 
@@ -51,5 +68,10 @@ struct ControlBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    private var hasAnythingToClear: Bool {
+        let state = coordinator.state
+        return state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty
     }
 }

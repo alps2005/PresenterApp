@@ -4,6 +4,8 @@ import PresenterCore
 /// Shows exactly what the audience sees, plus what comes next and what is cued.
 struct LivePanel: View {
     let coordinator: PresentationCoordinator
+    let outputManager: OutputManager
+    let onEditProps: (UUID?) -> Void
     @Environment(MediaLibrary.self) private var mediaLibrary
 
     var body: some View {
@@ -16,14 +18,24 @@ struct LivePanel: View {
                         liveBadge
                     }
                     SlideRenderView(scene: coordinator.audienceScene)
+                        .overlay { OverlayLayers(coordinator: coordinator) }
+                        .environment(\.showsLiveVideo, true)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .overlay {
                             RoundedRectangle(cornerRadius: 6)
                                 .strokeBorder(coordinator.state.live == nil ? Color.secondary.opacity(0.4) : .red, lineWidth: 2)
                         }
-                    if hasMissingImage(coordinator.state.live?.rendered) {
-                        missingImageWarning
+                    if hasMissingMedia(coordinator.state.liveBackground), !coordinator.state.isBlackout {
+                        missingMediaWarning(coordinator.state.liveBackground)
+                    } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
+                        TransportControls()
+                    }
+                    if let notes = coordinator.liveNotes {
+                        Label(notes, systemImage: "note.text")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .help("This slide's notes. The audience never sees them.")
                     }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
@@ -33,21 +45,28 @@ struct LivePanel: View {
                     }
                 }
 
-                slot(title: "Up Next", slide: coordinator.upNextSlide, placeholder: upNextPlaceholder)
+                // Shown as it will appear: a transparent slide over the background that's on screen.
+                slot(title: "Up Next", slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
+                     placeholder: upNextPlaceholder)
                 slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued")
+
+                Divider()
+                ShowControls(coordinator: coordinator, outputManager: outputManager, onEditProps: onEditProps)
             }
             .padding(16)
         }
     }
 
-    private var missingImageWarning: some View {
-        Label("Background image missing. The default background is showing.", systemImage: "exclamationmark.triangle")
+    private func missingMediaWarning(_ background: SlideBackground?) -> some View {
+        let kind = if case .video = background { "video" } else { "image" }
+        return Label("Background \(kind) missing. The default background is showing.", systemImage: "exclamationmark.triangle")
             .font(.caption)
             .foregroundStyle(.orange)
     }
 
-    private func hasMissingImage(_ slide: RenderedSlide?) -> Bool {
-        guard let assetID = slide?.background?.assetID else { return false }
+    /// The background's image or video is missing or unreadable, so the default background shows instead.
+    private func hasMissingMedia(_ background: SlideBackground?) -> Bool {
+        guard let assetID = background?.assetID else { return false }
         return mediaLibrary.isMissing(assetID)
     }
 
@@ -64,6 +83,8 @@ struct LivePanel: View {
             StateBadge(text: "BLACKOUT", color: .black)
         } else if coordinator.state.live != nil {
             StateBadge(text: "LIVE", color: .red)
+        } else if coordinator.state.liveBackground != nil {
+            StateBadge(text: "BACKGROUND ONLY", color: .gray)
         } else if coordinator.state.cleared != nil {
             StateBadge(text: "CLEARED", color: .gray)
         } else {
@@ -79,8 +100,8 @@ struct LivePanel: View {
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .frame(maxWidth: 220)
-                if hasMissingImage(slide) {
-                    missingImageWarning
+                if hasMissingMedia(slide.background) {
+                    missingMediaWarning(slide.background)
                 }
             } else {
                 Text(placeholder)

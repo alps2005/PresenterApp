@@ -1,9 +1,12 @@
+import AVFoundation
 import Foundation
 import ImageIO
 
 public enum MediaImportError: Error, Equatable, Sendable {
     /// The file isn't an image ImageIO can decode.
     case unreadableImage
+    /// The file isn't a video this Mac can play.
+    case unplayableVideo
     case copyFailed(String)
 }
 
@@ -43,6 +46,39 @@ public struct MediaStore: Sendable {
             storedFilename: storedFilename,
             pixelWidth: width,
             pixelHeight: height
+        )
+    }
+
+    /// Checks that `source` is a playable video, copies it into the store and describes the copy.
+    public func importVideo(at source: URL) async throws -> MediaAsset {
+        let asset = AVURLAsset(url: source)
+        let isPlayable = (try? await asset.load(.isPlayable)) ?? false
+        guard isPlayable,
+              let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let size = try? await track.load(.naturalSize),
+              let transform = try? await track.load(.preferredTransform),
+              let duration = try? await asset.load(.duration), duration.seconds > 0 else {
+            throw MediaImportError.unplayableVideo
+        }
+        // Width and height as shown, after any rotation the file asks for.
+        let shown = size.applying(transform)
+        let id = UUID()
+        let fileExtension = source.pathExtension.isEmpty ? "mov" : source.pathExtension.lowercased()
+        let storedFilename = "\(id.uuidString).\(fileExtension)"
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
+        } catch {
+            throw MediaImportError.copyFailed(error.localizedDescription)
+        }
+        return MediaAsset(
+            id: id,
+            kind: .video,
+            originalFilename: source.lastPathComponent,
+            storedFilename: storedFilename,
+            pixelWidth: Int(abs(shown.width).rounded()),
+            pixelHeight: Int(abs(shown.height).rounded()),
+            duration: duration.seconds
         )
     }
 

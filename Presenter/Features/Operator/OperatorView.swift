@@ -24,6 +24,7 @@ struct OperatorView: View {
     /// Set while the slide editor is open; it then fills the window in place of the show view.
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
+    @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
 
     var body: some View {
         Group {
@@ -64,7 +65,9 @@ struct OperatorView: View {
                         SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
-                        LivePanel(coordinator: coordinator)
+                        LivePanel(coordinator: coordinator, outputManager: outputManager) { propID in
+                            editSession = EditSession(itemID: nil, presentationID: coordinator.project.props.id, initialSlideID: propID)
+                        }
                             .frame(width: liveWidth)
                     }
                 }
@@ -80,6 +83,11 @@ struct OperatorView: View {
                 }
                 .toggleStyle(.button)
                 .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
+                Toggle(isOn: $isMediaBinVisible) {
+                    Label("Media", systemImage: "photo.on.rectangle.angled")
+                }
+                .toggleStyle(.button)
+                .help("Show or hide the media bin (⌥⌘I)")
                 OutputMenu(outputManager: outputManager)
             }
         }

@@ -16,6 +16,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         environment.persistence.saveNow()
-        environment.outputManager.hide()
+        environment.outputManager.hideAll()
     }
 }

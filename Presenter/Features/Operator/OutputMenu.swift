@@ -1,45 +1,64 @@
 import SwiftUI
 
-/// Toolbar control that shows output health and chooses where the audience output goes.
+/// Toolbar control that shows output health and chooses where the audience output and the stage display go.
 struct OutputMenu: View {
     let outputManager: OutputManager
 
     var body: some View {
         Menu {
-            Button("Show in Window") { outputManager.show(.windowed) }
-
-            Section("Full Screen") {
-                if outputManager.fullScreenCandidates.isEmpty {
-                    Text("Connect another display for full-screen output")
-                }
-                ForEach(outputManager.fullScreenCandidates) { display in
-                    Button("\(display.name) (\(display.resolutionDescription))") {
-                        outputManager.show(.display(display.id))
-                    }
-                }
-            }
-
+            section(.audience)
             Divider()
-            Button("Hide Output") { outputManager.hide() }
-                .disabled(!outputManager.isEnabled)
+            Menu("Stage Display") { section(.stage) }
         } label: {
             statusLabel
         }
-        .help("Audience output")
+        .help("Audience output and stage display")
     }
 
     @ViewBuilder
-    private var statusLabel: some View {
-        switch outputManager.status {
-        case .off:
-            Label("Output Off", systemImage: "display")
-        case .windowed:
-            Label("Output: Window", systemImage: "macwindow")
-        case .fullScreen(let name):
-            Label("Output: \(name)", systemImage: "display")
-        case .displayMissing(let name):
-            Label("\(name) disconnected", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+    private func section(_ role: OutputRole) -> some View {
+        Button("Show in Window") { outputManager.show(.windowed, for: role) }
+
+        Section("Full Screen") {
+            let candidates = outputManager.fullScreenCandidates(role)
+            if candidates.isEmpty {
+                Text("Connect another display for full-screen output")
+            }
+            ForEach(candidates) { display in
+                Button("\(display.name) (\(display.resolutionDescription))") {
+                    outputManager.show(.display(display.id), for: role)
+                }
+            }
         }
+
+        Divider()
+        Button(role == .audience ? "Hide Output" : "Hide Stage Display") { outputManager.hide(role) }
+            .disabled(!outputManager.isEnabled(role))
+    }
+
+    /// The audience output's state, unless an output has lost its display: that warning wins.
+    @ViewBuilder
+    private var statusLabel: some View {
+        if case .displayMissing(let name) = outputManager.status(.stage), !isAudienceMissing {
+            Label("Stage display \(name) disconnected", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        } else {
+            switch outputManager.status {
+            case .off:
+                Label("Output Off", systemImage: "display")
+            case .windowed:
+                Label("Output: Window", systemImage: "macwindow")
+            case .fullScreen(let name):
+                Label("Output: \(name)", systemImage: "display")
+            case .displayMissing(let name):
+                Label("\(name) disconnected", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    private var isAudienceMissing: Bool {
+        if case .displayMissing = outputManager.status { return true }
+        return false
     }
 }

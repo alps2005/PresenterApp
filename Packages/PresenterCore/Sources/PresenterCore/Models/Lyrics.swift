@@ -26,6 +26,9 @@ public enum SongSectionKind: Sendable, CaseIterable {
 /// - a line that is only a section name ("Verse 1", "[Chorus]", "CORO:", "Puente") isn't shown on a slide;
 ///   it labels the slides that follow it until the next section name.
 public enum LyricsParser {
+    /// Marks a slide without words in Reflow text, so it isn't lost.
+    public static let blankSlideMarker = "[Blank]"
+
     private static let sectionPattern = try! NSRegularExpression(
         pattern: #"^(verse|verso|estrofa|chorus|coro|refrain|estribillo|pre[- ]?chorus|pre[- ]?coro|bridge|puente|tag|intro|outro|final|ending|interlude|interludio|instrumental)(\s*\d+)?$"#,
         options: [.caseInsensitive]
@@ -54,6 +57,11 @@ public enum LyricsParser {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
             if line.isEmpty {
                 flush()
+            } else if line.caseInsensitiveCompare(blankSlideMarker) == .orderedSame {
+                flush()
+                var slide = SlideDocument.text("")
+                slide.label = label
+                slides.append(slide)
             } else if let name = sectionLabel(line) {
                 flush()
                 label = name

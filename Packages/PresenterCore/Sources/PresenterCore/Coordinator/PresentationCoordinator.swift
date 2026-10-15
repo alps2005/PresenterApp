@@ -12,6 +12,9 @@ public final class PresentationCoordinator {
     /// The most recent rejected command, for surfacing to the operator. Cleared by the next applied command.
     public private(set) var lastRejection: CommandRejection?
 
+    /// Each timer's running state, by timer ID. Timers without an entry are stopped at zero.
+    public private(set) var timerRuns: [UUID: TimerRun] = [:]
+
     /// Project snapshots taken before each edit, newest last. Live commands are never recorded.
     private var undoStack: [UndoEntry] = []
     private var redoStack: [UndoEntry] = []
@@ -40,17 +43,28 @@ public final class PresentationCoordinator {
 
     // MARK: - Derived state
 
+    /// What the audience sees: the live slide over the background layer, which a transparent slide keeps.
     public var audienceScene: AudienceScene {
         if state.isBlackout { return .black }
-        guard let live = state.live else { return .empty }
-        return .slide(live.rendered)
+        if let live = state.live {
+            return .slide(RenderedSlide(slide: live.slide, background: state.liveBackground))
+        }
+        if let background = state.liveBackground { return .background(background) }
+        return .empty
+    }
+
+    /// How a slide would look on the audience output if taken live now: a transparent slide is shown over
+    /// the background that's on screen. Used for the Up Next preview.
+    public func outputPreview(of rendered: RenderedSlide) -> RenderedSlide {
+        guard rendered.background == .transparent else { return rendered }
+        return RenderedSlide(slide: rendered.slide, background: state.liveBackground)
     }
 
     /// The slide that `nextSlide()` would take live, following playlist order.
     public var upNextPosition: SlidePosition? {
         guard let live = state.live else { return nil }
         let sequence = slideSequence()
-        guard let index = sequence.firstIndex(of: live.position), index + 1 < sequence.count else { return nil }
+        guard let index = Self.index(of: live.position, in: sequence), index + 1 < sequence.count else { return nil }
         return sequence[index + 1]
     }
 
@@ -68,14 +82,58 @@ public final class PresentationCoordinator {
 
     /// True when `restoreOutput()` would change the audience output.
     public var canRestore: Bool {
-        state.isBlackout || (state.live == nil && state.cleared != nil)
+        state.isBlackout
+            || (state.live == nil && state.cleared != nil)
+            || (state.liveBackground == nil && state.clearedBackground != nil)
+            || (state.activeMessage == nil && state.clearedMessage != nil)
+            || (state.activeProps.isEmpty && !state.clearedProps.isEmpty)
+    }
+
+    /// Props on the audience output, bottom to top. Hidden by blackout.
+    public var audienceProps: [SlideDocument] {
+        guard !state.isBlackout else { return [] }
+        return state.activeProps.compactMap { state.propSnapshots[$0] }
+    }
+
+    /// True when a prop on screen (or cleared, waiting to be restored) has been edited since it was shown,
+    /// so the audience sees an older version until it's shown again.
+    public func propHasPendingEdits(_ propID: UUID) -> Bool {
+        guard let shown = state.propSnapshots[propID], let current = project.prop(withID: propID) else { return false }
+        return shown != current
+    }
+
+    /// The message on the audience output, if any. Hidden by blackout.
+    public var audienceMessage: (message: MessageDefinition, values: [String: String])? {
+        guard !state.isBlackout, let active = state.activeMessage, let message = project.message(withID: active.messageID) else {
+            return nil
+        }
+        return (message, active.values)
+    }
+
+    /// The message's text right now, with blanks filled in and timers at `date`.
+    public func messageText(_ message: MessageDefinition, values: [String: String], at date: Date) -> String {
+        message.rendered(values: values) { name in
+            project.timers.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+                .flatMap { timerSeconds($0.id, at: date) }
+                .map { TimerDefinition.format($0) }
+        }
     }
 
     /// True when the live slide (or the background it inherits) has been edited since it was taken live,
     /// so the audience sees an older version.
     public var liveSlideHasPendingEdits: Bool {
-        guard let live = state.live, let current = project.renderedSlide(at: live.position) else { return false }
+        guard let live = state.live, var current = project.renderedSlide(at: live.position) else { return false }
+        // Notes never reach the audience, so editing them leaves nothing to take live again.
+        current.slide.notes = live.slide.notes
         return current != live.rendered
+    }
+
+    /// The live slide's notes as they are now. Notes never reach the audience, so edits show on the stage
+    /// display and in the Live panel straight away, without taking the slide live again.
+    public var liveNotes: String? {
+        guard let live = state.live else { return nil }
+        let notes = (project.renderedSlide(at: live.position)?.slide ?? live.slide).notes
+        return notes?.isEmpty == false ? notes : nil
     }
 
     // MARK: - Live commands
@@ -89,8 +147,8 @@ public final class PresentationCoordinator {
 
     /// Cues a slide for preview. Never changes the audience output.
     @discardableResult
-    public func cueSlide(_ slideID: UUID, inItem itemID: UUID) -> CommandResult {
-        let position = SlidePosition(itemID: itemID, slideID: slideID)
+    public func cueSlide(_ slideID: UUID, inItem itemID: UUID, occurrence: Int = 0) -> CommandResult {
+        let position = SlidePosition(itemID: itemID, slideID: slideID, occurrence: occurrence)
         guard project.playlist.item(withID: itemID) != nil else { return reject(.unknownItem) }
         guard project.slide(at: position) != nil else { return reject(.unknownSlide) }
         state.selectedItemID = itemID
@@ -107,8 +165,8 @@ public final class PresentationCoordinator {
 
     /// Cues and takes a slide live in one step (e.g. double-click).
     @discardableResult
-    public func takeLive(slideID: UUID, inItem itemID: UUID) -> CommandResult {
-        let result = cueSlide(slideID, inItem: itemID)
+    public func takeLive(slideID: UUID, inItem itemID: UUID, occurrence: Int = 0) -> CommandResult {
+        let result = cueSlide(slideID, inItem: itemID, occurrence: occurrence)
         guard result.isApplied else { return result }
         return takeLive()
     }
@@ -125,11 +183,97 @@ public final class PresentationCoordinator {
 
     /// Removes the live slide from the audience output, leaving the empty background.
     @discardableResult
+    /// Clear Slide: removes the live slide's words and elements. The background layer stays, as in ProPresenter.
     public func clearOutput() -> CommandResult {
         guard let live = state.live else { return reject(.nothingLive) }
         state.cleared = live
         state.live = nil
-        logger.info("Output cleared")
+        logger.info("Slide cleared")
+        return applied()
+    }
+
+    /// Clear Background: removes the background layer, back to the app's default. The live slide stays.
+    @discardableResult
+    public func clearBackground() -> CommandResult {
+        guard let background = state.liveBackground else { return reject(.nothingToClear) }
+        state.clearedBackground = background
+        state.liveBackground = nil
+        logger.info("Background cleared")
+        return applied()
+    }
+
+    /// Clear All: removes the slide and the background.
+    @discardableResult
+    public func clearAll() -> CommandResult {
+        guard state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty else {
+            return reject(.nothingLive)
+        }
+        if state.live != nil { _ = clearOutput() }
+        if state.liveBackground != nil { _ = clearBackground() }
+        if state.activeMessage != nil { _ = clearMessages() }
+        if !state.activeProps.isEmpty { _ = clearProps() }
+        return applied()
+    }
+
+    // MARK: - Media (live: never undone)
+
+    /// Puts an image, video or colour straight onto the audience output's background layer, like clicking a
+    /// cue in ProPresenter's media bin. The words on screen stay. Transparent slides keep it; the next
+    /// opaque slide replaces it.
+    @discardableResult
+    public func showBackground(_ background: SlideBackground) -> CommandResult {
+        if let rejection = validate(background) { return reject(rejection) }
+        guard background != .transparent else { return reject(.nothingToClear) }
+        state.liveBackground = background
+        state.clearedBackground = nil
+        logger.info("Media cue on the background layer")
+        return applied()
+    }
+
+    // MARK: - Messages and props (live: never undone)
+
+    /// Shows a message over the slides, replacing any other message.
+    @discardableResult
+    public func showMessage(_ messageID: UUID, values: [String: String] = [:]) -> CommandResult {
+        guard project.message(withID: messageID) != nil else { return reject(.unknownMessage) }
+        state.activeMessage = ActiveMessage(messageID: messageID, values: values)
+        state.clearedMessage = nil
+        return applied()
+    }
+
+    /// Clear Messages.
+    @discardableResult
+    public func clearMessages() -> CommandResult {
+        guard let active = state.activeMessage else { return reject(.nothingToClear) }
+        state.clearedMessage = active
+        state.activeMessage = nil
+        return applied()
+    }
+
+    /// Shows a prop if hidden, hides it if shown. Several props can be on screen at once.
+    @discardableResult
+    public func toggleProp(_ propID: UUID) -> CommandResult {
+        guard let prop = project.prop(withID: propID) else { return reject(.unknownProp) }
+        if state.activeProps.contains(propID) {
+            state.activeProps.removeAll { $0 == propID }
+            state.propSnapshots[propID] = nil
+        } else {
+            state.activeProps.append(propID)
+            state.propSnapshots[propID] = prop
+            for cleared in state.clearedProps where !state.activeProps.contains(cleared) {
+                state.propSnapshots[cleared] = nil
+            }
+            state.clearedProps = []
+        }
+        return applied()
+    }
+
+    /// Clear Props.
+    @discardableResult
+    public func clearProps() -> CommandResult {
+        guard !state.activeProps.isEmpty else { return reject(.nothingToClear) }
+        state.clearedProps = state.activeProps
+        state.activeProps = []
         return applied()
     }
 
@@ -153,9 +297,192 @@ public final class PresentationCoordinator {
             state.cleared = nil
             changed = true
         }
+        if state.liveBackground == nil, let background = state.clearedBackground {
+            state.liveBackground = background
+            state.clearedBackground = nil
+            changed = true
+        }
+        if state.activeMessage == nil, let message = state.clearedMessage {
+            state.activeMessage = message
+            state.clearedMessage = nil
+            changed = true
+        }
+        if state.activeProps.isEmpty, !state.clearedProps.isEmpty {
+            state.activeProps = state.clearedProps
+            state.clearedProps = []
+            changed = true
+        }
         guard changed else { return reject(.nothingToRestore) }
         logger.info("Output restored")
         return applied()
+    }
+
+    // MARK: - Timers and stage (live: never undone)
+
+    public func timer(withID timerID: UUID) -> TimerDefinition? {
+        project.timers.first { $0.id == timerID }
+    }
+
+    public func timerRun(for timerID: UUID) -> TimerRun {
+        timerRuns[timerID] ?? TimerRun()
+    }
+
+    /// The timer's value at `date` (see `TimerDefinition.seconds`), or nil if it doesn't exist.
+    public func timerSeconds(_ timerID: UUID, at date: Date) -> Int? {
+        timer(withID: timerID).map { $0.seconds(run: timerRun(for: timerID), now: date) }
+    }
+
+    /// Starts or resumes a timer.
+    @discardableResult
+    public func startTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        var run = timerRun(for: timerID)
+        if !run.isRunning { run.startedAt = now() }
+        timerRuns[timerID] = run
+        return applied()
+    }
+
+    /// Pauses a timer, keeping its time.
+    @discardableResult
+    public func stopTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        let run = timerRun(for: timerID)
+        timerRuns[timerID] = TimerRun(startedAt: nil, accumulated: run.elapsed(at: now()))
+        return applied()
+    }
+
+    /// Stops a timer and returns it to its starting value.
+    @discardableResult
+    public func resetTimer(_ timerID: UUID) -> CommandResult {
+        guard timer(withID: timerID) != nil else { return reject(.unknownTimer) }
+        timerRuns[timerID] = nil
+        return applied()
+    }
+
+    /// Shows a message on the stage display only. Empty text hides it.
+    @discardableResult
+    public func showStageMessage(_ text: String) -> CommandResult {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        state.stageMessage = trimmed.isEmpty ? nil : trimmed
+        return applied()
+    }
+
+    @discardableResult
+    public func hideStageMessage() -> CommandResult {
+        state.stageMessage = nil
+        return applied()
+    }
+
+    // MARK: - Message and prop library (edits: undoable)
+
+    @discardableResult
+    public func addMessage(name: String, text: String) -> MessageDefinition {
+        recordingUndo("Add Message") {
+            let message = MessageDefinition(name: name.isEmpty ? "Message" : name, text: text)
+            project.messages.append(message)
+            lastRejection = nil
+            return message
+        }
+    }
+
+    @discardableResult
+    public func updateMessage(_ message: MessageDefinition) -> CommandResult {
+        recordingUndo("Edit Message", coalescing: "message-\(message.id)") {
+            guard let index = project.messages.firstIndex(where: { $0.id == message.id }) else { return reject(.unknownMessage) }
+            project.messages[index] = message
+            return applied()
+        }
+    }
+
+    /// Deleting the message on screen leaves the output alone until it's cleared.
+    @discardableResult
+    public func deleteMessage(_ messageID: UUID) -> CommandResult {
+        recordingUndo("Delete Message") {
+            guard project.messages.contains(where: { $0.id == messageID }) else { return reject(.unknownMessage) }
+            project.messages.removeAll { $0.id == messageID }
+            return applied()
+        }
+    }
+
+    /// Adds a prop with a text box, ready to edit in the slide editor.
+    @discardableResult
+    public func addProp(name: String) -> SlideDocument {
+        recordingUndo("Add Prop") {
+            var prop = SlideDocument(
+                elements: [.text(TextElement(text: name.isEmpty ? "Prop" : name, role: .caption,
+                                             box: TextBox(frame: .centered(width: 0.4, height: 0.15))))],
+                background: .transparent
+            )
+            prop.label = name.isEmpty ? "Prop" : name
+            project.props.slides.append(prop)
+            lastRejection = nil
+            return prop
+        }
+    }
+
+    @discardableResult
+    public func renameProp(_ propID: UUID, to name: String) -> CommandResult {
+        recordingUndo("Rename Prop", coalescing: "prop-name-\(propID)") {
+            guard let index = project.props.index(ofSlide: propID) else { return reject(.unknownProp) }
+            project.props.slides[index].label = name.trimmingCharacters(in: .whitespaces).isEmpty ? nil : name
+            return applied()
+        }
+    }
+
+    /// Deleting a prop that's on screen takes it off.
+    @discardableResult
+    public func deleteProp(_ propID: UUID) -> CommandResult {
+        recordingUndo("Delete Prop") {
+            guard project.props.index(ofSlide: propID) != nil else { return reject(.unknownProp) }
+            project.props.slides.removeAll { $0.id == propID }
+            state.activeProps.removeAll { $0 == propID }
+            state.clearedProps.removeAll { $0 == propID }
+            state.propSnapshots[propID] = nil
+            return applied()
+        }
+    }
+
+    // MARK: - Timer and stage settings (edits: undoable)
+
+    @discardableResult
+    public func addTimer(name: String, kind: TimerDefinition.Kind) -> TimerDefinition {
+        recordingUndo("Add Timer") {
+            let timer = TimerDefinition(name: name.isEmpty ? "Timer" : name, kind: kind)
+            project.timers.append(timer)
+            lastRejection = nil
+            return timer
+        }
+    }
+
+    /// Changing a timer's kind or duration resets it.
+    @discardableResult
+    public func updateTimer(_ timer: TimerDefinition) -> CommandResult {
+        recordingUndo("Edit Timer", coalescing: "timer-\(timer.id)") {
+            guard let index = project.timers.firstIndex(where: { $0.id == timer.id }) else { return reject(.unknownTimer) }
+            if project.timers[index].kind != timer.kind { timerRuns[timer.id] = nil }
+            project.timers[index] = timer
+            return applied()
+        }
+    }
+
+    @discardableResult
+    public func deleteTimer(_ timerID: UUID) -> CommandResult {
+        recordingUndo("Delete Timer") {
+            guard project.timers.contains(where: { $0.id == timerID }) else { return reject(.unknownTimer) }
+            project.timers.removeAll { $0.id == timerID }
+            if project.stage.timerID == timerID { project.stage.timerID = nil }
+            timerRuns[timerID] = nil
+            return applied()
+        }
+    }
+
+    @discardableResult
+    public func setStageSettings(_ settings: StageSettings) -> CommandResult {
+        recordingUndo("Stage Settings") {
+            if let timerID = settings.timerID, timer(withID: timerID) == nil { return reject(.unknownTimer) }
+            project.stage = settings
+            return applied()
+        }
     }
 
     // MARK: - Undo
@@ -267,6 +594,142 @@ public final class PresentationCoordinator {
             lastRejection = nil
             logger.info("Added song \(presentation.id, privacy: .public) with \(slides.count) slides")
             return item
+        }
+    }
+
+    // MARK: - Reflow and arrangements
+
+    /// Rewrites a presentation's words from Reflow text (New Song format). Slides are matched by position, so each
+    /// keeps its identity, look, background and transition; new slides copy the look of the slide before them,
+    /// and slides past the end of the text are removed.
+    @discardableResult
+    public func reflow(_ text: String, presentationID: UUID) -> CommandResult {
+        recordingUndo("Reflow", coalescing: "reflow-\(presentationID)") {
+            let parsed = LyricsParser.slides(from: text)
+            let result = editPresentation(presentationID) { presentation in
+                var slides: [SlideDocument] = []
+                for (index, new) in parsed.enumerated() {
+                    if index < presentation.slides.count {
+                        var slide = presentation.slides[index]
+                        Self.editPrimaryText(of: &slide) { $0.text = new.primaryText }
+                        slide.label = new.label
+                        slides.append(slide)
+                    } else {
+                        slides.append(Self.slide(text: new.primaryText, label: new.label, lookingLike: slides.last))
+                    }
+                }
+                presentation.slides = slides
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    /// A new slide with `text` that copies `template`'s text style, position, background and transition.
+    private static func slide(text: String, label: String?, lookingLike template: SlideDocument?) -> SlideDocument {
+        guard let template else {
+            var slide = SlideDocument.text(text)
+            slide.label = label
+            return slide
+        }
+        let look = template.primaryTextElement
+        let element = TextElement(text: text, role: look?.role ?? .body, style: look?.style, box: look?.box)
+        return SlideDocument(elements: [.text(element)], background: template.background,
+                             transition: template.transition, label: label)
+    }
+
+    /// Adds an arrangement and makes it the one that plays.
+    @discardableResult
+    public func addArrangement(name: String, groups: [String], toPresentation presentationID: UUID) -> Arrangement? {
+        recordingUndo("Add Arrangement") {
+            let arrangement = Arrangement(name: name.isEmpty ? "Arrangement" : name, groups: groups)
+            let result = editPresentation(presentationID) { presentation in
+                presentation.arrangements.append(arrangement)
+                presentation.activeArrangementID = arrangement.id
+            }
+            repairCue()
+            return result.isApplied ? arrangement : nil
+        }
+    }
+
+    @discardableResult
+    public func updateArrangement(_ arrangement: Arrangement, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Edit Arrangement") {
+            guard project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangement.id }) == true else {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { presentation in
+                if let index = presentation.arrangements.firstIndex(where: { $0.id == arrangement.id }) {
+                    presentation.arrangements[index] = arrangement
+                }
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    @discardableResult
+    public func deleteArrangement(_ arrangementID: UUID, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Delete Arrangement") {
+            guard project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangementID }) == true else {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { presentation in
+                presentation.arrangements.removeAll { $0.id == arrangementID }
+                if presentation.activeArrangementID == arrangementID { presentation.activeArrangementID = nil }
+            }
+            repairCue()
+            return result
+        }
+    }
+
+    /// Chooses the arrangement that plays. Nil plays every slide in order.
+    @discardableResult
+    public func setActiveArrangement(_ arrangementID: UUID?, inPresentation presentationID: UUID) -> CommandResult {
+        recordingUndo("Arrangement") {
+            if let arrangementID,
+               project.presentation(withID: presentationID)?.arrangements.contains(where: { $0.id == arrangementID }) != true {
+                return reject(.unknownArrangement)
+            }
+            let result = editPresentation(presentationID) { $0.activeArrangementID = arrangementID }
+            repairCue()
+            return result
+        }
+    }
+
+    // MARK: - Library
+
+    /// Adds a library presentation to the end of the playlist and selects it.
+    @discardableResult
+    public func addToPlaylist(_ presentationID: UUID) -> PresentationItem? {
+        guard presentationID != project.props.id, project.presentation(withID: presentationID) != nil else {
+            _ = reject(.unknownPresentation)
+            return nil
+        }
+        return recordingUndo("Add to Playlist") {
+            let item = PresentationItem(presentationID: presentationID)
+            project.playlist.items.append(item)
+            state.selectedItemID = item.id
+            lastRejection = nil
+            return item
+        }
+    }
+
+    /// Deletes a presentation from the library and removes it from the playlist. If it's live, it stays on the
+    /// audience output until something else is taken live.
+    @discardableResult
+    public func deletePresentation(_ presentationID: UUID) -> CommandResult {
+        recordingUndo("Delete Presentation") {
+            guard presentationID != project.props.id, project.presentation(withID: presentationID) != nil else {
+                return reject(.unknownPresentation)
+            }
+            project.presentations.removeAll { $0.id == presentationID }
+            project.playlist.items.removeAll { $0.presentationID == presentationID }
+            if let selected = state.selectedItemID, project.playlist.item(withID: selected) == nil {
+                state.selectedItemID = project.playlist.items.first?.id
+            }
+            if let preview = state.preview, project.slide(at: preview) == nil { state.preview = nil }
+            return applied()
         }
     }
 
@@ -581,6 +1044,11 @@ public final class PresentationCoordinator {
         guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
         state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
+        // An opaque slide replaces the background layer; a transparent one leaves what's on screen.
+        if rendered.background != .transparent {
+            state.liveBackground = rendered.background
+            state.clearedBackground = nil
+        }
         logger.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }
@@ -588,22 +1056,45 @@ public final class PresentationCoordinator {
     private func step(by offset: Int, boundary: CommandRejection) -> CommandResult {
         guard let live = state.live else { return reject(.nothingLive) }
         let sequence = slideSequence()
-        guard let index = sequence.firstIndex(of: live.position) else { return reject(.liveSlideMissing) }
+        guard let index = Self.index(of: live.position, in: sequence) else { return reject(.liveSlideMissing) }
         let target = index + offset
         guard sequence.indices.contains(target) else { return reject(boundary) }
         return goLive(at: sequence[target])
     }
 
-    /// Every slide in the playlist, in running order. Items with missing presentations are skipped.
+    /// Every slide in the playlist, in running order, following each presentation's active arrangement.
+    /// Items with missing presentations are skipped.
     private func slideSequence() -> [SlidePosition] {
         project.playlist.items.flatMap { item in
-            (project.presentation(withID: item.presentationID)?.slides ?? []).map {
-                SlidePosition(itemID: item.id, slideID: $0.id)
+            (project.presentation(withID: item.presentationID)?.arrangedSlides ?? []).map {
+                SlidePosition(itemID: item.id, slideID: $0.slideID, occurrence: $0.occurrence)
             }
         }
     }
 
+    /// Where a position is in the sequence. If its exact repeat is gone (the arrangement changed), the slide's
+    /// first appearance in the same item, so Next and Previous keep working.
+    private static func index(of position: SlidePosition, in sequence: [SlidePosition]) -> Int? {
+        sequence.firstIndex(of: position)
+            ?? sequence.firstIndex { $0.itemID == position.itemID && $0.slideID == position.slideID }
+    }
+
+    /// Drops a cue whose slide or repeat no longer exists, e.g. after a reflow or an arrangement change.
+    private func repairCue() {
+        guard let preview = state.preview else { return }
+        let stillPlays = project.presentation(forItem: preview.itemID)?.arrangedSlides
+            .contains { $0.slideID == preview.slideID && $0.occurrence == preview.occurrence } ?? false
+        if !stillPlays { state.preview = nil }
+    }
+
     private func editPresentation(_ presentationID: UUID, _ edit: (inout PresentationDocument) -> Void) -> CommandResult {
+        // The props library is edited like any presentation, so the slide editor works on props.
+        if presentationID == project.props.id {
+            let before = project.props
+            edit(&project.props)
+            if project.props != before { project.props.updatedAt = .now }
+            return applied()
+        }
         guard let index = project.presentations.firstIndex(where: { $0.id == presentationID }) else {
             return reject(.unknownPresentation)
         }

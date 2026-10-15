@@ -69,9 +69,11 @@ swift test
 | Cue a slide (preview only, audience unaffected) | Click it |
 | Take a slide live | Double-click it, press Return with the workspace focused, or ⌘Return |
 | Next / previous slide (continues into the next or previous presentation) | → or Space / ←, with the workspace focused, or ⌥⌘→ / ⌥⌘← from anywhere |
-| Clear the slide from the output | ⌥⌘C |
+| Clear the slide's words, keeping the background | ⌥⌘C (Clear Slide) |
+| Clear the background, keeping the words | ⌥⌘X (Clear Background) |
+| Clear both | ⌥⌘A (Clear All) |
 | Blackout | ⌥⌘B |
-| Restore after clear/blackout | ⌥⌘R |
+| Restore after a clear or blackout | ⌥⌘R |
 | Show/hide audience output | ⌥⌘O, or the **Output** toolbar menu |
 | New presentation / new slide | ⌘N / ⇧⌘N |
 | New song from pasted lyrics | ⌥⌘N, or **New Song…** under the playlist |
@@ -87,6 +89,40 @@ swift test
 **Undo.** ⌘Z undoes the last change to your slides and playlist, and ⇧⌘Z redoes it. Typing and dragging a slider undo in one step. While you're typing in a text field, ⌘Z undoes the typing first. Taking slides live, Clear and Blackout are never undone, so Undo can't change what the audience sees.
 
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
+
+**Song tools.**
+- **Reflow:** the **Reflow** button on a presentation (and in the slide editor) shows all its words as one document. Type, and the slides update as you go; they keep their style, and new slides copy the one before them. It uses the same format as New Song: a blank line starts a slide, and a section name (Verse 1, Coro…) labels the slides after it. ⌘Z undoes a run of typing in one step.
+- **Arrangements:** for a song with group labels, the arrangement menu next to Add Slide sets the order the groups play in, like ProPresenter, e.g. *Verse 1 · Chorus · Verse 2 · Chorus · Bridge · Chorus*. A repeated chorus plays again without copying its slides. The workspace shows the slides in that order, and → / Space step through each repeat. **Slide Order** plays every slide once, in order.
+- **Library:** under the playlist, the **Library** lists every presentation, including ones taken off the playlist. Click ⊕ (or double-click) to add one to the playlist; right-click to delete it.
+- **Search:** the field above the playlist filters the playlist and the library by title and by the words on the slides. It ignores case and accents.
+- **Thumbnail size:** the slider at the bottom right of the workspace sets the thumbnail size.
+- **Renaming:** click a presentation's title to rename it.
+
+**Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
+- **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
+- **Show Controls** at the bottom of the Live panel:
+  - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
+  - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
+- **Notes:** the live slide's notes also appear under the Audience preview.
+
+**Video backgrounds and the media bin.**
+- **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.
+- **Media cues:** click an item to put it straight on the audience output's background layer, behind the words on screen, like a ProPresenter media cue. Right-click to make it the background of the cued slide or of its presentation instead.
+- **Video backgrounds:** a video plays on the background layer and keeps playing, without restarting, while transparent slides change the words over it. In the Background inspector, choose **Video** to pick one and set its fill, looping, mute and dimming.
+- **Transport:** while a video is live, controls under the Audience preview play and pause it, scrub, show the time left, mute it and set the volume.
+- **Missing files:** a missing or unplayable video shows the default background with a warning and never holds up slide changes.
+- **File size:** exported projects include their videos, so they can be large.
+
+**Messages and props.** Two more layers over the slides, managed from **Show Controls** in the Live panel:
+- **Messages:** a bar across the bottom (or top) of the audience output, like "Parent of child {Number}, please come to the nursery". Words in braces are blanks you fill in when you click **Show…**, and `{timer:Sermon}` shows a live timer. Edit the text, position, size and colours from the ⋯ menu. One message shows at a time.
+- **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images. Changes to a prop that is on screen wait until you hide it and show it again (its tile says EDITED).
+- **Clearing:** Clear Messages (⌥⌘G) and Clear Props (⌥⌘P) are in the Clear button's menu. Clear All (⌥⌘A) clears every layer and Restore brings them back. Blackout hides everything.
+
+**Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
+- **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
+- **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.
+- **Example:** give the first slide of a song an image and set the rest to None. The image stays up for the whole song, and a Dissolve fades only the words.
+- **Clear per layer:** Clear Slide, Clear Background and Clear All work on the layers separately. The Clear button's arrow has all three.
 
 **Editing is non-destructive.** Editing a live slide does not change what the audience sees until you take that slide live again. The Live panel warns you when this is the case.
 

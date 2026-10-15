@@ -4,9 +4,9 @@ import PresenterCore
 import UniformTypeIdentifiers
 
 /// Which presentation the slide editor is open on, and the playlist entry it was opened from
-/// (Send to Live needs it).
+/// (Send to Live needs it). Props have no playlist entry, so nothing in them can be sent live.
 struct EditSession: Equatable {
-    let itemID: UUID
+    let itemID: UUID?
     let presentationID: UUID
     var initialSlideID: UUID?
 }
@@ -54,6 +54,7 @@ struct PresentationEditor: View {
     @State private var isInspectorPresented = true
     @State private var zoom: EditorZoom = .fit
     @State private var importError: String?
+    @State private var isReflowing = false
 
     private var presentation: PresentationDocument? {
         coordinator.project.presentation(withID: session.presentationID)
@@ -65,7 +66,7 @@ struct PresentationEditor: View {
     }
 
     var body: some View {
-        if let presentation, coordinator.project.playlist.item(withID: session.itemID) != nil {
+        if let presentation, session.itemID.map({ coordinator.project.playlist.item(withID: $0) != nil }) ?? true {
             editor(presentation)
         } else {
             // The presentation left the playlist while it was being edited.
@@ -131,6 +132,9 @@ struct PresentationEditor: View {
                 selectedSlideID = old
             }
         }
+        .sheet(isPresented: $isReflowing) {
+            ReflowSheet(coordinator: coordinator, presentationID: session.presentationID)
+        }
         .alert("Couldn't Add the Image", isPresented: Binding(
             get: { importError != nil },
             set: { if !$0 { importError = nil } }
@@ -157,13 +161,18 @@ struct PresentationEditor: View {
             Button { sendToLive() } label: {
                 Label("Send to Live", systemImage: "play.fill")
             }
-            .help("Take this slide live on the audience output")
-            .disabled(slide == nil)
+            .help(session.itemID == nil ? "Props are shown from Show Controls, not sent live" : "Take this slide live on the audience output")
+            .disabled(slide == nil || session.itemID == nil)
 
             Button { addSlide() } label: {
                 Label("Add Slide", systemImage: "plus.rectangle")
             }
             .help("Add a blank slide after this one")
+
+            Button { isReflowing = true } label: {
+                Label("Reflow", systemImage: "text.alignleft")
+            }
+            .help("Edit all of this presentation's words as one document")
 
             Button { addText() } label: {
                 Label("Text", systemImage: "character.textbox")
@@ -231,7 +240,8 @@ struct PresentationEditor: View {
 
     private func sendToLive() {
         guard let slide else { return }
-        coordinator.takeLive(slideID: slide.id, inItem: session.itemID)
+        guard let itemID = session.itemID else { return }
+        coordinator.takeLive(slideID: slide.id, inItem: itemID)
     }
 
     private func addSlide() {

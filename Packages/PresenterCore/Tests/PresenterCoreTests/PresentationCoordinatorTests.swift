@@ -226,6 +226,21 @@ final class PresentationCoordinatorTests: XCTestCase {
         XCTAssertFalse(f.coordinator.liveSlideHasPendingEdits)
     }
 
+    func testEditingLiveSlideNotesShowsAtOnceWithoutPendingEdits() {
+        let f = makeFixture()
+        f.coordinator.takeLive(slideID: f.a1.id, inItem: f.itemA.id)
+        XCTAssertNil(f.coordinator.liveNotes)
+
+        f.coordinator.setNotes("Ask volunteers to stand", slideID: f.a1.id, inPresentation: f.presentationA.id)
+
+        XCTAssertEqual(f.coordinator.liveNotes, "Ask volunteers to stand")
+        XCTAssertFalse(f.coordinator.liveSlideHasPendingEdits)
+        XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.a1)))
+
+        f.coordinator.setNotes("", slideID: f.a1.id, inPresentation: f.presentationA.id)
+        XCTAssertNil(f.coordinator.liveNotes)
+    }
+
     func testDeletingLiveSlideKeepsOutputAndRejectsNavigation() {
         let f = makeFixture()
         f.coordinator.takeLive(slideID: f.a1.id, inItem: f.itemA.id)

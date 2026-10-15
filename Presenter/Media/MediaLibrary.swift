@@ -1,3 +1,4 @@
+import AVFoundation
 import AppKit
 import ImageIO
 import Observation
@@ -37,6 +38,13 @@ final class MediaLibrary {
         missing.contains(assetID)
     }
 
+    /// Records that an asset's file has gone since it was loaded (e.g. a video that can no longer play), and
+    /// drops its picture, so previews and the output show the default background and the operator is warned.
+    func markMissing(_ assetID: UUID) {
+        missing.insert(assetID)
+        images[assetID] = nil
+    }
+
     /// Copies an image the operator picked into the media folder and starts decoding it.
     func importImage(at url: URL) async throws -> MediaAsset {
         let store = store
@@ -51,13 +59,28 @@ final class MediaLibrary {
         return asset
     }
 
-    /// Decodes any of these assets not already loaded or loading.
+    /// Copies a video the operator picked into the media folder, after checking it plays, and makes its still.
+    func importVideo(at url: URL) async throws -> MediaAsset {
+        let isScoped = url.startAccessingSecurityScopedResource()
+        defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+        let asset = try await store.importVideo(at: url)
+        logger.info("Imported video \(asset.originalFilename, privacy: .public) as \(asset.id, privacy: .public)")
+        preload([asset])
+        return asset
+    }
+
+    /// Decodes any of these assets not already loaded or loading. A video's image is its first frame, used for
+    /// thumbnails and previews.
     func preload(_ assets: [MediaAsset]) {
         for asset in assets where !requested.contains(asset.id) {
             requested.insert(asset.id)
             let url = store.url(for: asset)
+            let kind = asset.kind
             Task {
-                let image = await Task.detached { Self.decode(url) }.value
+                let image: CGImage? = switch kind {
+                case .image: await Task.detached { Self.decode(url) }.value
+                case .video: await Self.firstFrame(of: url)
+                }
                 if let image {
                     images[asset.id] = image
                 } else {
@@ -66,6 +89,14 @@ final class MediaLibrary {
                 }
             }
         }
+    }
+
+    private nonisolated static func firstFrame(of url: URL) async -> CGImage? {
+        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: maxPixelSize, height: maxPixelSize)
+        return try? await generator.image(at: CMTime(seconds: 0.1, preferredTimescale: 600)).image
     }
 
     private nonisolated static func decode(_ url: URL) -> CGImage? {

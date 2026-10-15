@@ -5,6 +5,7 @@ import Foundation
 public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
     public enum Kind: String, Codable, Hashable, Sendable {
         case image
+        case video
     }
 
     public let id: UUID
@@ -16,6 +17,8 @@ public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
     public var pixelWidth: Int
     public var pixelHeight: Int
     public var importedAt: Date
+    /// Seconds, for videos.
+    public var duration: Double?
 
     public init(
         id: UUID = UUID(),
@@ -24,7 +27,8 @@ public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
         storedFilename: String,
         pixelWidth: Int,
         pixelHeight: Int,
-        importedAt: Date = .now
+        importedAt: Date = .now,
+        duration: Double? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -33,5 +37,6 @@ public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
         self.pixelWidth = pixelWidth
         self.pixelHeight = pixelHeight
         self.importedAt = importedAt
+        self.duration = duration
     }
 }

@@ -6,7 +6,15 @@ import PresenterCore
 struct SlideRenderView: View {
     static let canvasSize = CGSize(width: 1920, height: 1080)
 
+    /// How a transparent background is drawn: a checkerboard in the operator's previews, nothing at all on the
+    /// audience output's slide layer (the background layer underneath shows through).
+    enum Transparency {
+        case checkerboard
+        case clear
+    }
+
     let scene: AudienceScene
+    var transparency: Transparency = .checkerboard
 
     var body: some View {
         GeometryReader { proxy in
@@ -22,8 +30,10 @@ struct SlideRenderView: View {
                 .scaleEffect(scale)
                 .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .background(Color.black)
+        // Letterboxing: black, except on a transparent layer, where the layer below provides it.
+        .background(transparency == .clear ? Color.clear : Color.black)
         .clipped()
+        .environment(\.slideTransparency, transparency)
     }
 
     @ViewBuilder
@@ -33,12 +43,55 @@ struct SlideRenderView: View {
             Color.black
         case .empty:
             DefaultBackground()
+        case .background(let background):
+            BackgroundLayer(background: background)
         case .slide(let rendered):
             ZStack {
                 BackgroundLayer(background: rendered.background)
                 SlideContent(slide: rendered.slide)
             }
         }
+    }
+}
+
+/// How operator previews show a transparent background, as ProPresenter does.
+private struct Checkerboard: View {
+    private static let square: CGFloat = 60
+
+    var body: some View {
+        Canvas { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(white: 0.82)))
+            let columns = Int((size.width / Self.square).rounded(.up))
+            let rows = Int((size.height / Self.square).rounded(.up))
+            for row in 0..<rows {
+                for column in 0..<columns where (row + column).isMultiple(of: 2) {
+                    let rect = CGRect(x: CGFloat(column) * Self.square, y: CGFloat(row) * Self.square,
+                                      width: Self.square, height: Self.square)
+                    context.fill(Path(rect), with: .color(Color(white: 0.62)))
+                }
+            }
+        }
+    }
+}
+
+private struct ShowsLiveVideoKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+private struct SlideTransparencyKey: EnvironmentKey {
+    static let defaultValue = SlideRenderView.Transparency.checkerboard
+}
+
+extension EnvironmentValues {
+    /// True on the audience output and its preview: video backgrounds show the playing video, not a still.
+    var showsLiveVideo: Bool {
+        get { self[ShowsLiveVideoKey.self] }
+        set { self[ShowsLiveVideoKey.self] = newValue }
+    }
+
+    var slideTransparency: SlideRenderView.Transparency {
+        get { self[SlideTransparencyKey.self] }
+        set { self[SlideTransparencyKey.self] = newValue }
     }
 }
 
@@ -57,11 +110,20 @@ private struct DefaultBackground: View {
 private struct BackgroundLayer: View {
     let background: SlideBackground?
     @Environment(MediaLibrary.self) private var mediaLibrary: MediaLibrary?
+    @Environment(MediaPlaybackController.self) private var playback: MediaPlaybackController?
+    @Environment(\.slideTransparency) private var transparency
+    @Environment(\.showsLiveVideo) private var showsLiveVideo
 
     var body: some View {
         switch background {
         case nil:
             DefaultBackground()
+        case .transparent:
+            if transparency == .checkerboard {
+                Checkerboard()
+            } else {
+                Color.clear
+            }
         case .color(let color):
             color.color
         case .image(let image):
@@ -75,6 +137,22 @@ private struct BackgroundLayer: View {
             } else {
                 DefaultBackground()
             }
+        case .video(let video):
+            // The audience output and the Audience preview show the playing video; everything else shows its
+            // first frame. A missing file shows the default background.
+            ZStack {
+                Color.black
+                if showsLiveVideo, let playback, playback.assetID == video.assetID {
+                    VideoPlayerLayerView(player: playback.player, scaling: video.scaling)
+                        .frame(width: SlideRenderView.canvasSize.width, height: SlideRenderView.canvasSize.height)
+                } else if let poster = mediaLibrary?.image(for: video.assetID) {
+                    scaled(Image(decorative: poster, scale: 1), scaling: video.scaling)
+                } else {
+                    DefaultBackground()
+                }
+                Color.black.opacity(video.dimming)
+            }
+            .clipped()
         }
     }
 
