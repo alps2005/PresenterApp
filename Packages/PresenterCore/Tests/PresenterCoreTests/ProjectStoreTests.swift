@@ -79,4 +79,36 @@ final class ProjectStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: moved.path))
         XCTAssertNil(try store.load())
     }
+
+    func testSavedProjectsUseTheCurrentSchemaVersion() throws {
+        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 2)
+        let data = try ProjectStore.encode(.sample())
+        struct Probe: Decodable { let schemaVersion: Int }
+        XCTAssertEqual(try JSONDecoder().decode(Probe.self, from: data).schemaVersion, 2)
+    }
+
+    /// A version 1 file (beta 1) loads, gets today's defaults, and is saved back as the current version.
+    func testVersionOneFileLoadsAndSavesAsCurrent() throws {
+        let json = """
+        {
+          "id": "8E4B1C2A-0000-4000-8000-000000000001",
+          "name": "Beta 1",
+          "schemaVersion": 1,
+          "presentations": [],
+          "playlist": {"id": "8E4B1C2A-0000-4000-8000-000000000005", "title": "S", "items": []},
+          "mediaAssets": []
+        }
+        """
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(json.utf8).write(to: fileURL)
+        let store = ProjectStore(fileURL: fileURL)
+
+        let project = try XCTUnwrap(try store.load())
+        XCTAssertEqual(project.name, "Beta 1")
+        XCTAssertEqual(project.schemaVersion, ProjectDocument.currentSchemaVersion)
+        XCTAssertEqual(project.timers.map(\.name), TimerDefinition.defaults().map(\.name))
+
+        try store.save(project)
+        XCTAssertEqual(try store.load()?.schemaVersion, ProjectDocument.currentSchemaVersion)
+    }
 }

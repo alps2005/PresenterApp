@@ -510,6 +510,11 @@ public final class PresentationCoordinator {
     }
 
     private func restore(_ snapshot: ProjectDocument) {
+        // The media library only grows, and imports aren't recorded: an asset added after the snapshot was taken
+        // stays, so undoing an earlier edit never loses an import (its file is already in the media folder).
+        var snapshot = snapshot
+        let snapshotAssetIDs = Set(snapshot.mediaAssets.map(\.id))
+        snapshot.mediaAssets += project.mediaAssets.filter { !snapshotAssetIDs.contains($0.id) }
         project = snapshot
         coalescingKey = nil
         // Keep selection and cue pointing at things that still exist; live state is left alone.
@@ -853,6 +858,7 @@ public final class PresentationCoordinator {
     }
 
     /// Records an imported media file so backgrounds can reference it. Adding the same asset twice is a no-op.
+    /// Not an undoable edit: assets are never removed, and undo keeps them (see `restore(_:)`).
     @discardableResult
     public func addMediaAsset(_ asset: MediaAsset) -> CommandResult {
         if project.asset(withID: asset.id) == nil {

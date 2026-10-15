@@ -1,7 +1,7 @@
 import Foundation
 
-/// A project bundled with the image files it uses, as one JSON file, so it can move to another Mac
-/// (Export Project…) and open there complete (Open Project…). Plain project files open too.
+/// A project bundled with the media files (images and videos) it uses, as one JSON file, so it can move to
+/// another Mac (Export Project…) and open there complete (Open Project…). Plain project files open too.
 public enum ProjectArchive {
     public static let currentFormatVersion = 1
 
@@ -9,7 +9,7 @@ public enum ProjectArchive {
         /// Marks the file as an archive rather than a plain project.
         let presenterArchive: Int
         let project: ProjectDocument
-        /// Image bytes keyed by the asset's stored filename.
+        /// Media file bytes (images and videos) keyed by the asset's stored filename.
         let media: [String: Data]
     }
 
@@ -20,7 +20,7 @@ public enum ProjectArchive {
     }
 
     /// The project plus every media file it references that exists in `mediaDirectory`.
-    /// Files that are missing are left out; those images show as missing after opening, as they did here.
+    /// Files that are missing are left out; that media shows as missing after opening, as it did here.
     public static func export(_ project: ProjectDocument, mediaDirectory: URL) throws -> Data {
         var media: [String: Data] = [:]
         for asset in project.mediaAssets {
@@ -34,7 +34,7 @@ public enum ProjectArchive {
         }
     }
 
-    /// Reads an exported archive or a plain project file. An archive's images are written into
+    /// Reads an exported archive or a plain project file. An archive's media files are written into
     /// `mediaDirectory` (files already there are kept) before the project is returned.
     public static func open(_ data: Data, mediaDirectory: URL) throws -> ProjectDocument {
         guard let header = try? JSONDecoder().decode(Header.self, from: data) else {

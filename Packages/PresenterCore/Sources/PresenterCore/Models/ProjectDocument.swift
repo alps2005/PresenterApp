@@ -2,7 +2,14 @@ import Foundation
 
 /// Top-level container for a show: the presentation library and the playlist that runs it.
 public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
-    public static let currentSchemaVersion = 1
+    /// The file format version written to disk. Bump it whenever a release adds or changes a saved field:
+    /// an older build then refuses the newer file (and moves it aside) instead of loading it, silently dropping
+    /// the fields it doesn't know, and saving over it. Older versions load through the Codable defaults.
+    ///
+    /// - 1: presentations, playlist, slides, formatting, backgrounds and media (v0.1.0-beta.1).
+    /// - 2: transparent backgrounds, song arrangements, timers, stage display, messages, props and video
+    ///   (added in v0.1.0-beta.2, which still wrote 1; written as 2 from beta.3).
+    public static let currentSchemaVersion = 2
 
     public let id: UUID
     public var name: String

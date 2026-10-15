@@ -38,6 +38,14 @@ struct OperatorView: View {
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
+        .sheet(isPresented: Binding(get: { persistence.activity != nil }, set: { _ in })) {
+            HStack(spacing: 12) {
+                ProgressView().controlSize(.small)
+                Text(persistence.activity ?? "")
+            }
+            .padding(20)
+            .interactiveDismissDisabled()
+        }
         .alert("Project", isPresented: Binding(
             get: { persistence.problem != nil },
             set: { if !$0 { persistence.problem = nil } }
