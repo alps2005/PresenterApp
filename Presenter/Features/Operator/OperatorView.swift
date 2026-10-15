@@ -25,6 +25,8 @@ struct OperatorView: View {
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
+    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
     var body: some View {
         Group {
@@ -34,6 +36,7 @@ struct OperatorView: View {
                 showView
             }
         }
+        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
@@ -84,6 +87,7 @@ struct OperatorView: View {
             }
         }
         .navigationTitle(coordinator.project.name)
+        .solidToolbar()
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Toggle(isOn: $isQuickEditVisible) {
@@ -91,11 +95,13 @@ struct OperatorView: View {
                 }
                 .toggleStyle(.button)
                 .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
+                .accessibilityLabel("Quick Edit")
                 Toggle(isOn: $isMediaBinVisible) {
                     Label("Media", systemImage: "photo.on.rectangle.angled")
                 }
                 .toggleStyle(.button)
                 .help("Show or hide the media bin (⌥⌘I)")
+                .accessibilityLabel("Media Bin")
                 OutputMenu(outputManager: outputManager)
             }
         }

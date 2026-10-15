@@ -63,8 +63,9 @@ struct EditorCanvas: View {
                     .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
             }
             .scrollIndicators(zoom == .fit ? .hidden : .automatic)
+            .hardScrollEdges()
         }
-        .background(Color(nsColor: .underPageBackgroundColor))
+        .solidPanel()
         .focusable()
         .focused($isCanvasFocused)
         .focusEffectDisabled()

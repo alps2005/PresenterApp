@@ -11,8 +11,11 @@ struct PresenterCommands: Commands {
     let ui: OperatorUIState
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    @AppStorage(Self.followSystemAppearanceKey) private var followsSystemAppearance = false
     @Environment(\.openWindow) private var openWindow
     @FocusedValue(\.editorElementActions) private var editorElementActions
+
+    static let followSystemAppearanceKey = "followSystemAppearance"
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -51,6 +54,9 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("e", modifiers: [.command, .option])
             Toggle("Media Bin", isOn: $isMediaBinVisible)
                 .keyboardShortcut("i", modifiers: [.command, .option])
+            Divider()
+            // The console is dark by default, for dark booths.
+            Toggle("Follow System Appearance", isOn: $followsSystemAppearance)
         }
 
         // Text fields and text editors undo their own typing while they have focus; everywhere else ⌘Z undoes

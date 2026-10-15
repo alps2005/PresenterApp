@@ -18,7 +18,7 @@ struct SlideThumbnailSidebar: View {
                     .tag(slide.id)
                     .contextMenu {
                         if let itemID {
-                            Button("Send to Live") {
+                            Button("Take Live") {
                                 coordinator.takeLive(slideID: slide.id, inItem: itemID)
                             }
                             Divider()
@@ -30,6 +30,8 @@ struct SlideThumbnailSidebar: View {
             }
             .onMove { coordinator.moveSlides(inPresentation: presentation.id, fromOffsets: $0, toOffset: $1) }
         }
+        .solidSidebar()
+        .hardScrollEdges()
         .safeAreaInset(edge: .bottom) {
             Button { onAddSlide() } label: {
                 Label("Add Slide", systemImage: "plus")
@@ -38,19 +40,8 @@ struct SlideThumbnailSidebar: View {
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .confirmationDialog(
-            "Delete this slide?",
-            isPresented: Binding(
-                get: { slidePendingDeletion != nil },
-                set: { if !$0 { slidePendingDeletion = nil } }
-            ),
-            presenting: slidePendingDeletion
-        ) { slide in
-            Button("Delete", role: .destructive) {
-                coordinator.deleteSlide(slide.id, inPresentation: presentation.id)
-            }
-        } message: { _ in
-            Text("If this slide is live, it stays on the audience output until you take another slide live.")
+        .confirmSlideDeletion(of: $slidePendingDeletion) { slide in
+            coordinator.deleteSlide(slide.id, inPresentation: presentation.id)
         }
     }
 
@@ -67,17 +58,13 @@ struct SlideThumbnailSidebar: View {
             VStack(alignment: .trailing, spacing: 3) {
                 SlideRenderView(scene: .slide(presentation.rendered(slide)))
                     .aspectRatio(16 / 9, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 4)
-                            .strokeBorder(isLive ? Color.red : Color.secondary.opacity(0.4), lineWidth: isLive ? 2 : 1)
-                    }
+                    .tileFrame(TileState(isLive: isLive, isCued: isCued), cornerRadius: Radius.badge)
                 if isLive || isCued || slide.label != nil {
                     HStack(spacing: 4) {
                         if let label = slide.label { GroupLabelTag(label: label) }
                         Spacer(minLength: 0)
-                        if isCued { StateBadge(text: "CUED", color: .accentColor) }
-                        if isLive { StateBadge(text: "LIVE", color: .red) }
+                        if isCued { StateBadge(.cued) }
+                        if isLive { StateBadge(.live) }
                     }
                 }
             }

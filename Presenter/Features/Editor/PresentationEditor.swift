@@ -4,7 +4,7 @@ import PresenterCore
 import UniformTypeIdentifiers
 
 /// Which presentation the slide editor is open on, and the playlist entry it was opened from
-/// (Send to Live needs it). Props have no playlist entry, so nothing in them can be sent live.
+/// (Take Live needs it). Props have no playlist entry, so nothing in them can be sent live.
 struct EditSession: Equatable {
     let itemID: UUID?
     let presentationID: UUID
@@ -116,6 +116,7 @@ struct PresentationEditor: View {
         }
         .navigationTitle(presentation.title.isEmpty ? "Untitled" : presentation.title)
         .toolbar { toolbar }
+        .solidToolbar()
         .onAppear {
             selectedSlideID = session.initialSlideID ?? presentation.slides.first?.id
         }
@@ -158,8 +159,8 @@ struct PresentationEditor: View {
         }
 
         ToolbarItemGroup(placement: .principal) {
-            Button { sendToLive() } label: {
-                Label("Send to Live", systemImage: "play.fill")
+            Button { takeLive() } label: {
+                Label("Take Live", systemImage: "play.fill")
             }
             .help(session.itemID == nil ? "Props are shown from Show Controls, not sent live" : "Take this slide live on the audience output")
             .disabled(slide == nil || session.itemID == nil)
@@ -238,7 +239,7 @@ struct PresentationEditor: View {
 
     // MARK: Actions
 
-    private func sendToLive() {
+    private func takeLive() {
         guard let slide else { return }
         guard let itemID = session.itemID else { return }
         coordinator.takeLive(slideID: slide.id, inItem: itemID)
@@ -285,15 +286,8 @@ struct PresentationEditor: View {
 
 /// Picking an image file and sizing it for the canvas, shared by the toolbar and the image inspector.
 enum EditorImageImport {
-    /// NSOpenPanel rather than `.fileImporter`, matching the background inspector.
     static func chooseImage(message: String) -> URL? {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.image]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = message
-        guard panel.runModal() == .OK else { return nil }
-        return panel.url
+        MediaPanel.choose([.image], message: message).first
     }
 
     /// A centred frame with the image's aspect ratio, at most 40% of the canvas wide and 60% high.

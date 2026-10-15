@@ -16,9 +16,7 @@ struct MediaBin: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Media").font(.headline)
-                Spacer()
+            PanelHeader(title: "Media") {
                 if isImporting { ProgressView().controlSize(.small) }
                 Button {
                     importMedia()
@@ -28,9 +26,7 @@ struct MediaBin: View {
                 .disabled(isImporting)
             }
             if !importErrors.isEmpty {
-                Label(importErrors.joined(separator: " "), systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                WarningLabel(importErrors.joined(separator: " "))
                     .lineLimit(2)
             }
             if coordinator.project.mediaAssets.isEmpty {
@@ -60,7 +56,8 @@ struct MediaBin: View {
                 if let image = mediaLibrary.image(for: asset.id) {
                     Image(decorative: image, scale: 1).resizable().aspectRatio(contentMode: .fill)
                 } else if mediaLibrary.isMissing(asset.id) {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Palette.warning)
+                        .accessibilityLabel("Missing file")
                 }
                 if asset.kind == .video {
                     VStack {
@@ -69,7 +66,7 @@ struct MediaBin: View {
                             Image(systemName: "film")
                             Spacer()
                             if let duration = asset.duration {
-                                Text(String(format: "%d:%02d", Int(duration) / 60, Int(duration) % 60)).monospacedDigit()
+                                Text(TimeText.format(duration)).monospacedDigit()
                             }
                         }
                         .font(.caption2.bold())
@@ -80,10 +77,9 @@ struct MediaBin: View {
                 }
             }
             .frame(width: 160, height: 90)
-            .clipShape(RoundedRectangle(cornerRadius: 5))
-            .overlay {
-                RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(isLive ? Color.red : Color.secondary.opacity(0.4), lineWidth: isLive ? 2 : 1)
+            .tileFrame(TileState(isLive: isLive))
+            .overlay(alignment: .topTrailing) {
+                if isLive { StateBadge(.live).padding(Spacing.xs) }
             }
             Text(asset.originalFilename)
                 .font(.caption2)
@@ -92,6 +88,8 @@ struct MediaBin: View {
                 .frame(width: 160, alignment: .leading)
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .onTapGesture { coordinator.showBackground(background) }
         .help("Click to show on the audience output, behind the words")
         .contextMenu {
@@ -118,13 +116,8 @@ struct MediaBin: View {
     }
 
     private func importMedia() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.image, .movie]
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.message = "Choose images and videos to add to the media bin"
-        guard panel.runModal() == .OK else { return }
-        let urls = panel.urls
+        let urls = MediaPanel.choose([.image, .movie], multiple: true, message: "Choose images and videos to add to the media bin")
+        guard !urls.isEmpty else { return }
         isImporting = true
         importErrors = []
         Task {

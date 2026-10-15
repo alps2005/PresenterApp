@@ -106,7 +106,7 @@ struct TextStyleControls: View {
     }
 
     private var italicToggle: some View {
-        Toggle(isOn: $style.isItalic) { Image(systemName: "italic") }
+        Toggle(isOn: $style.isItalic) { Image(systemName: "italic").accessibilityLabel("Italic") }
             .toggleStyle(.button)
             .help("Italic")
     }
@@ -136,9 +136,9 @@ struct TextStyleControls: View {
 
     private var alignmentPicker: some View {
         Picker("Alignment", selection: $style.alignment) {
-            Image(systemName: "text.alignleft").tag(HorizontalTextAlignment.leading)
-            Image(systemName: "text.aligncenter").tag(HorizontalTextAlignment.center)
-            Image(systemName: "text.alignright").tag(HorizontalTextAlignment.trailing)
+            Image(systemName: "text.alignleft").accessibilityLabel("Align left").tag(HorizontalTextAlignment.leading)
+            Image(systemName: "text.aligncenter").accessibilityLabel("Align centre").tag(HorizontalTextAlignment.center)
+            Image(systemName: "text.alignright").accessibilityLabel("Align right").tag(HorizontalTextAlignment.trailing)
         }
         .pickerStyle(.segmented)
         .labelsHidden()

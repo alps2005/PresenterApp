@@ -6,6 +6,7 @@ struct MessagesTab: View {
     let coordinator: PresentationCoordinator
     @State private var showing: MessageDefinition?
     @State private var editing: MessageDraft?
+    @State private var pendingDeletion: MessageDefinition?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -26,21 +27,27 @@ struct MessagesTab: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
+                         message: "If it's on screen, it stays until you clear messages. You can undo this.",
+                         of: $pendingDeletion) { message in
+            coordinator.deleteMessage(message.id)
+        }
     }
 
     private func row(_ message: MessageDefinition) -> some View {
         let isShowing = coordinator.state.activeMessage?.messageID == message.id
-        return HStack(spacing: 6) {
+        return RowCard(isHighlighted: isShowing) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(message.name).lineLimit(1)
                 Text(message.text).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             if isShowing {
+                StateBadge(.live)
                 Button("Hide") { coordinator.clearMessages() }
-                    .tint(.red)
             } else {
-                Button("Show…") {
+                // The ellipsis only when there are blanks to fill in first.
+                Button(message.fields.isEmpty ? "Show" : "Show…") {
                     if message.fields.isEmpty {
                         coordinator.showMessage(message.id)
                     } else {
@@ -51,23 +58,15 @@ struct MessagesTab: View {
                     MessageFieldsForm(coordinator: coordinator, message: message) { showing = nil }
                 }
             }
-            Menu {
+            RowMenuButton(subject: message.name) {
                 Button("Edit…") { editing = MessageDraft(message: message) }
                 Divider()
-                Button("Delete", role: .destructive) { coordinator.deleteMessage(message.id) }
-            } label: {
-                Image(systemName: "ellipsis.circle")
+                Button("Delete…", role: .destructive) { pendingDeletion = message }
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
             .popover(item: Binding(get: { editing?.message?.id == message.id ? editing : nil }, set: { editing = $0 })) { draft in
                 MessageEditor(coordinator: coordinator, draft: draft) { editing = nil }
             }
         }
-        .padding(8)
-        .background(isShowing ? Color.accentColor.opacity(0.15) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 6))
     }
 }
 
@@ -79,26 +78,15 @@ private struct MessageFieldsForm: View {
     @State private var values: [String: String] = [:]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(message.name).font(.headline)
+        PopoverForm(message.name, primary: "Show", onCancel: onDone, onSubmit: show) {
             ForEach(message.fields, id: \.self) { field in
                 TextField(field, text: Binding(get: { values[field] ?? "" }, set: { values[field] = $0 }))
                     .textFieldStyle(.roundedBorder)
-                    // Return in a popover's text field doesn't reach its default button, so submit here too.
-                    .onSubmit { show() }
             }
             Text(coordinator.messageText(message, values: values, at: .now))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            HStack {
-                Spacer()
-                Button("Cancel", role: .cancel) { onDone() }
-                Button("Show") { show() }
-                    .keyboardShortcut(.defaultAction)
-            }
         }
-        .padding(16)
-        .frame(width: 300)
     }
 
     private func show() {
@@ -119,14 +107,12 @@ private struct MessageEditor: View {
     @State private var message = MessageDefinition(name: "", text: "")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(draft.message == nil ? "New Message" : "Edit Message").font(.headline)
+        PopoverForm(draft.message == nil ? "New Message" : "Edit Message", primary: draft.message == nil ? "Add" : "Save",
+                    width: 320, canSubmit: isValid, onCancel: onDone, onSubmit: save) {
             TextField("Name", text: $message.name).textFieldStyle(.roundedBorder)
-                .onSubmit { saveIfValid() }
             TextField("Text, e.g. Parent of child {Number}…", text: $message.text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...4)
-                .onSubmit { saveIfValid() }
             Picker("Position", selection: $message.position) {
                 Text("Bottom").tag(MessageDefinition.Position.bottom)
                 Text("Top").tag(MessageDefinition.Position.top)
@@ -141,24 +127,11 @@ private struct MessageEditor: View {
                 ColorPicker("Bar", selection: Binding(get: { message.barColor.color }, set: { message.barColor = RGBAColor($0) }),
                             supportsOpacity: true)
             }
-            HStack {
-                Spacer()
-                Button("Cancel", role: .cancel) { onDone() }
-                Button(draft.message == nil ? "Add" : "Save") { save() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!isValid)
-            }
         }
-        .padding(16)
-        .frame(width: 320)
         .onAppear { if let existing = draft.message { message = existing } }
     }
 
     private var isValid: Bool { !message.text.trimmingCharacters(in: .whitespaces).isEmpty }
-
-    private func saveIfValid() {
-        if isValid { save() }
-    }
 
     private func save() {
         if draft.message != nil {
@@ -211,19 +184,17 @@ struct PropsTab: View {
         return VStack(alignment: .leading, spacing: 3) {
             SlideRenderView(scene: .slide(props.rendered(prop)))
                 .aspectRatio(16 / 9, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(isShowing ? Color.red : Color.secondary.opacity(0.4), lineWidth: isShowing ? 2 : 1)
-                }
+                .tileFrame(TileState(isLive: isShowing), cornerRadius: Radius.badge)
             HStack(spacing: 4) {
                 Text(prop.label ?? "Prop").font(.caption).lineLimit(1)
                 Spacer()
-                if isEdited { StateBadge(text: "EDITED", color: .orange) }
-                if isShowing { StateBadge(text: "ON", color: .red) }
+                if isEdited { StateBadge(.edited) }
+                if isShowing { StateBadge(.live) }
             }
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
         .onTapGesture { coordinator.toggleProp(prop.id) }
         .help(isEdited ? "Edited since it was shown. Hide and show it again to put the changes on screen."
               : isShowing ? "Click to hide" : "Click to show over the slides")
@@ -238,23 +209,12 @@ struct PropsTab: View {
             Button("Delete", role: .destructive) { coordinator.deleteProp(prop.id) }
         }
         .popover(item: Binding(get: { renaming?.id == prop.id ? renaming : nil }, set: { renaming = $0 })) { prop in
-            VStack(alignment: .leading, spacing: 10) {
+            PopoverForm("Rename Prop", primary: "Rename", width: 240, onCancel: { renaming = nil }) {
+                coordinator.renameProp(prop.id, to: name)
+                renaming = nil
+            } fields: {
                 TextField("Name", text: $name).textFieldStyle(.roundedBorder)
-                    .onSubmit {
-                        coordinator.renameProp(prop.id, to: name)
-                        renaming = nil
-                    }
-                HStack {
-                    Spacer()
-                    Button("Rename") {
-                        coordinator.renameProp(prop.id, to: name)
-                        renaming = nil
-                    }
-                    .keyboardShortcut(.defaultAction)
-                }
             }
-            .padding(16)
-            .frame(width: 240)
         }
     }
 }

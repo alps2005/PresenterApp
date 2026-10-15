@@ -42,6 +42,7 @@ struct ShowControls: View {
 private struct TimersTab: View {
     let coordinator: PresentationCoordinator
     @State private var editing: TimerDraft?
+    @State private var pendingDeletion: TimerDefinition?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -62,41 +63,49 @@ private struct TimersTab: View {
                 TimerEditor(coordinator: coordinator, draft: draft) { editing = nil }
             }
         }
+        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
+                         message: "Its running time is lost, and messages that use it show the blank instead. You can undo this.",
+                         of: $pendingDeletion) { timer in
+            coordinator.deleteTimer(timer.id)
+        }
     }
 
     private func row(_ timer: TimerDefinition, now: Date) -> some View {
         let run = coordinator.timerRun(for: timer.id)
         let seconds = coordinator.timerSeconds(timer.id, at: now) ?? 0
         let isOnStage = coordinator.project.stage.timerID == timer.id
-        return HStack(spacing: 6) {
+        return RowCard {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
+                HStack(spacing: Spacing.xs) {
                     Text(timer.name).lineLimit(1)
                     if isOnStage {
                         Image(systemName: "rectangle.on.rectangle").foregroundStyle(.secondary).help("Shown on the stage display")
+                            .accessibilityLabel("Shown on the stage display")
                     }
                 }
                 Text(timer.summary).font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
             Text(TimerDefinition.format(seconds))
-                .font(.body.monospacedDigit().bold())
-                .foregroundStyle(seconds < 0 && timer.isCountdown ? .red : .primary)
+                .font(Typography.timerValue)
+                .foregroundStyle(seconds < 0 && timer.isCountdown ? Palette.live : .primary)
             if !timer.followsClock {
                 Button {
-                    run.isRunning ? coordinator.stopTimer(timer.id) : coordinator.startTimer(timer.id)
+                    _ = run.isRunning ? coordinator.stopTimer(timer.id) : coordinator.startTimer(timer.id)
                 } label: {
                     Image(systemName: run.isRunning ? "pause.fill" : "play.fill")
                 }
                 .help(run.isRunning ? "Pause" : "Start")
+                .accessibilityLabel(run.isRunning ? "Pause \(timer.name)" : "Start \(timer.name)")
                 Button {
                     coordinator.resetTimer(timer.id)
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
                 }
                 .help("Reset")
+                .accessibilityLabel("Reset \(timer.name)")
             }
-            Menu {
+            RowMenuButton(subject: timer.name) {
                 Button(isOnStage ? "Hide on Stage Display" : "Show on Stage Display") {
                     var settings = coordinator.project.stage
                     settings.timerID = isOnStage ? nil : timer.id
@@ -104,19 +113,12 @@ private struct TimersTab: View {
                 }
                 Button("Edit…") { editing = TimerDraft(timer: timer) }
                 Divider()
-                Button("Delete", role: .destructive) { coordinator.deleteTimer(timer.id) }
-            } label: {
-                Image(systemName: "ellipsis.circle")
+                Button("Delete…", role: .destructive) { pendingDeletion = timer }
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
             .popover(item: Binding(get: { editing?.timer?.id == timer.id ? editing : nil }, set: { editing = $0 })) { draft in
                 TimerEditor(coordinator: coordinator, draft: draft) { editing = nil }
             }
         }
-        .padding(8)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 6))
     }
 }
 
@@ -144,11 +146,9 @@ private struct TimerEditor: View {
     @State private var time = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: .now) ?? .now
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(draft.timer == nil ? "New Timer" : "Edit Timer").font(.headline)
+        PopoverForm(draft.timer == nil ? "New Timer" : "Edit Timer", primary: draft.timer == nil ? "Add" : "Save",
+                    onCancel: onDone, onSubmit: save) {
             TextField("Name", text: $name).textFieldStyle(.roundedBorder)
-                // Return in a popover's text field doesn't reach its default button, so submit here too.
-                .onSubmit { save() }
             Picker("Type", selection: $kind) {
                 ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -165,15 +165,7 @@ private struct TimerEditor: View {
             case .elapsed:
                 Text("Counts up from zero when started.").font(.caption).foregroundStyle(.secondary)
             }
-            HStack {
-                Spacer()
-                Button("Cancel", role: .cancel) { onDone() }
-                Button(draft.timer == nil ? "Add" : "Save") { save() }
-                    .keyboardShortcut(.defaultAction)
-            }
         }
-        .padding(16)
-        .frame(width: 300)
         .onAppear { load() }
     }
 
@@ -262,6 +254,7 @@ private struct StageTab: View {
                             .foregroundStyle(.black)
                         Spacer()
                         Button("Hide") { coordinator.hideStageMessage() }
+                            .accessibilityLabel("Hide stage message")
                     }
                 }
                 Button(coordinator.state.stageMessage == nil ? "Send Message…" : "Change Message…") {
@@ -269,27 +262,15 @@ private struct StageTab: View {
                     isComposing = true
                 }
                 .popover(isPresented: $isComposing) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Message to the stage").font(.headline)
+                    PopoverForm("Message to the stage", primary: "Show on Stage", width: 320,
+                                onCancel: { isComposing = false }) {
+                        coordinator.showStageMessage(draftMessage)
+                        isComposing = false
+                    } fields: {
                         TextField("e.g. 5 minutes left", text: $draftMessage, axis: .vertical)
                             .textFieldStyle(.roundedBorder)
                             .lineLimit(2...4)
-                            .onSubmit {
-                                coordinator.showStageMessage(draftMessage)
-                                isComposing = false
-                            }
-                        HStack {
-                            Spacer()
-                            Button("Cancel", role: .cancel) { isComposing = false }
-                            Button("Show on Stage") {
-                                coordinator.showStageMessage(draftMessage)
-                                isComposing = false
-                            }
-                            .keyboardShortcut(.defaultAction)
-                        }
                     }
-                    .padding(16)
-                    .frame(width: 320)
                 }
             }
 

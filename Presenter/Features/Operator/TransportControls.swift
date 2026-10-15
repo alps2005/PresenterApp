@@ -11,19 +11,21 @@ struct TransportControls: View {
                     .frame(width: 14)
             }
             .help(playback.isPlaying ? "Pause the video" : "Play the video")
+            .accessibilityLabel(playback.isPlaying ? "Pause video" : "Play video")
 
             Slider(value: Binding(get: { playback.currentTime }, set: { playback.seek(to: $0) }),
                    in: 0...max(playback.duration, 0.1))
                 .disabled(playback.duration <= 0)
+                .accessibilityLabel("Video position")
 
-            Text("-" + Self.format(max(playback.duration - playback.currentTime, 0)))
+            Text("-" + TimeText.format(playback.duration - playback.currentTime))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(width: 44, alignment: .trailing)
                 .help("Time left in the clip")
 
             if playback.loops {
-                Image(systemName: "repeat").foregroundStyle(.secondary).help("Loops")
+                Image(systemName: "repeat").foregroundStyle(.secondary).help("Loops").accessibilityLabel("Loops")
             }
 
             Button { playback.toggleMute() } label: {
@@ -31,18 +33,15 @@ struct TransportControls: View {
                     .frame(width: 16)
             }
             .help(playback.isMuted ? "Unmute" : "Mute")
+            .accessibilityLabel(playback.isMuted ? "Unmute video" : "Mute video")
 
             Slider(value: Binding(get: { Double(playback.volume) }, set: { playback.volume = Float($0) }), in: 0...1)
                 .frame(width: 60)
                 .disabled(playback.isMuted)
                 .help("Volume")
+                .accessibilityLabel("Volume")
         }
         .controlSize(.small)
         .buttonStyle(.borderless)
-    }
-
-    private static func format(_ seconds: Double) -> String {
-        let total = Int(seconds.rounded())
-        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }

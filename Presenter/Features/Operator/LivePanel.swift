@@ -11,21 +11,14 @@ struct LivePanel: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Audience").font(.headline)
-                        Spacer()
-                        liveBadge
-                    }
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    PanelHeader(title: "Audience") { liveBadge }
                     SlideRenderView(scene: coordinator.audienceScene)
                         .overlay { OverlayLayers(coordinator: coordinator) }
                         .environment(\.showsLiveVideo, true)
                         .aspectRatio(16 / 9, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(coordinator.state.live == nil ? Color.secondary.opacity(0.4) : .red, lineWidth: 2)
-                        }
+                        .tileFrame(audienceTileState)
+                        .accessibilityLabel("Audience output preview")
                     if hasMissingMedia(coordinator.state.liveBackground), !coordinator.state.isBlackout {
                         missingMediaWarning(coordinator.state.liveBackground)
                     } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
@@ -39,29 +32,35 @@ struct LivePanel: View {
                     }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
-                              systemImage: "pencil.circle")
+                              systemImage: "pencil.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Palette.edited)
                     }
                 }
 
                 // Shown as it will appear: a transparent slide over the background that's on screen.
                 slot(title: "Up Next", slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
-                     placeholder: upNextPlaceholder)
-                slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued")
+                     placeholder: upNextPlaceholder, tile: .idle)
+                slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued", tile: .cued)
 
                 Divider()
                 ShowControls(coordinator: coordinator, outputManager: outputManager, onEditProps: onEditProps)
             }
-            .padding(16)
+            .padding(Spacing.lg)
         }
+        .hardScrollEdges()
+        .solidPanel()
+    }
+
+    /// Red while something is on the audience output, so the preview reads as live at a glance.
+    private var audienceTileState: TileState {
+        let state = coordinator.state
+        return !state.isBlackout && (state.live != nil || state.liveBackground != nil) ? .live : .idle
     }
 
     private func missingMediaWarning(_ background: SlideBackground?) -> some View {
         let kind = if case .video = background { "video" } else { "image" }
-        return Label("Background \(kind) missing. The default background is showing.", systemImage: "exclamationmark.triangle")
-            .font(.caption)
-            .foregroundStyle(.orange)
+        return WarningLabel("Background \(kind) missing. The default background is showing.")
     }
 
     /// The background's image or video is missing or unreadable, so the default background shows instead.
@@ -80,26 +79,27 @@ struct LivePanel: View {
     @ViewBuilder
     private var liveBadge: some View {
         if coordinator.state.isBlackout {
-            StateBadge(text: "BLACKOUT", color: .black)
+            StateBadge(.blackout)
         } else if coordinator.state.live != nil {
-            StateBadge(text: "LIVE", color: .red)
+            StateBadge(.live)
         } else if coordinator.state.liveBackground != nil {
-            StateBadge(text: "BACKGROUND ONLY", color: .gray)
+            StateBadge(.backgroundOnly)
         } else if coordinator.state.cleared != nil {
-            StateBadge(text: "CLEARED", color: .gray)
+            StateBadge(.cleared)
         } else {
-            StateBadge(text: "NOTHING LIVE", color: .gray)
+            StateBadge(.nothingLive)
         }
     }
 
-    private func slot(title: String, slide: RenderedSlide?, placeholder: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.subheadline.bold()).foregroundStyle(.secondary)
+    private func slot(title: String, slide: RenderedSlide?, placeholder: String, tile: TileState) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(title).font(Typography.sectionHeader).foregroundStyle(.secondary)
             if let slide {
                 SlideRenderView(scene: .slide(slide))
                     .aspectRatio(16 / 9, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .tileFrame(tile)
                     .frame(maxWidth: 220)
+                    .accessibilityLabel("\(title) slide preview")
                 if hasMissingMedia(slide.background) {
                     missingMediaWarning(slide.background)
                 }

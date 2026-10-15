@@ -89,9 +89,9 @@ struct EditorInspector: View {
                         update(.text(updated), on: slide)
                     }
                 )) {
-                    Image(systemName: "arrow.up.to.line").tag(VerticalTextAlignment.top)
-                    Image(systemName: "arrow.up.and.down").tag(VerticalTextAlignment.center)
-                    Image(systemName: "arrow.down.to.line").tag(VerticalTextAlignment.bottom)
+                    Image(systemName: "arrow.up.to.line").accessibilityLabel("Top").tag(VerticalTextAlignment.top)
+                    Image(systemName: "arrow.up.and.down").accessibilityLabel("Middle").tag(VerticalTextAlignment.center)
+                    Image(systemName: "arrow.down.to.line").accessibilityLabel("Bottom").tag(VerticalTextAlignment.bottom)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -115,9 +115,9 @@ struct EditorInspector: View {
                     update(.shape(updated), on: slide)
                 }
             )) {
-                Image(systemName: "rectangle").tag(ShapeElement.Kind.rectangle).help("Rectangle")
-                Image(systemName: "app").tag(ShapeElement.Kind.roundedRectangle).help("Rounded rectangle")
-                Image(systemName: "circle").tag(ShapeElement.Kind.ellipse).help("Oval")
+                Image(systemName: "rectangle").accessibilityLabel("Rectangle").tag(ShapeElement.Kind.rectangle).help("Rectangle")
+                Image(systemName: "app").accessibilityLabel("Rounded rectangle").tag(ShapeElement.Kind.roundedRectangle).help("Rounded rectangle")
+                Image(systemName: "circle").accessibilityLabel("Oval").tag(ShapeElement.Kind.ellipse).help("Oval")
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -167,13 +167,11 @@ struct EditorInspector: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             if mediaLibrary.isMissing(image.assetID) {
-                Label("The image file is missing or unreadable.", systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                WarningLabel("The image file is missing or unreadable.")
             }
             Button("Replace Image…") { replaceImage(image, slide: slide) }
             if let importError {
-                Label(importError, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                WarningLabel(importError)
             }
         }
         section("Scaling") {
@@ -237,7 +235,7 @@ struct EditorInspector: View {
             .font(.body)
             .frame(height: 110)
             .scrollContentBackground(.hidden)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 6))
+            .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
             Text("Only you see these. The audience never does.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

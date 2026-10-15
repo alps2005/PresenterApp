@@ -28,7 +28,7 @@ struct ReflowSheet: View {
                     .font(.body.monospaced())
                     .scrollContentBackground(.hidden)
                     .padding(6)
-                    .background(.background.secondary, in: RoundedRectangle(cornerRadius: 6))
+                    .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
                     .frame(minWidth: 360, minHeight: 420)
                     .onChange(of: text) { _, newText in
                         coordinator.reflow(newText, presentationID: presentationID)
