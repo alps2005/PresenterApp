@@ -23,8 +23,10 @@ final class AppEnvironment {
         let initial = ProjectPersistence.loadInitialProject(from: store)
         // Live and cued state always start empty: nothing reaches the audience until the operator takes it live.
         coordinator = PresentationCoordinator(project: initial.project)
-        persistence = ProjectPersistence(coordinator: coordinator, store: store, loadProblem: initial.problem)
         mediaLibrary = MediaLibrary()
+        persistence = ProjectPersistence(
+            coordinator: coordinator, store: store, mediaDirectory: mediaLibrary.store.directory, loadProblem: initial.problem
+        )
         playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         preloadProjectMedia()

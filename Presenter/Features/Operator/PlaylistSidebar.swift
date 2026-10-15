@@ -40,6 +40,8 @@ struct PlaylistSidebar: View {
                 }
             }
         }
+        .solidSidebar()
+        .hardScrollEdges()
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search titles and words")
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .leading, spacing: 6) {
@@ -117,6 +119,13 @@ struct PlaylistSidebar: View {
             Label(presentation.title.isEmpty ? "Untitled" : presentation.title, systemImage: "doc.text")
                 .foregroundStyle(inPlaylist ? .primary : .secondary)
             Spacer()
+            // Not by colour alone: a mark shows which presentations are already in the playlist.
+            if inPlaylist {
+                Image(systemName: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .help("In the playlist")
+                    .accessibilityLabel("In the playlist")
+            }
             Button {
                 addToPlaylist(presentation)
             } label: {
@@ -124,6 +133,7 @@ struct PlaylistSidebar: View {
             }
             .buttonStyle(.borderless)
             .help("Add to Playlist")
+            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Playlist")
         }
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { addToPlaylist(presentation) }
@@ -149,16 +159,16 @@ struct PlaylistSidebar: View {
                 Spacer()
                 if coordinator.state.live?.position.itemID == item.id {
                     Image(systemName: "dot.radiowaves.left.and.right")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Palette.live)
                         .help("Live")
+                        .accessibilityLabel("Live")
                 }
                 Text("\(presentation.slides.count)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
         } else {
-            Label("Missing presentation", systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
+            WarningLabel("Missing presentation")
         }
     }
 }

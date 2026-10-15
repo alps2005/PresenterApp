@@ -92,8 +92,7 @@ struct BackgroundInspector: View {
             }
 
             if let importError {
-                Label(importError, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                WarningLabel(importError)
             }
         }
         .controlSize(.small)
@@ -110,17 +109,15 @@ struct BackgroundInspector: View {
                 .disabled(isImporting)
         }
         if mediaLibrary.isMissing(image.assetID) {
-            Label("The image file is missing or unreadable. Slides show the default background instead.",
-                  systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
+            WarningLabel("The image file is missing or unreadable. Slides show the default background instead.")
         }
         HStack(spacing: 16) {
             Picker("Scaling", selection: Binding(
                 get: { image.scaling },
                 set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
             )) {
-                Text("Fill").tag(ImageScaling.fill)
                 Text("Fit").tag(ImageScaling.fit)
+                Text("Fill").tag(ImageScaling.fill)
                 Text("Stretch").tag(ImageScaling.stretch)
             }
             .pickerStyle(.segmented)
@@ -159,9 +156,7 @@ struct BackgroundInspector: View {
                 .disabled(isImporting)
         }
         if mediaLibrary.isMissing(video.assetID) {
-            Label("The video file is missing or unreadable. Slides show the default background instead.",
-                  systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
+            WarningLabel("The video file is missing or unreadable. Slides show the default background instead.")
         }
         HStack(spacing: 16) {
             Picker("Scaling", selection: Binding(get: { video.scaling }, set: { value in
@@ -169,8 +164,8 @@ struct BackgroundInspector: View {
                 updated.scaling = value
                 apply(.video(updated))
             })) {
-                Text("Fill").tag(ImageScaling.fill)
                 Text("Fit").tag(ImageScaling.fit)
+                Text("Fill").tag(ImageScaling.fill)
                 Text("Stretch").tag(ImageScaling.stretch)
             }
             .pickerStyle(.segmented)
@@ -199,12 +194,7 @@ struct BackgroundInspector: View {
 
     /// Asks for a video, checks it plays, copies it into the media library and uses it.
     private func chooseVideo() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.movie]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Choose a background video"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let url = MediaPanel.choose([.movie], message: "Choose a background video").first else { return }
 
         let previous = background
         isImporting = true
@@ -230,14 +220,7 @@ struct BackgroundInspector: View {
 
     /// Asks for an image, copies it into the media library and uses it. Cancelling changes nothing.
     private func chooseImage() {
-        // NSOpenPanel rather than `.fileImporter`: this view can live in a popover that closes
-        // when the panel takes focus, which would drop a SwiftUI importer's callback.
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.image]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Choose a background image"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let url = MediaPanel.choose([.image], message: "Choose a background image").first else { return }
 
         let previous = background
         isImporting = true

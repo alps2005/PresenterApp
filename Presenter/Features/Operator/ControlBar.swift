@@ -5,12 +5,12 @@ struct ControlBar: View {
     let coordinator: PresentationCoordinator
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.md) {
             Button { coordinator.takeLive() } label: {
                 Label("Take Live", systemImage: "play.fill")
             }
             .buttonStyle(.borderedProminent)
-            .tint(.red)
+            .tint(Palette.live)
             .disabled(coordinator.state.preview == nil)
             .help("Send the cued slide to the audience (Return or ⌘Return)")
 
@@ -39,9 +39,12 @@ struct ControlBar: View {
             .disabled(!hasAnythingToClear)
             .help("Click to clear the slide, keeping its background (⌥⌘C). Use the arrow for Clear Background (⌥⌘X) or Clear All (⌥⌘A).")
 
+            // Set apart from Clear and Restore: it takes everything off the screen at once.
             Button { coordinator.blackout() } label: {
-                Label("Blackout", systemImage: "rectangle.fill")
+                Label("Blackout", systemImage: "moon.fill")
             }
+            .buttonStyle(.borderedProminent)
+            .tint(Palette.blackout)
             .disabled(coordinator.state.isBlackout)
             .help("Show pure black on the audience output (⌥⌘B)")
 
@@ -54,8 +57,8 @@ struct ControlBar: View {
             Spacer()
 
             if let rejection = coordinator.lastRejection {
-                Label(rejection.message, systemImage: "exclamationmark.circle")
-                    .foregroundStyle(.secondary)
+                Label(rejection.message, systemImage: "exclamationmark.circle.fill")
+                    .foregroundStyle(Palette.warning)
                     .lineLimit(1)
             } else {
                 Text("→ or Space next · ← previous")
@@ -65,9 +68,9 @@ struct ControlBar: View {
         }
         .controlSize(.large)
         .labelStyle(.titleAndIcon)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
+        .solidPanel(Palette.panelRaised)
     }
 
     private var hasAnythingToClear: Bool {

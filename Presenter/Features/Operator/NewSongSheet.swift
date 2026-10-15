@@ -29,7 +29,7 @@ struct NewSongSheet: View {
                     .font(.body.monospaced())
                     .scrollContentBackground(.hidden)
                     .padding(6)
-                    .background(.background.secondary, in: RoundedRectangle(cornerRadius: 6))
+                    .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
                     .frame(minWidth: 320, minHeight: 300)
                     .overlay(alignment: .topLeading) {
                         if lyrics.isEmpty {
@@ -121,13 +121,14 @@ struct GroupLabelTag: View {
 }
 
 extension SongSectionKind {
-    /// Kept clear of the red LIVE and accent-blue CUED badges.
+    /// Kept clear of red LIVE, blue CUED and amber warnings. (EDITED shares purple with Chorus, but it's a
+    /// badge with a pencil icon, not a capsule.)
     var color: Color {
         switch self {
         case .verse: .indigo
         case .preChorus: .teal
         case .chorus: .purple
-        case .bridge: .orange
+        case .bridge: .brown
         case .other: .gray
         }
     }

@@ -120,6 +120,38 @@ public enum Snapping {
     }
 }
 
+extension Snapping {
+    /// `origin` with the `moving` edges dragged by (`dx`, `dy`), before snapping. Each moving edge stays on the
+    /// canvas and at least `minimumSize` from the opposite edge; the other edges stay put.
+    public static func resized(
+        _ origin: NormalizedRect, moving edges: Edges, by dx: Double, _ dy: Double, minimumSize: Double
+    ) -> NormalizedRect {
+        var left = origin.minX, right = origin.maxX
+        var top = origin.minY, bottom = origin.maxY
+        if edges.left { left = min(max(left + dx, 0), right - minimumSize) }
+        if edges.right { right = max(min(right + dx, 1), left + minimumSize) }
+        if edges.top { top = min(max(top + dy, 0), bottom - minimumSize) }
+        if edges.bottom { bottom = max(min(bottom + dy, 1), top + minimumSize) }
+        return NormalizedRect(x: left, y: top, width: right - left, height: bottom - top)
+    }
+}
+
+extension SlideElement {
+    /// A copy with a new identity for pasting. Like Keynote, a copy that would land exactly on an element
+    /// already on the slide is nudged down and to the right by `offset`, up to `maxNudges` times.
+    public func pastedCopy(
+        avoiding occupied: [NormalizedRect], offset: (dx: Double, dy: Double), maxNudges: Int = 20
+    ) -> SlideElement {
+        var copy = duplicated()
+        var nudges = 0
+        while let frame = copy.frame, nudges < maxNudges, occupied.contains(where: { $0.isClose(to: frame) }) {
+            copy = copy.duplicated(offsetBy: offset.dx, offset.dy)
+            nudges += 1
+        }
+        return copy
+    }
+}
+
 extension NormalizedRect {
     public var minX: Double { x }
     public var midX: Double { x + width / 2 }
@@ -127,4 +159,9 @@ extension NormalizedRect {
     public var minY: Double { y }
     public var midY: Double { y + height / 2 }
     public var maxY: Double { y + height }
+
+    /// The same frame, allowing for floating-point error.
+    public func isClose(to other: NormalizedRect) -> Bool {
+        abs(x - other.x) < 1e-6 && abs(y - other.y) < 1e-6 && abs(width - other.width) < 1e-6 && abs(height - other.height) < 1e-6
+    }
 }

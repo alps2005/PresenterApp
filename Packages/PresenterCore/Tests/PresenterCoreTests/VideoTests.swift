@@ -16,6 +16,8 @@ final class VideoTests: XCTestCase {
     }
 
     /// Writes a one-second, 64×36 H.264 movie of solid frames.
+    private struct MovieWriterStalled: Error {}
+
     private func makeMovie() async throws -> URL {
         let url = root.appendingPathComponent("clip.mov")
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
@@ -29,11 +31,17 @@ final class VideoTests: XCTestCase {
         writer.add(input)
         XCTAssertTrue(writer.startWriting())
         writer.startSession(atSourceTime: .zero)
+        // Fail after 10 seconds rather than hang the test run if the writer stalls.
+        let deadline = Date.now.addingTimeInterval(10)
         for frame in 0..<10 {
-            while !input.isReadyForMoreMediaData { try await Task.sleep(nanoseconds: 1_000_000) }
+            while !input.isReadyForMoreMediaData {
+                guard Date.now < deadline else { throw MovieWriterStalled() }
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+            let pool = try XCTUnwrap(adaptor.pixelBufferPool, "No pixel buffer pool")
             var buffer: CVPixelBuffer?
-            CVPixelBufferPoolCreatePixelBuffer(nil, adaptor.pixelBufferPool!, &buffer)
-            adaptor.append(buffer!, withPresentationTime: CMTime(value: CMTimeValue(frame), timescale: 10))
+            CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer)
+            XCTAssertTrue(adaptor.append(try XCTUnwrap(buffer), withPresentationTime: CMTime(value: CMTimeValue(frame), timescale: 10)))
         }
         input.markAsFinished()
         await writer.finishWriting()

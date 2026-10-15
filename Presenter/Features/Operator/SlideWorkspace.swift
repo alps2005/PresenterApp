@@ -28,6 +28,7 @@ struct SlideWorkspace: View {
     @State private var topItemID: UUID?
     /// Where each on-screen slide sits. A plain reference, so scrolling doesn't re-render the workspace.
     @State private var slideFrames = SlideFrames()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private struct SlideDeletion: Identifiable {
         let slide: SlideDocument
@@ -79,19 +80,8 @@ struct SlideWorkspace: View {
             }
             .onChange(of: reflowPresentationID) { _, id in if id == nil { isWorkspaceFocused = true } }
             .onChange(of: arrangementDraft?.id) { _, id in if id == nil { isWorkspaceFocused = true } }
-            .confirmationDialog(
-                "Delete this slide?",
-                isPresented: Binding(
-                    get: { slidePendingDeletion != nil },
-                    set: { if !$0 { slidePendingDeletion = nil } }
-                ),
-                presenting: slidePendingDeletion
-            ) { deletion in
-                Button("Delete", role: .destructive) {
-                    coordinator.deleteSlide(deletion.slide.id, inPresentation: deletion.presentationID)
-                }
-            } message: { _ in
-                Text("If this slide is live, it stays on the audience output until you take another slide live.")
+            .confirmSlideDeletion(of: $slidePendingDeletion) { deletion in
+                coordinator.deleteSlide(deletion.slide.id, inPresentation: deletion.presentationID)
             }
         }
     }
@@ -104,16 +94,18 @@ struct SlideWorkspace: View {
     /// Like ProPresenter's slide size slider, bottom right of the slide view.
     private var sizeSlider: some View {
         HStack(spacing: 6) {
-            Image(systemName: "square.grid.3x3").font(.caption)
+            Image(systemName: "square.grid.3x3").font(.caption).accessibilityHidden(true)
             Slider(value: $thumbnailWidth, in: Self.thumbnailWidths)
                 .frame(width: 110)
                 .controlSize(.mini)
-            Image(systemName: "square.grid.2x2").font(.caption)
+                .accessibilityLabel("Thumbnail size")
+            Image(systemName: "square.grid.2x2").font(.caption).accessibilityHidden(true)
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
+        .background(Palette.panelRaised, in: Capsule())
+        .overlay { Capsule().strokeBorder(Palette.hairline, lineWidth: 0.5) }
         .padding(10)
         .help("Thumbnail size")
     }
@@ -132,6 +124,7 @@ struct SlideWorkspace: View {
                     }
                 }
                 .coordinateSpace(name: Self.coordinateSpace)
+                .hardScrollEdges()
                 // Measured positions rather than `scrollPosition(id:)`, which misses scrolls the app makes itself
                 // (following the live slide), so the sidebar would lag behind.
                 .onPreferenceChange(SlideFramesKey.self) { slideFrames.frames = $0 }
@@ -165,7 +158,7 @@ struct SlideWorkspace: View {
                 }
                 .onChange(of: scrollRequest) { _, itemID in
                     guard let itemID else { return }
-                    withAnimation { proxy.scrollTo(itemID, anchor: .top) }
+                    withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(itemID, anchor: .top) }
                     scrollRequest = nil
                 }
                 // Keep the live and cued slides on screen. Next/Previous crossing into another presentation
@@ -198,7 +191,7 @@ struct SlideWorkspace: View {
         } else {
             anchor = .center
         }
-        withAnimation { proxy.scrollTo(key, anchor: anchor) }
+        withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(key, anchor: anchor) }
     }
 
     /// The first presentation whose title is visible. When a long presentation fills the view and no
@@ -219,9 +212,9 @@ struct SlideWorkspace: View {
                 header(presentation: presentation, itemID: item.id)
                 grid(presentation: presentation, itemID: item.id)
             } else {
-                Label("Missing presentation", systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
-                    .padding(16)
+                WarningLabel("Missing presentation")
+                    .font(.body)
+                    .padding(Spacing.lg)
             }
             Divider()
         }
@@ -242,7 +235,7 @@ struct SlideWorkspace: View {
                 .layoutPriority(1)
 
             if coordinator.state.live?.position.itemID == itemID {
-                StateBadge(text: "LIVE", color: .red)
+                StateBadge(.live)
             }
 
             Spacer(minLength: 8)
@@ -476,42 +469,18 @@ struct SlideThumbnail: View {
         VStack(alignment: .leading, spacing: 6) {
             SlideRenderView(scene: .slide(slide))
                 .aspectRatio(16 / 9, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6)
-                        .strokeBorder(borderColor, lineWidth: isLive || isCued ? 3 : 1)
-                }
+                .tileFrame(TileState(isLive: isLive, isCued: isCued))
             HStack(spacing: 6) {
                 Text("\(number)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                 if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
-                if isCued { StateBadge(text: "CUED", color: .accentColor) }
-                if isLive { StateBadge(text: "LIVE", color: .red) }
+                if isCued { StateBadge(.cued) }
+                if isLive { StateBadge(.live) }
             }
             .font(.caption)
         }
         .contentShape(Rectangle())
-    }
-
-    private var borderColor: Color {
-        if isLive { return .red }
-        if isCued { return .accentColor }
-        return .secondary.opacity(0.4)
-    }
-}
-
-struct StateBadge: View {
-    let text: String
-    let color: Color
-
-    var body: some View {
-        Text(text)
-            .font(.caption2.bold())
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color, in: Capsule())
-            .foregroundStyle(.white)
     }
 }

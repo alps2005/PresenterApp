@@ -124,4 +124,30 @@ final class UndoTests: XCTestCase {
         c.undo()
         XCTAssertEqual(slides(c, p.id)[0].elements.count, 1)
     }
+
+    func testUndoKeepsMediaImportedAfterTheEdit() {
+        let (c, _, p) = makeCoordinator()
+        c.renamePresentation(p.id, to: "Renamed")
+        let asset = MediaAsset(originalFilename: "sky.jpg", storedFilename: "s.jpg", pixelWidth: 4, pixelHeight: 3)
+        c.addMediaAsset(asset)
+
+        c.undo()
+        XCTAssertEqual(c.project.presentation(withID: p.id)?.title, "P")
+        XCTAssertNotNil(c.project.asset(withID: asset.id))
+
+        c.redo()
+        XCTAssertEqual(c.project.presentation(withID: p.id)?.title, "Renamed")
+        XCTAssertNotNil(c.project.asset(withID: asset.id))
+    }
+
+    func testUndoingABackgroundKeepsItsImportedImage() {
+        let (c, _, p) = makeCoordinator()
+        let asset = MediaAsset(originalFilename: "sky.jpg", storedFilename: "s.jpg", pixelWidth: 4, pixelHeight: 3)
+        c.addMediaAsset(asset)
+        c.setSlideBackground(.image(ImageBackground(assetID: asset.id)), slideID: p.slides[0].id, inPresentation: p.id)
+
+        c.undo()
+        XCTAssertNil(slides(c, p.id)[0].background)
+        XCTAssertEqual(c.project.mediaAssets.map(\.id), [asset.id])
+    }
 }

@@ -25,6 +25,8 @@ struct OperatorView: View {
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
+    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
     var body: some View {
         Group {
@@ -34,9 +36,18 @@ struct OperatorView: View {
                 showView
             }
         }
+        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
+        }
+        .sheet(isPresented: Binding(get: { persistence.activity != nil }, set: { _ in })) {
+            HStack(spacing: 12) {
+                ProgressView().controlSize(.small)
+                Text(persistence.activity ?? "")
+            }
+            .padding(20)
+            .interactiveDismissDisabled()
         }
         .alert("Project", isPresented: Binding(
             get: { persistence.problem != nil },
@@ -76,20 +87,44 @@ struct OperatorView: View {
             }
         }
         .navigationTitle(coordinator.project.name)
-        .toolbar {
+        .solidToolbar()
+        .toolbar { operatorToolbar }
+    }
+
+    /// On macOS 26+, each button sits on its own instead of sharing one glass capsule (see ADR 0001).
+    @ToolbarContentBuilder
+    private var operatorToolbar: some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            ToolbarItem(placement: .primaryAction) { quickEditToggle }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { mediaBinToggle }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
             ToolbarItemGroup(placement: .primaryAction) {
-                Toggle(isOn: $isQuickEditVisible) {
-                    Label("Quick Edit", systemImage: "slider.horizontal.3")
-                }
-                .toggleStyle(.button)
-                .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
-                Toggle(isOn: $isMediaBinVisible) {
-                    Label("Media", systemImage: "photo.on.rectangle.angled")
-                }
-                .toggleStyle(.button)
-                .help("Show or hide the media bin (⌥⌘I)")
+                quickEditToggle
+                mediaBinToggle
                 OutputMenu(outputManager: outputManager)
             }
         }
+    }
+
+    private var quickEditToggle: some View {
+        Toggle(isOn: $isQuickEditVisible) {
+            Label("Quick Edit", systemImage: "slider.horizontal.3")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
+        .accessibilityLabel("Quick Edit")
+    }
+
+    private var mediaBinToggle: some View {
+        Toggle(isOn: $isMediaBinVisible) {
+            Label("Media", systemImage: "photo.on.rectangle.angled")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide the media bin (⌥⌘I)")
+        .accessibilityLabel("Media Bin")
     }
 }

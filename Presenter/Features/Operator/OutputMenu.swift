@@ -1,3 +1,4 @@
+import PresenterCore
 import SwiftUI
 
 /// Toolbar control that shows output health and chooses where the audience output and the stage display go.
@@ -41,7 +42,7 @@ struct OutputMenu: View {
     private var statusLabel: some View {
         if case .displayMissing(let name) = outputManager.status(.stage), !isAudienceMissing {
             Label("Stage display \(name) disconnected", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Palette.warning)
         } else {
             switch outputManager.status {
             case .off:
@@ -52,7 +53,7 @@ struct OutputMenu: View {
                 Label("Output: \(name)", systemImage: "display")
             case .displayMissing(let name):
                 Label("\(name) disconnected", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Palette.warning)
             }
         }
     }
