@@ -189,4 +189,10 @@ Logs use the subsystem `io.github.alps2005.Presenter` and can be viewed in Conso
 
 ## License
 
-Not chosen yet. See section 11 of the proposal.
+Copyright © 2026 Adrian Palma.
+
+Presenter is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+Presenter is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [GNU General Public License](LICENSE) for more details.
+
+In short: anyone may use, study, share and change Presenter, but any version they distribute must also be free and open source under the GPL.
