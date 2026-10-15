@@ -84,6 +84,8 @@ private struct MessageFieldsForm: View {
             ForEach(message.fields, id: \.self) { field in
                 TextField(field, text: Binding(get: { values[field] ?? "" }, set: { values[field] = $0 }))
                     .textFieldStyle(.roundedBorder)
+                    // Return in a popover's text field doesn't reach its default button, so submit here too.
+                    .onSubmit { show() }
             }
             Text(coordinator.messageText(message, values: values, at: .now))
                 .font(.caption)
@@ -91,15 +93,17 @@ private struct MessageFieldsForm: View {
             HStack {
                 Spacer()
                 Button("Cancel", role: .cancel) { onDone() }
-                Button("Show") {
-                    coordinator.showMessage(message.id, values: values)
-                    onDone()
-                }
-                .keyboardShortcut(.defaultAction)
+                Button("Show") { show() }
+                    .keyboardShortcut(.defaultAction)
             }
         }
         .padding(16)
         .frame(width: 300)
+    }
+
+    private func show() {
+        coordinator.showMessage(message.id, values: values)
+        onDone()
     }
 }
 
@@ -118,9 +122,11 @@ private struct MessageEditor: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(draft.message == nil ? "New Message" : "Edit Message").font(.headline)
             TextField("Name", text: $message.name).textFieldStyle(.roundedBorder)
+                .onSubmit { saveIfValid() }
             TextField("Text, e.g. Parent of child {Number}…", text: $message.text, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...4)
+                .onSubmit { saveIfValid() }
             Picker("Position", selection: $message.position) {
                 Text("Bottom").tag(MessageDefinition.Position.bottom)
                 Text("Top").tag(MessageDefinition.Position.top)
@@ -140,12 +146,18 @@ private struct MessageEditor: View {
                 Button("Cancel", role: .cancel) { onDone() }
                 Button(draft.message == nil ? "Add" : "Save") { save() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(message.text.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(!isValid)
             }
         }
         .padding(16)
         .frame(width: 320)
         .onAppear { if let existing = draft.message { message = existing } }
+    }
+
+    private var isValid: Bool { !message.text.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    private func saveIfValid() {
+        if isValid { save() }
     }
 
     private func save() {
@@ -200,6 +212,7 @@ struct PropsTab: View {
 
     private func tile(_ prop: SlideDocument, props: PresentationDocument) -> some View {
         let isShowing = coordinator.state.activeProps.contains(prop.id)
+        let isEdited = coordinator.propHasPendingEdits(prop.id)
         return VStack(alignment: .leading, spacing: 3) {
             SlideRenderView(scene: .slide(props.rendered(prop)))
                 .aspectRatio(16 / 9, contentMode: .fit)
@@ -211,12 +224,14 @@ struct PropsTab: View {
             HStack(spacing: 4) {
                 Text(prop.label ?? "Prop").font(.caption).lineLimit(1)
                 Spacer()
+                if isEdited { StateBadge(text: "EDITED", color: .orange) }
                 if isShowing { StateBadge(text: "ON", color: .red) }
             }
         }
         .contentShape(Rectangle())
         .onTapGesture { coordinator.toggleProp(prop.id) }
-        .help(isShowing ? "Click to hide" : "Click to show over the slides")
+        .help(isEdited ? "Edited since it was shown. Hide and show it again to put the changes on screen."
+              : isShowing ? "Click to hide" : "Click to show over the slides")
         .contextMenu {
             Button(isShowing ? "Hide" : "Show") { coordinator.toggleProp(prop.id) }
             Button("Edit…") { onEdit(prop.id) }
@@ -230,6 +245,10 @@ struct PropsTab: View {
         .popover(item: Binding(get: { renaming?.id == prop.id ? renaming : nil }, set: { renaming = $0 })) { prop in
             VStack(alignment: .leading, spacing: 10) {
                 TextField("Name", text: $name).textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        coordinator.renameProp(prop.id, to: name)
+                        renaming = nil
+                    }
                 HStack {
                     Spacer()
                     Button("Rename") {

@@ -74,6 +74,7 @@ final class MediaPlaybackController {
         guard let asset = coordinator.project.asset(withID: video.assetID),
               mediaLibrary.store.fileExists(for: asset) else {
             stop()
+            mediaLibrary.markMissing(video.assetID)
             logger.error("Video missing: \(video.assetID, privacy: .public)")
             return
         }

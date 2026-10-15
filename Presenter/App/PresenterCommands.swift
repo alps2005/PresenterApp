@@ -106,10 +106,14 @@ struct PresenterCommands: Commands {
                 outputManager.toggle()
             }
             .keyboardShortcut("o", modifiers: [.command, .option])
-            Button(outputManager.isEnabled(.stage) ? "Hide Stage Display" : "Show Stage Display") {
-                outputManager.toggle(.stage)
-            }
-            .keyboardShortcut("d", modifiers: [.command, .option])
+            // A checkmark item with a fixed title: when this item's title switched between Show and Hide,
+            // the menu lost its shortcut once the stage display was on.
+            // ⌥⌘S, not ⌥⌘D: macOS keeps ⌥⌘D for hiding the Dock, so the app would never see it.
+            Toggle("Stage Display", isOn: Binding(
+                get: { outputManager.isEnabled(.stage) },
+                set: { _ in outputManager.toggle(.stage) }
+            ))
+            .keyboardShortcut("s", modifiers: [.command, .option])
         }
     }
 

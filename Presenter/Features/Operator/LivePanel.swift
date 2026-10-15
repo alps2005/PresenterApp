@@ -26,13 +26,12 @@ struct LivePanel: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .strokeBorder(coordinator.state.live == nil ? Color.secondary.opacity(0.4) : .red, lineWidth: 2)
                         }
-                    if hasMissingImage(coordinator.state.liveBackground), !coordinator.state.isBlackout {
-                        missingImageWarning
-                    }
-                    if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
+                    if hasMissingMedia(coordinator.state.liveBackground), !coordinator.state.isBlackout {
+                        missingMediaWarning(coordinator.state.liveBackground)
+                    } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
                         TransportControls()
                     }
-                    if let notes = coordinator.state.live?.slide.notes, !notes.isEmpty {
+                    if let notes = coordinator.liveNotes {
                         Label(notes, systemImage: "note.text")
                             .font(.callout)
                             .foregroundStyle(.secondary)
@@ -58,14 +57,15 @@ struct LivePanel: View {
         }
     }
 
-    private var missingImageWarning: some View {
-        Label("Background image missing. The default background is showing.", systemImage: "exclamationmark.triangle")
+    private func missingMediaWarning(_ background: SlideBackground?) -> some View {
+        let kind = if case .video = background { "video" } else { "image" }
+        return Label("Background \(kind) missing. The default background is showing.", systemImage: "exclamationmark.triangle")
             .font(.caption)
             .foregroundStyle(.orange)
     }
 
-    /// The background layer's image is missing or unreadable, so the default background shows instead.
-    private func hasMissingImage(_ background: SlideBackground?) -> Bool {
+    /// The background's image or video is missing or unreadable, so the default background shows instead.
+    private func hasMissingMedia(_ background: SlideBackground?) -> Bool {
         guard let assetID = background?.assetID else { return false }
         return mediaLibrary.isMissing(assetID)
     }
@@ -100,8 +100,8 @@ struct LivePanel: View {
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .frame(maxWidth: 220)
-                if hasMissingImage(slide.background) {
-                    missingImageWarning
+                if hasMissingMedia(slide.background) {
+                    missingMediaWarning(slide.background)
                 }
             } else {
                 Text(placeholder)

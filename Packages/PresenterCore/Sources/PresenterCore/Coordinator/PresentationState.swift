@@ -26,6 +26,9 @@ public struct PresentationState: Equatable, Sendable {
     /// Clear Props removed.
     public var activeProps: [UUID] = []
     public var clearedProps: [UUID] = []
+    /// Each shown prop as it was when shown. Editing a prop never changes what the audience sees until it's
+    /// shown again, like a slide that has to be taken live again.
+    public var propSnapshots: [UUID: SlideDocument] = [:]
 
     public init(
         selectedItemID: UUID? = nil,

@@ -38,6 +38,13 @@ final class MediaLibrary {
         missing.contains(assetID)
     }
 
+    /// Records that an asset's file has gone since it was loaded (e.g. a video that can no longer play), and
+    /// drops its picture, so previews and the output show the default background and the operator is warned.
+    func markMissing(_ assetID: UUID) {
+        missing.insert(assetID)
+        images[assetID] = nil
+    }
+
     /// Copies an image the operator picked into the media folder and starts decoding it.
     func importImage(at url: URL) async throws -> MediaAsset {
         let store = store

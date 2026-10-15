@@ -147,6 +147,8 @@ private struct TimerEditor: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(draft.timer == nil ? "New Timer" : "Edit Timer").font(.headline)
             TextField("Name", text: $name).textFieldStyle(.roundedBorder)
+                // Return in a popover's text field doesn't reach its default button, so submit here too.
+                .onSubmit { save() }
             Picker("Type", selection: $kind) {
                 ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -245,7 +247,7 @@ private struct StageTab: View {
                     .lineLimit(1)
                 Spacer()
                 Button(outputManager.isEnabled(.stage) ? "Hide" : "Show") { outputManager.toggle(.stage) }
-                    .help("Show or hide the stage display (⌥⌘D). Choose its screen in the Output menu.")
+                    .help("Show or hide the stage display (⌥⌘S). Choose its screen in the Output menu.")
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -272,6 +274,10 @@ private struct StageTab: View {
                         TextField("e.g. 5 minutes left", text: $draftMessage, axis: .vertical)
                             .textFieldStyle(.roundedBorder)
                             .lineLimit(2...4)
+                            .onSubmit {
+                                coordinator.showStageMessage(draftMessage)
+                                isComposing = false
+                            }
                         HStack {
                             Spacer()
                             Button("Cancel", role: .cancel) { isComposing = false }

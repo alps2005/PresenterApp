@@ -73,7 +73,7 @@ struct StageOutputView: View {
                 }
             }
 
-            if settings.showsNotes, let notes = live?.notes, !notes.isEmpty {
+            if settings.showsNotes, let notes = coordinator.liveNotes {
                 Text(notes)
                     .font(.system(size: 40 * scale, weight: .medium))
                     .foregroundStyle(.cyan)

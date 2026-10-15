@@ -92,7 +92,14 @@ public final class PresentationCoordinator {
     /// Props on the audience output, bottom to top. Hidden by blackout.
     public var audienceProps: [SlideDocument] {
         guard !state.isBlackout else { return [] }
-        return state.activeProps.compactMap { project.prop(withID: $0) }
+        return state.activeProps.compactMap { state.propSnapshots[$0] }
+    }
+
+    /// True when a prop on screen (or cleared, waiting to be restored) has been edited since it was shown,
+    /// so the audience sees an older version until it's shown again.
+    public func propHasPendingEdits(_ propID: UUID) -> Bool {
+        guard let shown = state.propSnapshots[propID], let current = project.prop(withID: propID) else { return false }
+        return shown != current
     }
 
     /// The message on the audience output, if any. Hidden by blackout.
@@ -115,8 +122,18 @@ public final class PresentationCoordinator {
     /// True when the live slide (or the background it inherits) has been edited since it was taken live,
     /// so the audience sees an older version.
     public var liveSlideHasPendingEdits: Bool {
-        guard let live = state.live, let current = project.renderedSlide(at: live.position) else { return false }
+        guard let live = state.live, var current = project.renderedSlide(at: live.position) else { return false }
+        // Notes never reach the audience, so editing them leaves nothing to take live again.
+        current.slide.notes = live.slide.notes
         return current != live.rendered
+    }
+
+    /// The live slide's notes as they are now. Notes never reach the audience, so edits show on the stage
+    /// display and in the Live panel straight away, without taking the slide live again.
+    public var liveNotes: String? {
+        guard let live = state.live else { return nil }
+        let notes = (project.renderedSlide(at: live.position)?.slide ?? live.slide).notes
+        return notes?.isEmpty == false ? notes : nil
     }
 
     // MARK: - Live commands
@@ -236,11 +253,16 @@ public final class PresentationCoordinator {
     /// Shows a prop if hidden, hides it if shown. Several props can be on screen at once.
     @discardableResult
     public func toggleProp(_ propID: UUID) -> CommandResult {
-        guard project.prop(withID: propID) != nil else { return reject(.unknownProp) }
+        guard let prop = project.prop(withID: propID) else { return reject(.unknownProp) }
         if state.activeProps.contains(propID) {
             state.activeProps.removeAll { $0 == propID }
+            state.propSnapshots[propID] = nil
         } else {
             state.activeProps.append(propID)
+            state.propSnapshots[propID] = prop
+            for cleared in state.clearedProps where !state.activeProps.contains(cleared) {
+                state.propSnapshots[cleared] = nil
+            }
             state.clearedProps = []
         }
         return applied()
@@ -415,6 +437,7 @@ public final class PresentationCoordinator {
             project.props.slides.removeAll { $0.id == propID }
             state.activeProps.removeAll { $0 == propID }
             state.clearedProps.removeAll { $0 == propID }
+            state.propSnapshots[propID] = nil
             return applied()
         }
     }

@@ -99,7 +99,7 @@ swift test
 - **Renaming:** click a presentation's title to rename it.
 
 **Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
-- **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘D. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
+- **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
 - **Show Controls** at the bottom of the Live panel:
   - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
   - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
@@ -115,7 +115,7 @@ swift test
 
 **Messages and props.** Two more layers over the slides, managed from **Show Controls** in the Live panel:
 - **Messages:** a bar across the bottom (or top) of the audience output, like "Parent of child {Number}, please come to the nursery". Words in braces are blanks you fill in when you click **Show…**, and `{timer:Sermon}` shows a live timer. Edit the text, position, size and colours from the ⋯ menu. One message shows at a time.
-- **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images.
+- **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images. Changes to a prop that is on screen wait until you hide it and show it again (its tile says EDITED).
 - **Clearing:** Clear Messages (⌥⌘G) and Clear Props (⌥⌘P) are in the Clear button's menu. Clear All (⌥⌘A) clears every layer and Restore brings them back. Blackout hides everything.
 
 **Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.

@@ -67,6 +67,28 @@ final class MessagesPropsTests: XCTestCase {
         XCTAssertNotNil(c.project.prop(withID: prop.id))
     }
 
+    func testEditingAShownPropWaitsUntilItIsShownAgain() {
+        let c = PresentationCoordinator(project: ProjectDocument(name: "T"))
+        let prop = c.addProp(name: "Bug")
+        let shape = SlideElement.shape(ShapeElement(kind: .ellipse, frame: .centered(width: 0.1, height: 0.1)))
+        c.toggleProp(prop.id)
+        let shown = c.audienceProps
+
+        c.addElement(shape, toSlide: prop.id, inPresentation: c.project.props.id)
+        XCTAssertEqual(c.audienceProps, shown)
+        XCTAssertTrue(c.propHasPendingEdits(prop.id))
+
+        // Clear and Restore bring back what was on screen, not the edit.
+        c.clearProps()
+        c.restoreOutput()
+        XCTAssertEqual(c.audienceProps, shown)
+
+        c.toggleProp(prop.id)
+        c.toggleProp(prop.id)
+        XCTAssertEqual(c.audienceProps.first?.elements.count, prop.elements.count + 1)
+        XCTAssertFalse(c.propHasPendingEdits(prop.id))
+    }
+
     func testPropsLibraryIsNotAPlaylistPresentation() {
         let c = PresentationCoordinator(project: ProjectDocument(name: "T"))
         XCTAssertNil(c.addToPlaylist(c.project.props.id))
