@@ -3,7 +3,24 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## Unreleased: planned for v0.1.0-beta.4
+
+### Not yet tested on hardware
+Beta 3 changed these and covered them with unit tests, but they still need a check on a real external display
+(the GS24F14 projector used for beta 2):
+- the stage display full screen on its own display;
+- unplugging and replugging a display: the output comes back full screen on the right screen;
+- video mute from the transport lasting across slide changes;
+- the "Exporting…" progress sheet. The export ran in the background, but on the test machine it finished too fast
+  to see the sheet.
+
+### To do
+- Finish moving the remaining hard-coded spacing in the views onto the design tokens.
+- **Before the repository goes public:**
+  - a real contact in CODE_OF_CONDUCT;
+  - turn on GitHub private vulnerability reporting, which SECURITY.md relies on.
+
+## v0.1.0-beta.3 (2026-10-15)
 
 ### Data safety
 - Undo no longer drops an image or video imported after the edit being undone.
@@ -39,6 +56,8 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 - Contributor docs: CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue and pull request templates,
   [ARCHITECTURE](docs/ARCHITECTURE.md) and [ADR 0001](docs/adr/0001-quiet-native-design.md).
 - CI pins its Xcode version and setup action, and the Xcode scheme is shared.
+
+See [the release notes](docs/release-notes/v0.1.0-beta.3.md).
 
 ## v0.1.0-beta.2 (2026-10-14)
 
