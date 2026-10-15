@@ -27,6 +27,8 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 - **Live and cued tiles:** they're outlined the same way everywhere. Up Next and Cued now have borders, and the
   live item in the media bin shows LIVE.
 - **Blackout:** the button is set apart from Clear and Restore.
+- **Toolbar:** on macOS 26 and later, the operator toolbar's buttons no longer share a glass capsule, so it's
+  easier to see which toggles are on.
 - **Warnings:** a rejected Take Live and other warnings show in amber.
 - **Timers:** the values are larger.
 - **Wording:** "Take Live" is used everywhere, and props on screen say LIVE.

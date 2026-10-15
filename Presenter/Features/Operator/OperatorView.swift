@@ -88,22 +88,43 @@ struct OperatorView: View {
         }
         .navigationTitle(coordinator.project.name)
         .solidToolbar()
-        .toolbar {
+        .toolbar { operatorToolbar }
+    }
+
+    /// On macOS 26+, each button sits on its own instead of sharing one glass capsule (see ADR 0001).
+    @ToolbarContentBuilder
+    private var operatorToolbar: some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            ToolbarItem(placement: .primaryAction) { quickEditToggle }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { mediaBinToggle }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
             ToolbarItemGroup(placement: .primaryAction) {
-                Toggle(isOn: $isQuickEditVisible) {
-                    Label("Quick Edit", systemImage: "slider.horizontal.3")
-                }
-                .toggleStyle(.button)
-                .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
-                .accessibilityLabel("Quick Edit")
-                Toggle(isOn: $isMediaBinVisible) {
-                    Label("Media", systemImage: "photo.on.rectangle.angled")
-                }
-                .toggleStyle(.button)
-                .help("Show or hide the media bin (⌥⌘I)")
-                .accessibilityLabel("Media Bin")
+                quickEditToggle
+                mediaBinToggle
                 OutputMenu(outputManager: outputManager)
             }
         }
+    }
+
+    private var quickEditToggle: some View {
+        Toggle(isOn: $isQuickEditVisible) {
+            Label("Quick Edit", systemImage: "slider.horizontal.3")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide Quick Edit for the cued slide (⌥⌘E)")
+        .accessibilityLabel("Quick Edit")
+    }
+
+    private var mediaBinToggle: some View {
+        Toggle(isOn: $isMediaBinVisible) {
+            Label("Media", systemImage: "photo.on.rectangle.angled")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide the media bin (⌥⌘I)")
+        .accessibilityLabel("Media Bin")
     }
 }

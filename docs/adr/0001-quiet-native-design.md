@@ -60,9 +60,10 @@ Quiet native:
 - **One tile frame:** `tileFrame` outlines a live tile in red and a cued tile in blue everywhere: the slide grid,
   the live panel's Audience, Up Next and Cued, the media bin, props, and the editor's thumbnails.
 - **Popovers, menus and sheets stay as the system draws them.** Glass can't be removed there, and they're brief.
-- **Not done yet:** separating the operator toolbar's three buttons out of their shared glass capsule
-  (`sharedBackgroundVisibility(.hidden)`, macOS 26+). It's kept only if it reads better on screen, which needs a
-  visual check.
+- **No shared glass capsule in the operator toolbar.** On macOS 26+, Quick Edit, Media and Output each use
+  `sharedBackgroundVisibility(.hidden)`. Compared side by side on screen, the buttons no longer sit in translucent
+  grey capsules, and an active toggle (a solid blue pill on its own) is easier to tell from an inactive one
+  (a plain icon). Older systems keep the grouped buttons.
 
 ## Consequences
 
