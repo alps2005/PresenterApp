@@ -4,47 +4,10 @@ import Observation
 import PresenterCore
 import SwiftUI
 
-enum OutputTarget: Hashable {
-    case windowed
-    case display(CGDirectDisplayID)
-}
-
-enum OutputStatus: Equatable {
-    case off
-    case windowed
-    case fullScreen(displayName: String)
-    /// The chosen display is gone. Output is hidden and comes back if the display reconnects.
-    case displayMissing(displayName: String)
-}
-
-/// Which output a command is for. The stage display never shows audience content controls, and the audience
-/// never sees stage-only information.
-enum OutputRole: CaseIterable, Hashable {
-    case audience
-    case stage
-
-    var title: String {
-        switch self {
-        case .audience: "Audience Output"
-        case .stage: "Stage Display"
-        }
-    }
-}
-
-/// Tracks connected displays and places the audience and stage outputs according to the operator's choices.
+/// Tracks connected displays and places the audience and stage outputs as `OutputPlanner` decides.
 @Observable
 final class OutputManager {
-    private struct Channel {
-        var target: OutputTarget = .windowed
-        /// The operator's intent. The window may still be hidden if the chosen display is missing.
-        var isEnabled = false
-        var targetDisplayName = ""
-    }
-
-    private(set) var displays: [DisplayInfo] = DisplayDiscovery.currentDisplays()
-    /// The display showing the operator window. Full-screen output is never offered there.
-    private(set) var operatorDisplayID: CGDirectDisplayID?
-    private var channels: [OutputRole: Channel] = [.audience: Channel(), .stage: Channel()]
+    private(set) var planner = OutputPlanner(displays: DisplayDiscovery.currentDisplays())
 
     @ObservationIgnored private var controllers: [OutputRole: OutputWindowController] = [:]
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
@@ -63,7 +26,7 @@ final class OutputManager {
         }
         for role in OutputRole.allCases {
             controllers[role]?.onUserClosedWindow = { [weak self] in
-                self?.channels[role]?.isEnabled = false
+                self?.planner.hide(role)
             }
         }
         screenObserver = NotificationCenter.default.addObserver(
@@ -75,6 +38,8 @@ final class OutputManager {
         }
     }
 
+    var displays: [DisplayInfo] { planner.displays }
+
     // MARK: Audience (the defaults most callers want)
 
     var isEnabled: Bool { isEnabled(.audience) }
@@ -84,45 +49,18 @@ final class OutputManager {
 
     // MARK: Per output
 
-    func isEnabled(_ role: OutputRole) -> Bool { channels[role]?.isEnabled ?? false }
-    func target(_ role: OutputRole) -> OutputTarget { channels[role]?.target ?? .windowed }
-
-    func status(_ role: OutputRole) -> OutputStatus {
-        guard let channel = channels[role], channel.isEnabled else { return .off }
-        switch channel.target {
-        case .windowed:
-            return .windowed
-        case .display(let id):
-            return displays.contains { $0.id == id }
-                ? .fullScreen(displayName: channel.targetDisplayName)
-                : .displayMissing(displayName: channel.targetDisplayName)
-        }
-    }
-
-    /// Displays that can take this output full screen: not the operator's, and not one the other output
-    /// already fills.
-    func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] {
-        let operatorID = operatorDisplayID ?? displays.first(where: \.isPrimary)?.id
-        let taken = OutputRole.allCases.filter { $0 != role }.compactMap { other -> CGDirectDisplayID? in
-            guard let channel = channels[other], channel.isEnabled, case .display(let id) = channel.target else { return nil }
-            return id
-        }
-        return displays.filter { $0.id != operatorID && !taken.contains($0.id) }
-    }
+    func isEnabled(_ role: OutputRole) -> Bool { planner.isEnabled(role) }
+    func target(_ role: OutputRole) -> OutputTarget { planner.target(role) }
+    func status(_ role: OutputRole) -> OutputStatus { planner.status(role) }
+    func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] { planner.fullScreenCandidates(role) }
 
     func show(_ target: OutputTarget, for role: OutputRole = .audience) {
-        var channel = channels[role] ?? Channel()
-        if case .display(let id) = target, let display = displays.first(where: { $0.id == id }) {
-            channel.targetDisplayName = display.name
-        }
-        channel.target = target
-        channel.isEnabled = true
-        channels[role] = channel
+        planner.show(target, for: role)
         apply(role)
     }
 
     func hide(_ role: OutputRole = .audience) {
-        channels[role]?.isEnabled = false
+        planner.hide(role)
         apply(role)
     }
 
@@ -131,34 +69,36 @@ final class OutputManager {
     }
 
     func toggle(_ role: OutputRole = .audience) {
-        isEnabled(role) ? hide(role) : show(target(role), for: role)
+        planner.toggle(role)
+        apply(role)
     }
 
     func operatorWindowMoved(to screen: NSScreen?) {
-        operatorDisplayID = screen.flatMap(DisplayDiscovery.displayID(of:))
+        planner.operatorDisplayID = screen.flatMap(DisplayDiscovery.displayID(of:))
     }
 
     private func screensChanged() {
-        displays = DisplayDiscovery.currentDisplays()
-        Log.output.info("Displays changed: \(self.displays.map(\.name), privacy: .public)")
+        planner.displays = DisplayDiscovery.currentDisplays()
+        Log.output.info("Displays changed: \(self.planner.displays.map(\.name), privacy: .public)")
         for role in OutputRole.allCases { apply(role) }
     }
 
     private func apply(_ role: OutputRole) {
-        guard let controller = controllers[role], let channel = channels[role] else { return }
-        guard channel.isEnabled else {
+        guard let controller = controllers[role] else { return }
+        switch planner.placement(role) {
+        case .hidden:
             controller.hide()
-            return
-        }
-        switch channel.target {
+            if case .displayMissing(let name) = planner.status(role) {
+                Log.output.error("\(role.title, privacy: .public) display \(name, privacy: .public) is not connected")
+            }
         case .windowed:
             controller.showWindowed()
-        case .display(let id):
+        case .fullScreen(let id):
             if let screen = DisplayDiscovery.screen(for: id) {
                 controller.showFullScreen(on: screen, displayID: id)
             } else {
                 controller.hide()
-                Log.output.error("\(role.title, privacy: .public) display \(channel.targetDisplayName, privacy: .public) is not connected")
+                Log.output.error("\(role.title, privacy: .public) display \(id, privacy: .public) has no screen")
             }
         }
     }

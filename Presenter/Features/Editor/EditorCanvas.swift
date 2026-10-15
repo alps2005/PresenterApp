@@ -282,20 +282,12 @@ struct EditorCanvas: View {
     private func resize(_ target: Target, handle: SelectionChrome.Handle, translation: CGSize, stageSize: CGSize, ended: Bool) {
         if dragOrigin == nil { dragOrigin = target.frame }
         guard let origin = dragOrigin else { return }
-        let dx = translation.width / stageSize.width
-        let dy = translation.height / stageSize.height
-        var left = origin.x, right = origin.x + origin.width
-        var top = origin.y, bottom = origin.y + origin.height
-        // Each moving edge stays on the canvas and at least the minimum size from the opposite edge.
-        if handle.movesLeft { left = min(max(left + dx, 0), right - Self.minimumSize) }
-        if handle.movesRight { right = max(min(right + dx, 1), left + Self.minimumSize) }
-        if handle.movesTop { top = min(max(top + dy, 0), bottom - Self.minimumSize) }
-        if handle.movesBottom { bottom = max(min(bottom + dy, 1), top + Self.minimumSize) }
-        var frame = NormalizedRect(x: left, y: top, width: right - left, height: bottom - top)
+        let edges = Snapping.Edges(left: handle.movesLeft, right: handle.movesRight, top: handle.movesTop, bottom: handle.movesBottom)
+        var frame = Snapping.resized(origin, moving: edges, by: translation.width / stageSize.width,
+                                     translation.height / stageSize.height, minimumSize: Self.minimumSize)
         if Self.isSnappingSuspended {
             guides = nil
         } else {
-            let edges = Snapping.Edges(left: handle.movesLeft, right: handle.movesRight, top: handle.movesTop, bottom: handle.movesBottom)
             let result = Snapping.resize(frame, moving: edges, among: otherFrames(than: target.id),
                                          tolerance: snapTolerance(stageSize), minimumSize: Self.minimumSize)
             frame = result.frame
@@ -430,17 +422,11 @@ extension EditorCanvas {
     /// Adds copies with new identities. Like Keynote, a copy that would land exactly on an element already on
     /// the slide is nudged down and to the right instead.
     private func insert(_ elements: [SlideElement]) {
-        let offset = PresentationCoordinator.duplicateOffset
         var pastedID: UUID?
         for element in elements {
-            var copy = element.duplicated()
             let occupied = (coordinator.project.presentation(withID: presentation.id)?.slide(withID: slide.id)?.elements ?? [])
                 .compactMap(\.frame)
-            var attempts = 0
-            while let frame = copy.frame, attempts < 20, occupied.contains(where: { $0.isClose(to: frame) }) {
-                copy = copy.duplicated(offsetBy: offset.dx, offset.dy)
-                attempts += 1
-            }
+            let copy = element.pastedCopy(avoiding: occupied, offset: PresentationCoordinator.duplicateOffset)
             // An image from another project whose file isn't in this one is skipped (rejected as unknown media).
             if coordinator.addElement(copy, toSlide: slide.id, inPresentation: presentation.id).isApplied {
                 pastedID = copy.id
@@ -479,12 +465,6 @@ extension FocusedValues {
     var editorElementActions: EditorElementActions? {
         get { self[EditorElementActionsKey.self] }
         set { self[EditorElementActionsKey.self] = newValue }
-    }
-}
-
-private extension NormalizedRect {
-    func isClose(to other: NormalizedRect) -> Bool {
-        abs(x - other.x) < 1e-6 && abs(y - other.y) < 1e-6 && abs(width - other.width) < 1e-6 && abs(height - other.height) < 1e-6
     }
 }
 

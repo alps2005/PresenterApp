@@ -36,9 +36,8 @@ final class MediaPlaybackController {
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 4), queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
                 guard let self else { return }
-                let seconds = time.seconds
                 // A looping item's time keeps counting; show where it is within the clip.
-                self.currentTime = self.duration > 0 && seconds.isFinite ? seconds.truncatingRemainder(dividingBy: self.duration) : 0
+                self.currentTime = PlaybackPlan.clipTime(time.seconds, duration: self.duration)
                 self.isPlaying = self.player.rate != 0
             }
         }
@@ -56,28 +55,30 @@ final class MediaPlaybackController {
     }
 
     private func sync(to background: SlideBackground?) {
-        guard case .video(let video) = background else {
+        // The live background is the one source of truth for mute; the transport writes through the coordinator.
+        if case .video(let video) = background {
+            isMuted = video.isMuted
+            player.isMuted = video.isMuted
+        }
+        let decision = PlaybackPlan.decide(playingAssetID: assetID, playingLoops: loops, background: background) { id in
+            coordinator.project.asset(withID: id).map { mediaLibrary.store.fileExists(for: $0) } ?? false
+        }
+        switch decision {
+        case .stop:
             stop()
-            return
+        case .keep:
+            break
+        case .load(let video), .reload(let video):
+            load(video)
+        case .missing(let id):
+            stop()
+            mediaLibrary.markMissing(id)
+            logger.error("Video missing: \(id, privacy: .public)")
         }
-        isMuted = video.isMuted
-        player.isMuted = video.isMuted
-        // The same video again (e.g. a transparent slide, or another slide using it) keeps playing.
-        if video.assetID == assetID {
-            if loops != video.loops { load(video) }
-            return
-        }
-        load(video)
     }
 
     private func load(_ video: VideoBackground) {
-        guard let asset = coordinator.project.asset(withID: video.assetID),
-              mediaLibrary.store.fileExists(for: asset) else {
-            stop()
-            mediaLibrary.markMissing(video.assetID)
-            logger.error("Video missing: \(video.assetID, privacy: .public)")
-            return
-        }
+        guard let asset = coordinator.project.asset(withID: video.assetID) else { return stop() }
         stop()
         let item = AVPlayerItem(url: mediaLibrary.store.url(for: asset))
         assetID = video.assetID
@@ -115,7 +116,8 @@ final class MediaPlaybackController {
             player.pause()
         } else {
             // A finished, non-looping video starts again from the top.
-            if !loops, let item = player.currentItem, item.currentTime() >= item.duration {
+            if let item = player.currentItem,
+               PlaybackPlan.restartsFromTop(loops: loops, currentTime: item.currentTime().seconds, duration: item.duration.seconds) {
                 item.seek(to: .zero, completionHandler: nil)
             }
             player.play()
@@ -128,9 +130,9 @@ final class MediaPlaybackController {
         currentTime = seconds
     }
 
+    /// Mutes through the coordinator, so the setting lives in the live background and survives slide changes.
     func toggleMute() {
-        player.isMuted.toggle()
-        isMuted = player.isMuted
+        coordinator.setLiveVideoMuted(!isMuted)
     }
 }
 

@@ -1,18 +1,5 @@
 import AppKit
-
-/// A connected display. `id` is stable while the display stays connected, but not guaranteed across launches;
-/// persisting the selected display needs a durable identity (planned with output configuration storage).
-struct DisplayInfo: Identifiable, Hashable {
-    let id: CGDirectDisplayID
-    let name: String
-    let frame: CGRect
-    /// The display with the menu bar.
-    let isPrimary: Bool
-
-    var resolutionDescription: String {
-        "\(Int(frame.width))×\(Int(frame.height))"
-    }
-}
+import PresenterCore
 
 enum DisplayDiscovery {
     static func currentDisplays() -> [DisplayInfo] {

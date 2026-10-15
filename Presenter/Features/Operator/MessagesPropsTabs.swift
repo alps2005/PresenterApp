@@ -164,12 +164,7 @@ private struct MessageEditor: View {
         if draft.message != nil {
             coordinator.updateMessage(message)
         } else {
-            var added = coordinator.addMessage(name: message.name, text: message.text)
-            added.position = message.position
-            added.fontSize = message.fontSize
-            added.textColor = message.textColor
-            added.barColor = message.barColor
-            coordinator.updateMessage(added)
+            coordinator.addMessage(message)
         }
         onDone()
     }

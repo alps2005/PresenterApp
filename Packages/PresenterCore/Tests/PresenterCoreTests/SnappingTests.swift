@@ -68,4 +68,54 @@ final class SnappingTests: XCTestCase {
 
         XCTAssertEqual(result.frame, frame)
     }
+
+    // MARK: Resize clamping and paste placement
+
+    func testResizeMovesOnlyTheDraggedEdges() {
+        let origin = NormalizedRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
+        let frame = Snapping.resized(origin, moving: Snapping.Edges(right: true, bottom: true), by: 0.1, 0.05, minimumSize: 0.02)
+        XCTAssertEqual(frame.minX, 0.2, accuracy: 1e-9)
+        XCTAssertEqual(frame.maxX, 0.7, accuracy: 1e-9)
+        XCTAssertEqual(frame.minY, 0.2, accuracy: 1e-9)
+        XCTAssertEqual(frame.maxY, 0.65, accuracy: 1e-9)
+    }
+
+    func testResizeStaysOnTheCanvas() {
+        let origin = NormalizedRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
+        let frame = Snapping.resized(origin, moving: Snapping.Edges(left: true, top: true), by: -0.5, -0.5, minimumSize: 0.02)
+        XCTAssertEqual(frame.minX, 0, accuracy: 1e-9)
+        XCTAssertEqual(frame.minY, 0, accuracy: 1e-9)
+        XCTAssertEqual(frame.maxX, 0.6, accuracy: 1e-9)
+        XCTAssertEqual(frame.maxY, 0.6, accuracy: 1e-9)
+    }
+
+    func testResizePastTheOppositeEdgeStopsAtTheMinimumSize() {
+        let origin = NormalizedRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
+        let frame = Snapping.resized(origin, moving: Snapping.Edges(right: true), by: -0.9, 0, minimumSize: 0.05)
+        XCTAssertEqual(frame.minX, 0.2, accuracy: 1e-9)
+        XCTAssertEqual(frame.width, 0.05, accuracy: 1e-9)
+    }
+
+    func testPastedCopyIsNudgedOffElementsItWouldCover() {
+        let offset = (dx: 0.01, dy: 0.02)
+        let frame = NormalizedRect(x: 0.1, y: 0.1, width: 0.2, height: 0.2)
+        let element = SlideElement.shape(ShapeElement(kind: .rectangle, frame: frame))
+        let once = NormalizedRect(x: 0.11, y: 0.12, width: 0.2, height: 0.2)
+
+        let free = element.pastedCopy(avoiding: [], offset: offset)
+        XCTAssertNotEqual(free.id, element.id)
+        XCTAssertEqual(free.frame, frame)
+
+        let nudged = element.pastedCopy(avoiding: [frame, once], offset: offset)
+        XCTAssertEqual(nudged.frame?.x ?? 0, 0.12, accuracy: 1e-9)
+        XCTAssertEqual(nudged.frame?.y ?? 0, 0.14, accuracy: 1e-9)
+    }
+
+    func testPastedCopyGivesUpAfterTheNudgeLimit() {
+        let offset = (dx: 0.01, dy: 0.0)
+        let frame = NormalizedRect(x: 0, y: 0, width: 0.1, height: 0.1)
+        let occupied = (0..<50).map { NormalizedRect(x: Double($0) * 0.01, y: 0, width: 0.1, height: 0.1) }
+        let copy = SlideElement.shape(ShapeElement(kind: .rectangle, frame: frame)).pastedCopy(avoiding: occupied, offset: offset, maxNudges: 3)
+        XCTAssertEqual(copy.frame?.x ?? 0, 0.03, accuracy: 1e-9)
+    }
 }

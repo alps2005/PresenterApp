@@ -22,7 +22,7 @@ public final class PresentationCoordinator {
     @ObservationIgnored private var coalescingKey: String?
     @ObservationIgnored private var lastEditTime = Date.distantPast
     @ObservationIgnored private var recordingDepth = 0
-    /// The clock used for coalescing. Tests replace it.
+    /// The clock for coalescing, timers and edit dates. Tests replace it.
     @ObservationIgnored var now: () -> Date = { Date() }
 
     static let undoLimit = 100
@@ -230,6 +230,17 @@ public final class PresentationCoordinator {
         return applied()
     }
 
+    /// Mutes or unmutes the video on the background layer. The live background is the one source of truth for
+    /// playback, so the setting holds while transparent slides change over the video, and when the next slide
+    /// keeps playing the same video.
+    @discardableResult
+    public func setLiveVideoMuted(_ isMuted: Bool) -> CommandResult {
+        guard case .video(var video) = state.liveBackground else { return reject(.nothingLive) }
+        video.isMuted = isMuted
+        state.liveBackground = .video(video)
+        return applied()
+    }
+
     // MARK: - Messages and props (live: never undone)
 
     /// Shows a message over the slides, replacing any other message.
@@ -377,8 +388,15 @@ public final class PresentationCoordinator {
 
     @discardableResult
     public func addMessage(name: String, text: String) -> MessageDefinition {
+        addMessage(MessageDefinition(name: name, text: text))
+    }
+
+    /// Adds a message with all its settings (position, size, colours) as one undoable step.
+    @discardableResult
+    public func addMessage(_ definition: MessageDefinition) -> MessageDefinition {
         recordingUndo("Add Message") {
-            let message = MessageDefinition(name: name.isEmpty ? "Message" : name, text: text)
+            var message = definition
+            if message.name.isEmpty { message.name = "Message" }
             project.messages.append(message)
             lastRejection = nil
             return message
@@ -1052,7 +1070,14 @@ public final class PresentationCoordinator {
         state.cleared = nil
         // An opaque slide replaces the background layer; a transparent one leaves what's on screen.
         if rendered.background != .transparent {
-            state.liveBackground = rendered.background
+            var background = rendered.background
+            // The same video carries on playing, so the operator's mute choice carries on with it.
+            if case .video(var next) = background, case .video(let current) = state.liveBackground,
+               next.assetID == current.assetID {
+                next.isMuted = current.isMuted
+                background = .video(next)
+            }
+            state.liveBackground = background
             state.clearedBackground = nil
         }
         logger.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
@@ -1098,7 +1123,7 @@ public final class PresentationCoordinator {
         if presentationID == project.props.id {
             let before = project.props
             edit(&project.props)
-            if project.props != before { project.props.updatedAt = .now }
+            if project.props != before { project.props.updatedAt = now() }
             return applied()
         }
         guard let index = project.presentations.firstIndex(where: { $0.id == presentationID }) else {
@@ -1108,7 +1133,7 @@ public final class PresentationCoordinator {
         edit(&project.presentations[index])
         // Views can write back an unchanged value (e.g. a text field on appear); that isn't an edit.
         if project.presentations[index] != before {
-            project.presentations[index].updatedAt = .now
+            project.presentations[index].updatedAt = now()
         }
         return applied()
     }

@@ -42,31 +42,19 @@ final class ProjectPersistence {
         observeProject()
     }
 
-    /// The project to start with: the saved one, else the sample. A file that can't be read is
-    /// moved aside first, so autosave never overwrites something the operator might want back.
-    /// A project that loads is also copied into `Backups/` (unless it's unchanged since the last backup).
+    /// The project to start with (see `ProjectLoader`), logging what happened.
     static func loadInitialProject(from store: ProjectStore) -> (project: ProjectDocument, problem: String?) {
-        do {
-            if let project = try store.load() {
-                Log.persistence.info("Loaded project from \(store.fileURL.path, privacy: .public)")
-                do {
-                    try ProjectBackups(projectFileURL: store.fileURL).backUpFile(at: store.fileURL)
-                } catch {
-                    Log.persistence.error("Launch backup failed: \(error.localizedDescription, privacy: .public)")
-                }
-                return (project, nil)
-            }
-            return (.sample(), nil)
-        } catch {
-            let message = (error as? ProjectStoreError)?.message ?? error.localizedDescription
-            Log.persistence.error("Couldn't load project: \(message, privacy: .public)")
-            do {
-                let moved = try store.quarantine()
-                return (.sample(), "\(message) It was moved to \(moved.path) and a sample project was opened instead.")
-            } catch {
-                return (.sample(), "\(message) A sample project was opened instead.")
-            }
+        let outcome = ProjectLoader.loadInitialProject(from: store, backups: ProjectBackups(projectFileURL: store.fileURL))
+        if outcome.loadedFromDisk {
+            Log.persistence.info("Loaded project from \(store.fileURL.path, privacy: .public)")
         }
+        if let problem = outcome.problem {
+            Log.persistence.error("Couldn't load project: \(problem, privacy: .public)")
+        }
+        if let backupError = outcome.backupError {
+            Log.persistence.error("Launch backup failed: \(backupError, privacy: .public)")
+        }
+        return (outcome.project, outcome.problem)
     }
 
     // MARK: - Saving
