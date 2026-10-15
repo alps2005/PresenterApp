@@ -30,7 +30,7 @@ Every push and pull request to `develop` or `main` also runs the tests and a bui
 ## Requirements
 
 - macOS 14 Sonoma or later to run the app
-- Xcode 27 or later to build it (the project file uses the Xcode 26+ format)
+- Xcode 26 or later to build it (CI uses Xcode 26.6)
 
 ## Build and run
 
@@ -126,22 +126,26 @@ swift test
 
 **Editing is non-destructive.** Editing a live slide does not change what the audience sees until you take that slide live again. The Live panel warns you when this is the case.
 
-**Saving.** The project saves itself about a second after each change, and again when you quit. It lives at `~/Library/Containers/<bundle id>/Data/Library/Application Support/Presenter/Project.json`. Nothing is ever live when the app starts.
+**Saving.** The project saves itself about a second after each change, and again when you quit. If that last save fails, Presenter asks before quitting so you can export a copy first. It lives at `~/Library/Containers/<bundle id>/Data/Library/Application Support/Presenter/Project.json`. Nothing is ever live when the app starts.
 
-- **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images the project uses, so it opens complete on the other Mac.
+- **Backups:** each time Presenter opens your project, it copies it to `Presenter/Backups/` (unless nothing changed since the last copy), keeping the newest 10.
+- **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images and videos the project uses, so it opens complete on the other Mac.
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
+- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost.
 - If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and a sample project opens instead.
+
+**Appearance.** The operator window is dark, with solid panels, so it stays readable in a dark booth. LIVE is always red, CUED always blue and warnings amber, and every state badge has an icon and a word. To use the system's light or dark setting instead, turn on **View › Follow System Appearance**.
 
 **One continuous workspace.** The workspace shows every presentation in the playlist one after another, so you can scroll ahead to see what's coming. The sidebar highlights the first presentation whose title is in view, and clicking a sidebar item scrolls to it. When Next or Previous moves the live slide off screen, the workspace scrolls just enough to show it again. While you're typing a presentation title, Space and the arrow keys edit the title instead of changing slides.
 
 **Slide editor.** **Edit** opens a presentation in a Keynote-style editor that fills the window:
 
-- **Left:** slide thumbnails. Click to select, drag to reorder, right-click to send a slide live or delete it, **Add Slide** at the bottom.
+- **Left:** slide thumbnails. Click to select, drag to reorder, right-click to take a slide live or delete it, **Add Slide** at the bottom.
 - **Middle:** the slide. Click an item to select it, drag to move it, and drag the handles to resize. Double-click text to change the words; Esc finishes. The arrow keys nudge the selected item (with Shift, ten times as far).
   - **Alignment guides:** while you drag or resize, yellow guides appear when an item lines up with the slide's centre or edges, or with another item's centre or edges. Within a few points it snaps onto the line, and a tag shows its position (or size) in slide points. Hold ⌘ while dragging to place it freely.
   - **Copy, Cut, Paste** (⌘C / ⌘X / ⌘V) work on the selected item, even between slides and presentations. A paste that would land exactly on top of an item is nudged down and to the right. Text copied from another app pastes as a new text box.
   - **Duplicate** (⌘D) adds a copy just above and to the right. **Delete** (⌫ or ⌦) removes the selected item.
-- **Toolbar:** **Done**, **Send to Live**, **Add Slide**, **Text**, **Shape** (rectangle, rounded rectangle, oval), **Media** (an image from your Mac) and zoom (Fit, 25–200%).
+- **Toolbar:** **Done**, **Take Live**, **Add Slide**, **Text**, **Shape** (rectangle, rounded rectangle, oval), **Media** (an image from your Mac) and zoom (Fit, 25–200%).
 - **Right, chosen with the toolbar's three buttons:**
   - **Format:** the selected item's settings: text style; shape, fill and border; or image scaling and opacity. Each also has position, size, stacking order and Delete. With nothing selected, it shows the slide's background and presenter notes.
   - **Animate:** the slide's transition: None, or a **Dissolve** of 0.2–2 seconds that cross-fades the audience output when the slide goes live. Clear and Blackout are always instant.
@@ -168,22 +172,27 @@ Images are copied into the app's media folder (`~/Library/Containers/<bundle id>
 ```text
 Presenter.xcodeproj
 Presenter/                     macOS app target (SwiftUI + AppKit)
-  App/                         App entry point, delegate, menu commands
-  Features/Operator/           Operator window: playlist, continuous workspace, Quick Edit and inspectors, live panel, controls
+  App/                         App entry point, delegate, menu commands, saving and opening projects
+  DesignSystem/                Tokens, shared components and the solid "quiet native" chrome
+  Features/Operator/           Operator window: playlist, continuous workspace, Quick Edit and inspectors, live panel, show controls, media bin
   Features/Editor/             Keynote-style slide editor: thumbnails, canvas, toolbar and Format/Animate/Document inspector
-  Media/                       Media library: imported images, decoded ahead of time
-  Outputs/                     Display discovery, output placement, audience window
-  Rendering/                   Shared slide renderer (used for thumbnails, preview and output)
+  Media/                       Media library (images decoded ahead of time) and video playback
+  Outputs/                     Display discovery and the audience and stage display windows
+  Rendering/                   Shared slide renderer and overlay layers (used for thumbnails, previews and outputs)
   Support/                     Logging and AppKit helpers
-Packages/PresenterCore/        UI-free domain models, PresentationCoordinator and ProjectStore, with unit tests
+Packages/PresenterCore/        UI-free core, with unit tests: models, PresentationCoordinator, persistence (store,
+                               archive, backups, loading), the media store, and output and playback decisions
+docs/                          Architecture, decision records and release notes
 ```
 
-The `PresentationCoordinator` owns all live state and is the only thing that changes it. It keeps four ideas separate:
+`PresentationCoordinator` owns the project and the live state, and every change to what the audience sees goes through it. Video transport (play, pause, scrubbing, volume) and showing or hiding the output windows are handled by the app's playback controller and output manager. The coordinator keeps four ideas separate:
 
 - **Selected:** the playlist item you're working on.
 - **Cued:** the slide that will go live next time you take it.
 - **Live:** a snapshot of what the audience currently sees.
 - **Up next:** what Next will take live.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for more, and [CONTRIBUTING.md](CONTRIBUTING.md) to help out.
 
 Logs use the subsystem `io.github.alps2005.Presenter` and can be viewed in Console.app.
 

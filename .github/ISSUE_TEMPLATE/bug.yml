@@ -1,0 +1,54 @@
+name: Bug report
+description: Something doesn't work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Cue a slide…
+        2. Press Return…
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: live
+    attributes:
+      label: Did it affect what the audience saw?
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Presenter version
+      description: Presenter › About Presenter
+      placeholder: "0.1.0 (12), or the release you downloaded, e.g. v0.1.0-beta.2"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: macOS 26.1, MacBook Air M2
+  - type: textarea
+    id: displays
+    attributes:
+      label: Displays
+      description: For output problems, the displays connected and how (HDMI, adapter, AirPlay…).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Console.app logs for the subsystem io.github.alps2005.Presenter, or screenshots.
