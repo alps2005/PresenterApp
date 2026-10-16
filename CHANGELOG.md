@@ -14,8 +14,11 @@ Beta 3 changed these and covered them with unit tests, but they still need a che
 - the "Exporting…" progress sheet. The export ran in the background, but on the test machine it finished too fast
   to see the sheet.
 
+### Look
+- All operator and editor views now use the design tokens for spacing and corner radius. A few gaps shift by
+  1 or 2 points to fit the scale. The audience and stage outputs, which scale with the output size, are unchanged.
+
 ### To do
-- Finish moving the remaining hard-coded spacing in the views onto the design tokens.
 - **Before the repository goes public:**
   - a real contact in CODE_OF_CONDUCT;
   - turn on GitHub private vulnerability reporting, which SECURITY.md relies on.

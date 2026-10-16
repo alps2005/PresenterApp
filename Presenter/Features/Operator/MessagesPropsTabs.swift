@@ -9,7 +9,7 @@ struct MessagesTab: View {
     @State private var pendingDeletion: MessageDefinition?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             ForEach(coordinator.project.messages) { message in
                 row(message)
             }
@@ -152,9 +152,9 @@ struct PropsTab: View {
     @State private var name = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             let props = coordinator.project.props
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: Spacing.md)], spacing: Spacing.md) {
                 ForEach(props.slides) { prop in
                     tile(prop, props: props)
                 }
@@ -181,11 +181,11 @@ struct PropsTab: View {
     private func tile(_ prop: SlideDocument, props: PresentationDocument) -> some View {
         let isShowing = coordinator.state.activeProps.contains(prop.id)
         let isEdited = coordinator.propHasPendingEdits(prop.id)
-        return VStack(alignment: .leading, spacing: 3) {
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
             SlideRenderView(scene: .slide(props.rendered(prop)))
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .tileFrame(TileState(isLive: isShowing), cornerRadius: Radius.badge)
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 Text(prop.label ?? "Prop").font(.caption).lineLimit(1)
                 Spacer()
                 if isEdited { StateBadge(.edited) }

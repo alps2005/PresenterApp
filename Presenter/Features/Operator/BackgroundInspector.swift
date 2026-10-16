@@ -57,7 +57,7 @@ struct BackgroundInspector: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
             Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
                 Text(inheritLabel).tag(Mode.inherit)
@@ -111,7 +111,7 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(image.assetID) {
             WarningLabel("The image file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: 16) {
+        HStack(spacing: Spacing.lg) {
             Picker("Scaling", selection: Binding(
                 get: { image.scaling },
                 set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
@@ -122,7 +122,7 @@ struct BackgroundInspector: View {
             }
             .pickerStyle(.segmented)
             .fixedSize()
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 Text("Dim")
                 Slider(value: Binding(
                     get: { image.dimming },
@@ -158,7 +158,7 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(video.assetID) {
             WarningLabel("The video file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: 16) {
+        HStack(spacing: Spacing.lg) {
             Picker("Scaling", selection: Binding(get: { video.scaling }, set: { value in
                 var updated = video
                 updated.scaling = value
@@ -181,7 +181,7 @@ struct BackgroundInspector: View {
                 apply(.video(updated))
             }))
         }
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xs) {
             Text("Dim")
             Slider(value: Binding(get: { video.dimming }, set: { value in
                 var updated = video

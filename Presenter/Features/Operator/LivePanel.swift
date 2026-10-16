@@ -10,7 +10,7 @@ struct LivePanel: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: Spacing.xl) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     PanelHeader(title: "Audience") { liveBadge }
                     SlideRenderView(scene: coordinator.audienceScene)

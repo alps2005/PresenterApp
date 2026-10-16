@@ -72,7 +72,7 @@ struct StateBadge: View {
             .font(Typography.badge)
             .lineLimit(1)
             .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 2)
+            .padding(.vertical, Spacing.xxs)
             .foregroundStyle(foreground)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.badge))
             .overlay {
@@ -168,7 +168,7 @@ struct RowCard<Content: View>: View {
 
     var body: some View {
         HStack(spacing: Spacing.sm) { content }
-            .padding(8)
+            .padding(Spacing.md)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
             .overlay {
                 if isHighlighted {

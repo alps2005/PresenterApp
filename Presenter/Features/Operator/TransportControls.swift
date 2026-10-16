@@ -5,7 +5,7 @@ struct TransportControls: View {
     @Environment(MediaPlaybackController.self) private var playback
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.md) {
             Button { playback.togglePlay() } label: {
                 Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
                     .frame(width: 14)

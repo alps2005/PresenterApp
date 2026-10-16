@@ -19,7 +19,7 @@ struct ShowControls: View {
     @AppStorage("showControlsTab") private var tab: Tab = .timers
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Picker("Show Controls", selection: $tab) {
                 ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -45,9 +45,9 @@ private struct TimersTab: View {
     @State private var pendingDeletion: TimerDefinition?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             TimelineView(.periodic(from: .now, by: 0.5)) { context in
-                VStack(spacing: 6) {
+                VStack(spacing: Spacing.sm) {
                     ForEach(coordinator.project.timers) { timer in
                         row(timer, now: context.date)
                     }
@@ -232,7 +232,7 @@ private struct StageTab: View {
 
     var body: some View {
         let settings = coordinator.project.stage
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Label(stageStatus, systemImage: "rectangle.on.rectangle")
                     .foregroundStyle(.secondary)
@@ -242,15 +242,15 @@ private struct StageTab: View {
                     .help("Show or hide the stage display (⌥⌘S). Choose its screen in the Output menu.")
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Message to the stage").font(.caption.bold())
                 if let message = coordinator.state.stageMessage {
                     HStack {
                         Text(message)
                             .lineLimit(2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.yellow.opacity(0.85), in: RoundedRectangle(cornerRadius: 4))
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, Spacing.xs)
+                            .background(Color.yellow.opacity(0.85), in: RoundedRectangle(cornerRadius: Radius.badge))
                             .foregroundStyle(.black)
                         Spacer()
                         Button("Hide") { coordinator.hideStageMessage() }

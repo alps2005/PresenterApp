@@ -42,11 +42,11 @@ struct OperatorView: View {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
         .sheet(isPresented: Binding(get: { persistence.activity != nil }, set: { _ in })) {
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.md) {
                 ProgressView().controlSize(.small)
                 Text(persistence.activity ?? "")
             }
-            .padding(20)
+            .padding(Spacing.xl)
             .interactiveDismissDisabled()
         }
         .alert("Project", isPresented: Binding(

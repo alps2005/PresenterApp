@@ -37,7 +37,7 @@ struct SlideThumbnailSidebar: View {
                 Label("Add Slide", systemImage: "plus")
             }
             .buttonStyle(.borderless)
-            .padding(10)
+            .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .confirmSlideDeletion(of: $slidePendingDeletion) { slide in
@@ -49,18 +49,18 @@ struct SlideThumbnailSidebar: View {
         let position = itemID.map { SlidePosition(itemID: $0, slideID: slide.id) }
         let isLive = position != nil && coordinator.state.live?.position == position
         let isCued = position != nil && coordinator.state.preview == position
-        return HStack(alignment: .top, spacing: 6) {
+        return HStack(alignment: .top, spacing: Spacing.sm) {
             Text("\(index + 1)")
                 .font(.caption)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .trailing)
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .trailing, spacing: Spacing.xs) {
                 SlideRenderView(scene: .slide(presentation.rendered(slide)))
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .tileFrame(TileState(isLive: isLive, isCued: isCued), cornerRadius: Radius.badge)
                 if isLive || isCued || slide.label != nil {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Spacing.xs) {
                         if let label = slide.label { GroupLabelTag(label: label) }
                         Spacer(minLength: 0)
                         if isCued { StateBadge(.cued) }
@@ -69,6 +69,6 @@ struct SlideThumbnailSidebar: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 }

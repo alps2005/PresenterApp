@@ -15,7 +15,7 @@ struct MediaBin: View {
     static let height: CGFloat = 170
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             PanelHeader(title: "Media") {
                 if isImporting { ProgressView().controlSize(.small) }
                 Button {
@@ -35,7 +35,7 @@ struct MediaBin: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.horizontal) {
-                    LazyHStack(spacing: 10) {
+                    LazyHStack(spacing: Spacing.md) {
                         ForEach(coordinator.project.mediaAssets.reversed()) { asset in
                             tile(asset)
                         }
@@ -43,14 +43,14 @@ struct MediaBin: View {
                 }
             }
         }
-        .padding(12)
+        .padding(Spacing.md)
         .frame(height: Self.height)
     }
 
     private func tile(_ asset: MediaAsset) -> some View {
         let background = Self.background(for: asset)
         let isLive = coordinator.state.liveBackground?.assetID == asset.id
-        return VStack(alignment: .leading, spacing: 3) {
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
             ZStack {
                 Color.black
                 if let image = mediaLibrary.image(for: asset.id) {
@@ -71,7 +71,7 @@ struct MediaBin: View {
                         }
                         .font(.caption2.bold())
                         .foregroundStyle(.white)
-                        .padding(4)
+                        .padding(Spacing.xs)
                         .background(.black.opacity(0.5))
                     }
                 }

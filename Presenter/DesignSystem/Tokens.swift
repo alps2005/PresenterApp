@@ -7,6 +7,8 @@ import SwiftUI
 
 /// Spacing between and around controls, in points.
 enum Spacing {
+    /// The vertical padding of badges and tags.
+    static let xxs: CGFloat = 2
     static let xs: CGFloat = 4
     static let sm: CGFloat = 6
     static let md: CGFloat = 10
