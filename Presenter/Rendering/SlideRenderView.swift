@@ -293,14 +293,40 @@ private struct ImageElementView: View {
 private struct StyledText: View {
     let element: TextElement
 
+    /// Copies of the words around the letters make the outline: SwiftUI on macOS 14 has no text stroke.
+    private static let outlineCopies = 16
+
     var body: some View {
         let style = element.style
-        Text(element.text)
+        letters(in: style.color.color)
+            .background {
+                if let outline = style.outline {
+                    // In the background, the copies are offered the words' own size, so they wrap and scale alike.
+                    ZStack {
+                        ForEach(0..<Self.outlineCopies, id: \.self) { index in
+                            let angle = Double(index) / Double(Self.outlineCopies) * 2 * .pi
+                            letters(in: outline.color.color)
+                                .offset(x: cos(angle) * outline.width, y: sin(angle) * outline.width)
+                        }
+                    }
+                }
+            }
+            .shadow(color: .black.opacity(style.hasShadow ? 0.6 : 0), radius: 6, y: 3)
+            .padding(style.backgroundBox?.padding ?? 0)
+            .background {
+                if let box = style.backgroundBox {
+                    RoundedRectangle(cornerRadius: box.cornerRadius).fill(box.color.color)
+                }
+            }
+    }
+
+    private func letters(in color: Color) -> some View {
+        let style = element.style
+        return Text(element.text)
             .font(style.font)
             .lineSpacing(style.lineSpacing)
             .multilineTextAlignment(style.alignment.textAlignment)
-            .foregroundStyle(style.color.color)
-            .shadow(color: .black.opacity(style.hasShadow ? 0.6 : 0), radius: 6, y: 3)
+            .foregroundStyle(color)
             .minimumScaleFactor(0.25)
     }
 }

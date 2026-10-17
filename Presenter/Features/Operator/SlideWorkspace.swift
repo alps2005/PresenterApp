@@ -105,7 +105,7 @@ struct SlideWorkspace: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .background(Palette.panelRaised, in: Capsule())
-        .overlay { Capsule().strokeBorder(Palette.hairline, lineWidth: 0.5) }
+        .hairlineBorder(Capsule())
         .padding(Spacing.md)
         .help("Thumbnail size")
     }
@@ -359,7 +359,7 @@ struct SlideWorkspace: View {
     ) -> some View {
         let position = SlidePosition(itemID: itemID, slideID: slide.id, occurrence: occurrence)
         return SlideThumbnail(
-                    slide: presentation.rendered(slide),
+            slide: coordinator.project.rendered(slide, in: presentation),
             number: number,
             isCued: coordinator.state.preview == position,
             isLive: coordinator.state.live?.position == position

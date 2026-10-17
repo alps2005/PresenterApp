@@ -9,7 +9,10 @@ struct PlaylistSidebar: View {
     @State private var itemPendingRemoval: PresentationItem?
     @State private var presentationPendingDeletion: PresentationDocument?
     @State private var searchText = ""
+    @State private var editingThemeID: UUID?
+    @State private var themePendingDeletion: Theme?
     @AppStorage("libraryExpanded") private var isLibraryExpanded = true
+    @AppStorage("themesExpanded") private var isThemesExpanded = true
 
     private var isSearching: Bool { !searchText.trimmingCharacters(in: .whitespaces).isEmpty }
 
@@ -37,6 +40,20 @@ struct PlaylistSidebar: View {
                 if libraryPresentations.isEmpty {
                     Text(isSearching ? "No matches" : "No presentations yet")
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            if !isSearching {
+                Section("Themes", isExpanded: $isThemesExpanded) {
+                    ForEach(coordinator.project.themes) { theme in
+                        themeRow(theme)
+                    }
+                    Button {
+                        if let theme = coordinator.addTheme(named: "New Theme") { editingThemeID = theme.id }
+                    } label: {
+                        Label("New Theme…", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderless)
                 }
             }
         }
@@ -72,6 +89,18 @@ struct PlaylistSidebar: View {
             }
         } message: { presentation in
             Text("“\(presentation.title)” is removed from the library and the playlist. You can undo this with ⌘Z. If it's live, it stays on the audience output until you take something else live.")
+        }
+        .sheet(isPresented: Binding(get: { editingThemeID != nil }, set: { if !$0 { editingThemeID = nil } })) {
+            if let editingThemeID {
+                ThemeEditorSheet(coordinator: coordinator, themeID: editingThemeID)
+            }
+        }
+        .confirmDeletion(
+            "Delete this theme?",
+            message: "Presentations that use it keep their look. You can undo this with ⌘Z.",
+            of: $themePendingDeletion
+        ) { theme in
+            coordinator.deleteTheme(theme.id)
         }
         .confirmationDialog(
             "Remove this item from the playlist?",
@@ -143,6 +172,38 @@ struct PlaylistSidebar: View {
             Button("Delete Presentation…", role: .destructive) { presentationPendingDeletion = presentation }
         }
         .help(inPlaylist ? "In the playlist. Double-click to add it again." : "Not in the playlist. Double-click to add it.")
+    }
+
+    private func themeRow(_ theme: Theme) -> some View {
+        let isDefault = coordinator.project.defaultThemeID == theme.id
+        return HStack {
+            Label(theme.name.isEmpty ? "Untitled Theme" : theme.name, systemImage: "paintpalette")
+            Spacer()
+            // An icon and a word, not colour alone.
+            if isDefault {
+                Label("Default", systemImage: "star.fill")
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .help("New songs and presentations use this theme")
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) { editingThemeID = theme.id }
+        .contextMenu {
+            Button("Edit Theme…") { editingThemeID = theme.id }
+            Button("Duplicate") {
+                if let copy = coordinator.addTheme(named: "\(theme.name) Copy", basedOn: theme.id) { editingThemeID = copy.id }
+            }
+            if isDefault {
+                Button("Don't Use for New Songs") { coordinator.setDefaultTheme(nil) }
+            } else {
+                Button("Use for New Songs") { coordinator.setDefaultTheme(theme.id) }
+            }
+            Divider()
+            Button("Delete Theme…", role: .destructive) { themePendingDeletion = theme }
+        }
+        .help("Double-click to edit. Choose a presentation's theme in the editor's Document settings.")
     }
 
     private func addToPlaylist(_ presentation: PresentationDocument) {

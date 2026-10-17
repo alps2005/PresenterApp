@@ -10,9 +10,7 @@ import UniformTypeIdentifiers
 final class ProjectPersistence {
     /// `Application Support/Presenter/Project.json`, inside the app's sandbox container.
     static var defaultFileURL: URL {
-        URL.applicationSupportDirectory
-            .appendingPathComponent("Presenter", isDirectory: true)
-            .appendingPathComponent("Project.json")
+        AppDirectories.data.appendingPathComponent("Project.json")
     }
 
     /// Long enough to batch a burst of typing into one write.

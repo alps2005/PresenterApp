@@ -13,10 +13,18 @@ struct EditorInspector: View {
     @Environment(MediaLibrary.self) private var mediaLibrary
     @State private var isConfirmingTransitionForAll = false
     @State private var importError: String?
+    @State private var editingThemeID: UUID?
+    /// A theme chosen for a presentation whose text is already formatted, waiting for Keep or Replace.
+    @State private var pendingThemeID: UUID?
 
+    /// The selected element as drawn: themed, so the controls show the look on the canvas.
     private var element: SlideElement? {
-        guard let selectedElementID else { return nil }
-        return slide?.element(withID: selectedElementID)
+        guard let selectedElementID, let slide else { return nil }
+        return coordinator.project.rendered(slide, in: presentation).slide.element(withID: selectedElementID)
+    }
+
+    private var theme: Theme? {
+        coordinator.project.theme(for: presentation)
     }
 
     var body: some View {
@@ -32,9 +40,17 @@ struct EditorInspector: View {
                 }
             }
             .padding(Spacing.lg)
+            .overflowGuard("Editor inspector", minimumWidth: Widths.editorInspector.min)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .solidPanel(Palette.sidebar)
+        .hardScrollEdges()
         .controlSize(.small)
+        .sheet(isPresented: Binding(get: { editingThemeID != nil }, set: { if !$0 { editingThemeID = nil } })) {
+            if let editingThemeID {
+                ThemeEditorSheet(coordinator: coordinator, themeID: editingThemeID)
+            }
+        }
     }
 
     private var title: String {
@@ -101,7 +117,43 @@ struct EditorInspector: View {
         Text("Double-click the text on the slide to change the words.")
             .font(.caption)
             .foregroundStyle(.secondary)
+        if let theme {
+            themeStatus(text, theme: theme, slide: slide)
+        }
         arrange(.text(text), slide: slide)
+    }
+
+    /// Whether the text follows the presentation's theme, in words, with the ways back and forth.
+    @ViewBuilder
+    private func themeStatus(_ text: TextElement, theme: Theme, slide: SlideDocument) -> some View {
+        let overrides = slide.element(withID: text.id).flatMap { element -> Set<ThemedProperty>? in
+            if case .text(let stored) = element { stored.overrides } else { nil }
+        } ?? []
+        section("Theme") {
+            if overrides.isEmpty {
+                Label("Follows “\(theme.name)”", systemImage: "paintpalette")
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Label(Self.overrideText(overrides), systemImage: "paintbrush.pointed")
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Revert to Theme") {
+                    coordinator.revertToTheme(elementID: text.id, inPresentation: presentation.id)
+                }
+                .help("Use the theme's style and position for this text again")
+            }
+            Button("Update Theme from This Text") {
+                coordinator.updateThemeFromText(text.id, slideID: slide.id, inPresentation: presentation.id)
+            }
+            .help("Give “\(theme.name)” this text's style and position. Every slide that follows the theme changes.")
+        }
+    }
+
+    private static func overrideText(_ overrides: Set<ThemedProperty>) -> String {
+        switch (overrides.contains(.style), overrides.contains(.box)) {
+        case (true, true): "Own style and position"
+        case (true, false): "Own style; position from the theme"
+        default: "Own position; style from the theme"
+        }
     }
 
     @ViewBuilder
@@ -233,9 +285,12 @@ struct EditorInspector: View {
                 set: { coordinator.setNotes($0, slideID: slide.id, inPresentation: presentation.id) }
             ))
             .font(.body)
-            .frame(height: 110)
             .scrollContentBackground(.hidden)
+            .padding(Spacing.sm)
+            .frame(height: 110)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
+            // The raised fill alone is nearly the inspector's colour in dark mode; the outline shows the field.
+            .hairlineBorder(RoundedRectangle(cornerRadius: Radius.card))
             Text("Only you see these. The audience never does.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -248,7 +303,7 @@ struct EditorInspector: View {
     private func arrange(_ element: SlideElement, slide: SlideDocument) -> some View {
         section("Arrange") {
             if let frame = element.frame {
-                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                Grid(alignment: .leading, horizontalSpacing: Spacing.sm, verticalSpacing: Spacing.sm) {
                     GridRow {
                         pointField("X", frame: frame, keyPath: \.x, axis: .horizontal, element: element, slide: slide)
                         pointField("Y", frame: frame, keyPath: \.y, axis: .vertical, element: element, slide: slide)
@@ -382,6 +437,10 @@ struct EditorInspector: View {
             Text(presentation.slides.count == 1 ? "1 slide" : "\(presentation.slides.count) slides")
                 .foregroundStyle(.secondary)
         }
+        // Props are overlays, not slides of a presentation: they don't follow a theme.
+        if presentation.id != coordinator.project.props.id {
+            themeSection
+        }
         section("Background") {
             BackgroundInspector(coordinator: coordinator, target: .presentation(presentation.id))
             Text("Used by every slide that doesn't set its own.")
@@ -390,6 +449,53 @@ struct EditorInspector: View {
         }
         section("Audio") {
             comingSoon("A soundtrack and audio cues for this presentation are coming in the next phase.")
+        }
+    }
+
+    private var themeSection: some View {
+        section("Theme") {
+            Picker("Theme", selection: Binding(get: { presentation.themeID }, set: { choose($0) })) {
+                Text("None").tag(UUID?.none)
+                Divider()
+                ForEach(coordinator.project.themes) { theme in
+                    Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                }
+            }
+            .labelsHidden()
+            if let theme {
+                Button("Edit Theme…") { editingThemeID = theme.id }
+                Button("Revert All Text to Theme") {
+                    coordinator.revertToTheme(elementID: nil, inPresentation: presentation.id)
+                }
+                .help("Text formatted by hand on any slide follows the theme again")
+            }
+            Text("Text follows the theme unless you format it by hand. Make or edit themes in the sidebar.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .confirmationDialog(
+            "Keep the formatting already on these slides?",
+            isPresented: Binding(get: { pendingThemeID != nil }, set: { if !$0 { pendingThemeID = nil } }),
+            presenting: pendingThemeID
+        ) { themeID in
+            Button("Keep Slide Formatting") {
+                coordinator.setPresentationTheme(themeID, presentationID: presentation.id, keepSlideFormatting: true)
+            }
+            Button("Use the Theme for All Text") {
+                coordinator.setPresentationTheme(themeID, presentationID: presentation.id, keepSlideFormatting: false)
+            }
+        } message: { _ in
+            Text("Text you styled or placed by hand can keep its look, or take the theme's like the rest.")
+        }
+    }
+
+    private func choose(_ themeID: UUID?) {
+        guard themeID != presentation.themeID else { return }
+        if themeID != nil, coordinator.hasOwnFormatting(presentation.id) {
+            pendingThemeID = themeID
+        } else {
+            coordinator.setPresentationTheme(themeID, presentationID: presentation.id)
         }
     }
 
@@ -426,7 +532,7 @@ struct EditorInspector: View {
             Slider(value: value, in: range)
             Text(format(value.wrappedValue))
                 .monospacedDigit()
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: Widths.valueLabel, alignment: .trailing)
         }
     }
 
@@ -473,3 +579,35 @@ struct EditorInspector: View {
         }
     }
 }
+
+#if DEBUG
+// At the inspector's narrowest width, with an image background so the widest Format rows show
+// (docs/adr/0002-spacing-and-panel-padding.md). The image is missing on purpose; its warning wraps too.
+private struct EditorInspectorPreview: View {
+    let tab: EditorInspectorTab
+    @State private var coordinator: PresentationCoordinator = {
+        var project = ProjectDocument.sample()
+        let assetID = UUID()
+        project.presentations[0].slides[0].background = .image(ImageBackground(assetID: assetID, dimming: 0.2))
+        return PresentationCoordinator(project: project)
+    }()
+    @State private var mediaLibrary = MediaLibrary(directory: .temporaryDirectory.appendingPathComponent("PresenterPreview"))
+
+    var body: some View {
+        let presentation = coordinator.project.presentations[0]
+        EditorInspector(
+            coordinator: coordinator,
+            presentation: presentation,
+            slide: presentation.slides.first,
+            tab: tab,
+            selectedElementID: .constant(nil)
+        )
+        .environment(mediaLibrary)
+        .frame(width: Widths.editorInspector.min, height: 700)
+    }
+}
+
+#Preview("Format, narrowest") { EditorInspectorPreview(tab: .format) }
+#Preview("Animate, narrowest") { EditorInspectorPreview(tab: .animate) }
+#Preview("Document, narrowest") { EditorInspectorPreview(tab: .document) }
+#endif

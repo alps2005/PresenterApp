@@ -3,6 +3,48 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v0.1.0-beta.5 (2026-10-17)
+
+### Themes
+- **Themes**, like ProPresenter's: a reusable look for each kind of text (title, body, caption) — font, size,
+  colour, position and effects — and a background. New projects start with Worship, Scripture and Lower Third.
+- Choose a presentation's theme in the editor's Document tab; Presenter asks whether to keep formatting already on
+  the slides. New Song has a theme picker, starting at the theme marked Default.
+- Edit themes from the sidebar, with a live preview. Every slide that follows the theme changes.
+- Text styled or moved by hand keeps its look. The Format tab says whether text follows the theme, with Revert to
+  Theme and Update Theme from This Text.
+- Backgrounds fall back slide, presentation, theme. Deleting a theme leaves its presentations looking the same.
+
+### Text
+- **Outline** and **Box** effects: an outline around each letter, and a filled, rounded box behind the words.
+  In the Format tab, in themes, and in Quick Edit under Effects….
+
+### Project
+- Projects are saved in format version 3. Beta 4 and earlier move a version 3 file aside (without overwriting it)
+  and open a sample project. Version 2 projects load with the starting themes and look the same as before.
+
+### Look
+- **The slide editor's inspector keeps its margins.** With an image or video background, the Background
+  section's controls were wider than the inspector, which pushed every row past the column and hid its margins.
+  It showed on macOS 14 and 15, where the inspector sits flush with the window edge (reported on a 2019 iMac).
+  The Scaling, Dim, Loop and Mute controls now wrap onto their own lines in a narrow inspector, and the
+  Background choice turns into a menu when its five buttons don't fit.
+- **The live panel keeps its margins** in a narrow window: the Timers, Messages, Props and Stage choice becomes a
+  menu when its four buttons don't fit.
+- The font menu has a fixed width, so a long font name installed on the Mac can't widen the inspector.
+- The inspector has the same solid background as the rest of the editor.
+- Presenter Notes and Quick Edit's text box leave space between the words and the box's edge, and have an
+  outline, so the notes box no longer disappears into the dark inspector.
+- Quick Edit and the media bin have the same 16 pt margins as the side panels.
+- The thumbnail-size slider's outline is one pixel wide, so it stays visible on non-Retina displays.
+
+### For contributors
+- [ADR 0002](docs/adr/0002-spacing-and-panel-padding.md) sets the panel padding rule and the 238 pt width every
+  inspector row must fit. Column widths are tokens (`Widths`).
+- Debug builds outline in amber, and log, any panel whose content doesn't fit its column at the column's
+  narrowest width.
+  `scripts/layout-screenshots.sh` captures each inspector tab at its narrowest width.
+
 ## v0.1.0-beta.4 (2026-10-16)
 
 ### Tested on hardware (2026-10-16)

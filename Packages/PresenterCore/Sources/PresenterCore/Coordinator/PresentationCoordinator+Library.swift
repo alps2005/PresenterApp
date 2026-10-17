@@ -9,7 +9,7 @@ extension PresentationCoordinator {
     @discardableResult
     public func addPresentation(title: String) -> PresentationItem {
         recordingUndo("Add Presentation") {
-            let presentation = PresentationDocument(title: title, slides: [.text("")])
+            let presentation = PresentationDocument(title: title, slides: [.text("")], themeID: defaultThemeID)
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
             project.playlist.items.append(item)
@@ -23,11 +23,13 @@ extension PresentationCoordinator {
     /// Creates a presentation from pasted lyrics (see `LyricsParser`), adds it to the playlist and selects it.
     /// Returns nil, changing nothing, when the lyrics contain no words.
     @discardableResult
-    public func addSong(title: String, lyrics: String, maxLinesPerSlide: Int? = nil) -> PresentationItem? {
+    /// The song follows `themeID` (the New Song sheet starts with `defaultThemeID`); nil, or a deleted theme, none.
+    public func addSong(title: String, lyrics: String, maxLinesPerSlide: Int? = nil, themeID: UUID? = nil) -> PresentationItem? {
         let slides = LyricsParser.slides(from: lyrics, maxLinesPerSlide: maxLinesPerSlide)
         guard !slides.isEmpty else { return nil }
         return recordingUndo("Add Song") {
-            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides)
+            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides,
+                                                    themeID: existingThemeID(themeID))
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
             project.playlist.items.append(item)
@@ -74,7 +76,8 @@ extension PresentationCoordinator {
             return slide
         }
         let look = template.primaryTextElement
-        let element = TextElement(text: text, role: look?.role ?? .body, style: look?.style, box: look?.box)
+        let element = TextElement(text: text, role: look?.role ?? .body, style: look?.style, box: look?.box,
+                                  overrides: look?.overrides ?? [])
         return SlideDocument(elements: [.text(element)], background: template.background,
                              transition: template.transition, label: label)
     }

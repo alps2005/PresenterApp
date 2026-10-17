@@ -11,6 +11,8 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
     public var arrangements: [Arrangement]
     /// The arrangement used when the presentation plays. Nil plays every slide in order.
     public var activeArrangementID: UUID?
+    /// The project theme its slides follow (see `Theme`). Nil uses each slide's own formatting.
+    public var themeID: UUID?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -21,6 +23,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         background: SlideBackground? = nil,
         arrangements: [Arrangement] = [],
         activeArrangementID: UUID? = nil,
+        themeID: UUID? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -30,15 +33,16 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         self.background = background
         self.arrangements = arrangements
         self.activeArrangementID = activeArrangementID
+        self.themeID = themeID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, slides, background, arrangements, activeArrangementID, createdAt, updatedAt
+        case id, title, slides, background, arrangements, activeArrangementID, themeID, createdAt, updatedAt
     }
 
-    /// Files saved before arrangements existed load with none.
+    /// Files saved before arrangements or themes existed load with none.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -47,6 +51,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         background = try container.decodeIfPresent(SlideBackground.self, forKey: .background)
         arrangements = try container.decodeIfPresent([Arrangement].self, forKey: .arrangements) ?? []
         activeArrangementID = try container.decodeIfPresent(UUID.self, forKey: .activeArrangementID)
+        themeID = try container.decodeIfPresent(UUID.self, forKey: .themeID)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
@@ -59,8 +64,11 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         slides.firstIndex { $0.id == slideID }
     }
 
-    /// A slide of this presentation, ready to draw: its own background, else the presentation's.
-    public func rendered(_ slide: SlideDocument) -> RenderedSlide {
-        RenderedSlide(slide: slide, background: slide.background ?? background)
+    /// A slide of this presentation, ready to draw under `theme` (which should be this presentation's, see
+    /// `ProjectDocument.rendered(_:in:)`): text follows the theme where it isn't formatted by hand, and the
+    /// background is the slide's own, else the presentation's, else the theme's.
+    public func rendered(_ slide: SlideDocument, theme: Theme?) -> RenderedSlide {
+        guard let theme else { return RenderedSlide(slide: slide, background: slide.background ?? background) }
+        return RenderedSlide(slide: theme.applied(to: slide), background: slide.background ?? background ?? theme.background)
     }
 }

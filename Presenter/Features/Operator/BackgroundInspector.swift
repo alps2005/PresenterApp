@@ -3,10 +3,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PresenterCore
 
-/// Which background the inspector edits: one slide's override, or a presentation's default.
+/// Which background the inspector edits: one slide's override, a presentation's default, or a theme's.
 enum BackgroundTarget: Equatable {
     case slide(UUID, presentationID: UUID)
     case presentation(UUID)
+    case theme(UUID)
 }
 
 /// Picks a colour or an imported image as a background, clears it so it inherits, or makes it transparent so
@@ -28,22 +29,38 @@ struct BackgroundInspector: View {
     @State private var importError: String?
     @State private var isImporting = false
 
-    private var presentationID: UUID {
-        switch target {
-        case .slide(_, let presentationID), .presentation(let presentationID): presentationID
-        }
-    }
-
     private var background: SlideBackground? {
-        let presentation = coordinator.project.presentation(withID: presentationID)
         switch target {
-        case .slide(let slideID, _): return presentation?.slide(withID: slideID)?.background
-        case .presentation: return presentation?.background
+        case .slide(let slideID, let presentationID):
+            coordinator.project.presentation(withID: presentationID)?.slide(withID: slideID)?.background
+        case .presentation(let presentationID):
+            coordinator.project.presentation(withID: presentationID)?.background
+        case .theme(let themeID):
+            coordinator.project.theme(withID: themeID)?.background
         }
     }
 
     private var inheritLabel: String {
-        if case .slide = target { "Presentation" } else { "Default" }
+        switch target {
+        case .slide: "Presentation"
+        case .presentation: hasThemeBackground ? "Theme" : "Default"
+        case .theme: "Default"
+        }
+    }
+
+    /// The presentation follows a theme with a background, which its slides get when it sets none.
+    private var hasThemeBackground: Bool {
+        guard case .presentation(let presentationID) = target,
+              let presentation = coordinator.project.presentation(withID: presentationID) else { return false }
+        return coordinator.project.theme(for: presentation)?.background != nil
+    }
+
+    private var inheritedText: String {
+        switch target {
+        case .slide: "This slide uses its presentation's background."
+        case .presentation: hasThemeBackground ? "Slides use the theme's background." : "Slides use the app's default background."
+        case .theme: "Slides use their presentation's background, or the app's default."
+        }
     }
 
     private var mode: Mode {
@@ -58,24 +75,22 @@ struct BackgroundInspector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
-            Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
-                Text(inheritLabel).tag(Mode.inherit)
-                Text("Color").tag(Mode.color)
-                Text("Image").tag(Mode.image)
-                Text("Video").tag(Mode.video)
-                Text("None").tag(Mode.transparent)
+            // Five segments only just fit a narrow inspector; past that, a menu, so the row never pushes the
+            // panel wider than its column (docs/adr/0002-spacing-and-panel-padding.md).
+            ViewThatFits(in: .horizontal) {
+                modePicker
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                modePicker
+                    .pickerStyle(.menu)
+                    .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
 
             switch background {
             case nil:
-                Text(target == .presentation(presentationID)
-                     ? "Slides use the app's default background."
-                     : "This slide uses its presentation's background.")
+                Text(inheritedText)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             case .color(let color):
                 ColorPicker("Color", selection: Binding(
                     get: { color.color },
@@ -98,6 +113,18 @@ struct BackgroundInspector: View {
         .controlSize(.small)
     }
 
+    private var modePicker: some View {
+        // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
+        Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
+            Text(inheritLabel).tag(Mode.inherit)
+            Text("Color").tag(Mode.color)
+            Text("Image").tag(Mode.image)
+            Text("Video").tag(Mode.video)
+            Text("None").tag(Mode.transparent)
+        }
+        .labelsHidden()
+    }
+
     @ViewBuilder
     private func imageControls(_ image: ImageBackground) -> some View {
         HStack {
@@ -111,24 +138,23 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(image.assetID) {
             WarningLabel("The image file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: Spacing.lg) {
-            Picker("Scaling", selection: Binding(
-                get: { image.scaling },
-                set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
-            )) {
-                Text("Fit").tag(ImageScaling.fit)
-                Text("Fill").tag(ImageScaling.fill)
-                Text("Stretch").tag(ImageScaling.stretch)
+        let scaling = Binding(
+            get: { image.scaling },
+            set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
+        )
+        let dimming = Binding(
+            get: { image.dimming },
+            set: { dimming in apply(.image(ImageBackground(assetID: image.assetID, scaling: image.scaling, dimming: dimming))) }
+        )
+        // One row where there's room (Quick Edit), two in a narrow inspector.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.lg) {
+                scalingPicker(scaling)
+                dimRow(dimming).frame(width: Widths.dimRow)
             }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            HStack(spacing: Spacing.xs) {
-                Text("Dim")
-                Slider(value: Binding(
-                    get: { image.dimming },
-                    set: { dimming in apply(.image(ImageBackground(assetID: image.assetID, scaling: image.scaling, dimming: dimming))) }
-                ), in: ImageBackground.dimmingRange)
-                .frame(width: 100)
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                scalingPicker(scaling)
+                dimRow(dimming)
             }
         }
     }
@@ -158,18 +184,12 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(video.assetID) {
             WarningLabel("The video file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: Spacing.lg) {
-            Picker("Scaling", selection: Binding(get: { video.scaling }, set: { value in
-                var updated = video
-                updated.scaling = value
-                apply(.video(updated))
-            })) {
-                Text("Fit").tag(ImageScaling.fit)
-                Text("Fill").tag(ImageScaling.fill)
-                Text("Stretch").tag(ImageScaling.stretch)
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
+        let scaling = Binding(get: { video.scaling }, set: { value in
+            var updated = video
+            updated.scaling = value
+            apply(.video(updated))
+        })
+        let toggles = HStack(spacing: Spacing.lg) {
             Toggle("Loop", isOn: Binding(get: { video.loops }, set: { value in
                 var updated = video
                 updated.loops = value
@@ -181,14 +201,44 @@ struct BackgroundInspector: View {
                 apply(.video(updated))
             }))
         }
+        .fixedSize()
+        // One row where there's room (Quick Edit), two in a narrow inspector.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.lg) {
+                scalingPicker(scaling)
+                toggles
+            }
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                scalingPicker(scaling)
+                toggles
+            }
+        }
+        dimRow(Binding(get: { video.dimming }, set: { value in
+            var updated = video
+            updated.dimming = value
+            apply(.video(updated))
+        }))
+        .frame(maxWidth: Widths.inspectorContentWidth, alignment: .leading)
+    }
+
+    private func scalingPicker(_ scaling: Binding<ImageScaling>) -> some View {
+        Picker("Scaling", selection: scaling) {
+            Text("Fit").tag(ImageScaling.fit)
+            Text("Fill").tag(ImageScaling.fill)
+            Text("Stretch").tag(ImageScaling.stretch)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel("Scaling")
+    }
+
+    /// "Dim" and a slider that takes the rest of the row.
+    private func dimRow(_ dimming: Binding<Double>) -> some View {
         HStack(spacing: Spacing.xs) {
             Text("Dim")
-            Slider(value: Binding(get: { video.dimming }, set: { value in
-                var updated = video
-                updated.dimming = value
-                apply(.video(updated))
-            }), in: ImageBackground.dimmingRange)
-            .frame(width: 100)
+            Slider(value: dimming, in: ImageBackground.dimmingRange)
+                .frame(minWidth: Widths.compactSlider)
         }
     }
 
@@ -249,6 +299,10 @@ struct BackgroundInspector: View {
             coordinator.setSlideBackground(background, slideID: slideID, inPresentation: presentationID)
         case .presentation(let presentationID):
             coordinator.setPresentationBackground(background, presentationID: presentationID)
+        case .theme(let themeID):
+            guard var theme = coordinator.project.theme(withID: themeID) else { return }
+            theme.background = background
+            coordinator.updateTheme(theme)
         }
     }
 }

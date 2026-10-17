@@ -74,6 +74,15 @@ struct PresentationEditor: View {
         }
     }
 
+    private var inspectorIdealWidth: CGFloat {
+        #if DEBUG
+        // `-PresenterDebugInspectorWidth 270` opens the inspector at its narrowest, where rows overflow first.
+        let width = UserDefaults.standard.double(forKey: "PresenterDebugInspectorWidth")
+        if width > 0 { return width }
+        #endif
+        return Widths.editorInspector.ideal
+    }
+
     private func editor(_ presentation: PresentationDocument) -> some View {
         NavigationSplitView {
             SlideThumbnailSidebar(
@@ -83,14 +92,17 @@ struct PresentationEditor: View {
                 selection: $selectedSlideID,
                 onAddSlide: { addSlide() }
             )
-            .navigationSplitViewColumnWidth(min: 150, ideal: 190, max: 280)
+            .navigationSplitViewColumnWidth(
+                min: Widths.editorThumbnails.min, ideal: Widths.editorThumbnails.ideal, max: Widths.editorThumbnails.max
+            )
         } detail: {
             Group {
                 if let slide {
+                    // Themed, so what's selected, dragged and edited is what's drawn.
                     EditorCanvas(
                         coordinator: coordinator,
                         presentation: presentation,
-                        slide: slide,
+                        slide: coordinator.project.rendered(slide, in: presentation).slide,
                         selectedElementID: $selectedElementID,
                         zoom: zoom,
                         onExit: { onDone() }
@@ -111,7 +123,9 @@ struct PresentationEditor: View {
                     tab: inspectorTab,
                     selectedElementID: $selectedElementID
                 )
-                .inspectorColumnWidth(min: 270, ideal: 310, max: 420)
+                .inspectorColumnWidth(
+                    min: Widths.editorInspector.min, ideal: inspectorIdealWidth, max: Widths.editorInspector.max
+                )
             }
         }
         .navigationTitle(presentation.title.isEmpty ? "Untitled" : presentation.title)
@@ -119,6 +133,14 @@ struct PresentationEditor: View {
         .solidToolbar()
         .onAppear {
             selectedSlideID = session.initialSlideID ?? presentation.slides.first?.id
+            #if DEBUG
+            // `-PresenterDebugEditorTab format|animate|document`, for scripts/layout-screenshots.sh.
+            switch UserDefaults.standard.string(forKey: "PresenterDebugEditorTab") {
+            case "animate": inspectorTab = .animate
+            case "document": inspectorTab = .document
+            default: break
+            }
+            #endif
         }
         // Keep a valid slide selected when the selected one is deleted.
         .onChange(of: presentation.slides.map(\.id)) { old, new in

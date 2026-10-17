@@ -45,9 +45,15 @@ struct SlideEditor: View {
                         ))
                         .font(.body)
                         .scrollContentBackground(.hidden)
+                        .padding(Spacing.sm)
                         .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
+                        .hairlineBorder(RoundedRectangle(cornerRadius: Radius.card))
                     case .style:
-                        TextStyleInspector(coordinator: coordinator, slide: slide, presentationID: presentation.id)
+                        TextStyleInspector(
+                            coordinator: coordinator,
+                            slide: coordinator.project.rendered(slide, in: presentation).slide,
+                            presentationID: presentation.id
+                        )
                     case .background:
                         BackgroundInspector(
                             coordinator: coordinator,
@@ -62,6 +68,7 @@ struct SlideEditor: View {
             }
             .frame(height: Self.contentHeight, alignment: .top)
         }
-        .padding(Spacing.md)
+        .padding(Spacing.lg)
+        .overflowGuard("Quick Edit")
     }
 }

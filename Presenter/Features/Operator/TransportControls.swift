@@ -21,7 +21,7 @@ struct TransportControls: View {
             Text("-" + TimeText.format(playback.duration - playback.currentTime))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: Widths.valueLabel, alignment: .trailing)
                 .help("Time left in the clip")
 
             if playback.loops {

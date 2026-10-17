@@ -3,15 +3,10 @@ import PresenterCore
 
 /// The operator's main window: playlist, slides, live state and controls.
 struct OperatorView: View {
-    static let sidebarMinWidth: CGFloat = 200
-    static let sidebarMaxWidth: CGFloat = 300
-    static let workspaceMinWidth: CGFloat = 480
-    static let livePanelMinWidth: CGFloat = 300
-    static let livePanelMaxWidth: CGFloat = 440
     /// The window can't shrink below this. Even with the sidebar at its widest, the workspace and
     /// live panel still get their minimum widths, so nothing is clipped.
     static let minimumWindowSize = CGSize(
-        width: sidebarMaxWidth + workspaceMinWidth + livePanelMinWidth + 20,
+        width: Widths.operatorSidebar.max + Widths.workspaceMinWidth + Widths.livePanelWidths.lowerBound + 20,
         height: 700
     )
 
@@ -38,6 +33,9 @@ struct OperatorView: View {
         }
         .preferredColorScheme(followsSystemAppearance ? nil : .dark)
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
+        #if DEBUG
+        .onAppear { openEditorIfAsked() }
+        #endif
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -59,11 +57,21 @@ struct OperatorView: View {
         }
     }
 
+    #if DEBUG
+    /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
+    /// scripts/layout-screenshots.sh.
+    private func openEditorIfAsked() {
+        guard UserDefaults.standard.bool(forKey: "PresenterDebugOpenEditor"),
+              let item = coordinator.project.playlist.items.first else { return }
+        editSession = EditSession(itemID: item.id, presentationID: item.presentationID, initialSlideID: nil)
+    }
+    #endif
+
     /// The live show: playlist, continuous slide workspace, live panel and controls.
     private var showView: some View {
         NavigationSplitView {
             PlaylistSidebar(coordinator: coordinator, scrollRequest: $scrollRequest, onNewSong: { ui.isAddingSong = true })
-                .navigationSplitViewColumnWidth(min: Self.sidebarMinWidth, ideal: 240, max: Self.sidebarMaxWidth)
+                .navigationSplitViewColumnWidth(min: Widths.operatorSidebar.min, ideal: Widths.operatorSidebar.ideal, max: Widths.operatorSidebar.max)
         } detail: {
             // Plain SwiftUI stacks on purpose. HSplitView (AppKit-backed) ignored these minimum widths and
             // made the content wider than the window, clipping the sidebar and live panel; it also ignores
@@ -71,7 +79,7 @@ struct OperatorView: View {
             VStack(spacing: 0) {
                 GeometryReader { proxy in
                     // HStack would split space evenly and overflow; size the live panel from what's available.
-                    let liveWidth = min(max(proxy.size.width * 0.34, Self.livePanelMinWidth), Self.livePanelMaxWidth)
+                    let liveWidth = min(max(proxy.size.width * 0.34, Widths.livePanelWidths.lowerBound), Widths.livePanelWidths.upperBound)
                     HStack(spacing: 0) {
                         SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

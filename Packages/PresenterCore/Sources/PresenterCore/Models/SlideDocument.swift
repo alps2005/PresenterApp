@@ -81,20 +81,32 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
     public var style: TextStyle
     /// Where the text sits on the canvas. Nil keeps the default centred flow layout.
     public var box: TextBox?
+    /// What the operator formatted by hand, so the presentation's theme leaves it alone. The rest follows the theme;
+    /// with no theme, `style` and `box` are used as they are.
+    public var overrides: Set<ThemedProperty>
 
-    public init(id: UUID = UUID(), text: String, role: TextRole = .body, style: TextStyle? = nil, box: TextBox? = nil) {
+    public init(
+        id: UUID = UUID(),
+        text: String,
+        role: TextRole = .body,
+        style: TextStyle? = nil,
+        box: TextBox? = nil,
+        overrides: Set<ThemedProperty> = []
+    ) {
         self.id = id
         self.text = text
         self.role = role
         self.style = style ?? .default(for: role)
         self.box = box
+        self.overrides = overrides
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, text, role, style, box
+        case id, text, role, style, box, overrides
     }
 
-    /// Text saved before styling existed has no style; it gets its role's default look.
+    /// Text saved before styling existed has no style; it gets its role's default look. Text saved before themes
+    /// existed has no overrides.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -102,6 +114,7 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
         role = try container.decode(TextRole.self, forKey: .role)
         style = try container.decodeIfPresent(TextStyle.self, forKey: .style) ?? .default(for: role)
         box = try container.decodeIfPresent(TextBox.self, forKey: .box)
+        overrides = try container.decodeIfPresent(Set<ThemedProperty>.self, forKey: .overrides) ?? []
     }
 }
 
