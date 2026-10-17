@@ -142,6 +142,23 @@ final class ThemeTests: XCTestCase {
         XCTAssertEqual(f.drawn(f.s1.id)?.text, "Una")
     }
 
+    func testApplyToAllSlidesCopiesTheLookAsDrawn() {
+        // s1 follows the theme, but its stored style is still the plain default: it copies the theme's look.
+        let following = themed()
+        following.coordinator.applyTextFormatToAllSlides(from: following.s1.id, inPresentation: following.presentationID)
+        XCTAssertEqual(following.drawn(following.s2.id)?.style, Self.themeBody)
+        XCTAssertEqual(following.drawn(following.s2.id)?.box, Self.themeBox)
+
+        // Formatted by hand, the copies are formatted by hand too, so later theme changes leave them alone.
+        let formatted = themed()
+        var style = Self.themeBody
+        style.color = .black
+        formatted.coordinator.setTextStyle(style, slideID: formatted.s1.id, inPresentation: formatted.presentationID)
+        formatted.coordinator.applyTextFormatToAllSlides(from: formatted.s1.id, inPresentation: formatted.presentationID)
+        XCTAssertEqual(formatted.drawn(formatted.s2.id)?.style, style)
+        XCTAssertEqual(formatted.stored(formatted.s2.id)?.overrides, [.style, .box])
+    }
+
     func testRevertToThemeFollowsTheThemeAgain() {
         let f = themed()
         f.coordinator.setTextStyle(TextStyle(fontSize: 30), slideID: f.s1.id, inPresentation: f.presentationID)
@@ -206,18 +223,31 @@ final class ThemeTests: XCTestCase {
         }
     }
 
-    func testNewSongsFollowTheDefaultTheme() throws {
+    func testNewPresentationsFollowTheDefaultTheme() {
         let f = makeFixture()
         f.coordinator.setDefaultTheme(f.theme.id)
+        XCTAssertEqual(f.coordinator.defaultThemeID, f.theme.id)
 
-        let item = try XCTUnwrap(f.coordinator.addSong(title: "S", lyrics: "Line one"))
-        let song = try XCTUnwrap(f.coordinator.project.presentation(forItem: item.id))
-        XCTAssertEqual(song.themeID, f.theme.id)
+        let item = f.coordinator.addPresentation(title: "New")
+        XCTAssertEqual(f.coordinator.project.presentation(forItem: item.id)?.themeID, f.theme.id)
 
         f.coordinator.deleteTheme(f.theme.id)
         XCTAssertNil(f.coordinator.project.defaultThemeID)
-        let next = try XCTUnwrap(f.coordinator.addSong(title: "T", lyrics: "Line two"))
+        let next = f.coordinator.addPresentation(title: "Next")
         XCTAssertNil(f.coordinator.project.presentation(forItem: next.id)?.themeID)
+    }
+
+    func testSongsFollowTheThemeChosenForThem() throws {
+        let f = makeFixture()
+        f.coordinator.setDefaultTheme(f.theme.id)
+
+        let themed = try XCTUnwrap(f.coordinator.addSong(title: "S", lyrics: "Line one", themeID: f.theme.id))
+        let plain = try XCTUnwrap(f.coordinator.addSong(title: "T", lyrics: "Line two", themeID: nil))
+        let ghost = try XCTUnwrap(f.coordinator.addSong(title: "U", lyrics: "Line three", themeID: UUID()))
+
+        XCTAssertEqual(f.coordinator.project.presentation(forItem: themed.id)?.themeID, f.theme.id)
+        XCTAssertNil(f.coordinator.project.presentation(forItem: plain.id)?.themeID, "None, even with a default")
+        XCTAssertNil(f.coordinator.project.presentation(forItem: ghost.id)?.themeID)
     }
 
     func testUnknownThemesAreRejected() {

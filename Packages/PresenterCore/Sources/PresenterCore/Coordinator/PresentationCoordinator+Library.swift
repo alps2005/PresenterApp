@@ -23,13 +23,13 @@ extension PresentationCoordinator {
     /// Creates a presentation from pasted lyrics (see `LyricsParser`), adds it to the playlist and selects it.
     /// Returns nil, changing nothing, when the lyrics contain no words.
     @discardableResult
-    /// The song follows `themeID`, or the project's default theme when nil.
+    /// The song follows `themeID` (the New Song sheet starts with `defaultThemeID`); nil, or a deleted theme, none.
     public func addSong(title: String, lyrics: String, maxLinesPerSlide: Int? = nil, themeID: UUID? = nil) -> PresentationItem? {
         let slides = LyricsParser.slides(from: lyrics, maxLinesPerSlide: maxLinesPerSlide)
         guard !slides.isEmpty else { return nil }
         return recordingUndo("Add Song") {
             let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides,
-                                                    themeID: existingThemeID(themeID) ?? defaultThemeID)
+                                                    themeID: existingThemeID(themeID))
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
             project.playlist.items.append(item)

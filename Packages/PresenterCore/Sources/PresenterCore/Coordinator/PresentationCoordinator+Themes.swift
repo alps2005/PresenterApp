@@ -3,7 +3,7 @@ import Foundation
 // Themes: reusable looks that presentations follow. Undoable edits.
 extension PresentationCoordinator {
     /// The theme new presentations and songs start with, if it still exists.
-    var defaultThemeID: UUID? {
+    public var defaultThemeID: UUID? {
         existingThemeID(project.defaultThemeID)
     }
 

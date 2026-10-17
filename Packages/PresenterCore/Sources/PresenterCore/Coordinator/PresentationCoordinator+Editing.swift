@@ -25,7 +25,9 @@ extension PresentationCoordinator {
         recordingUndo("Apply to All Slides") {
             guard let presentation = project.presentation(withID: presentationID) else { return reject(.unknownPresentation) }
             guard let source = presentation.slide(withID: slideID) else { return reject(.unknownSlide) }
-            let format = source.primaryTextElement ?? TextElement(text: "")
+            // As drawn: text that follows a theme may have an out-of-date style stored.
+            let stored = source.primaryTextElement ?? TextElement(text: "")
+            let format = project.theme(for: presentation)?.applied(to: stored) ?? stored
             Log.coordinator.info("Applied text format to all slides of \(presentationID, privacy: .public)")
             return editPresentation(presentationID) { presentation in
                 for index in presentation.slides.indices {
