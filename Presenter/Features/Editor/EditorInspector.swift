@@ -34,6 +34,8 @@ struct EditorInspector: View {
             .padding(Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .solidPanel(Palette.sidebar)
+        .hardScrollEdges()
         .controlSize(.small)
     }
 
@@ -233,8 +235,9 @@ struct EditorInspector: View {
                 set: { coordinator.setNotes($0, slideID: slide.id, inPresentation: presentation.id) }
             ))
             .font(.body)
-            .frame(height: 110)
             .scrollContentBackground(.hidden)
+            .padding(Spacing.sm)
+            .frame(height: 110)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
             Text("Only you see these. The audience never does.")
                 .font(.caption)
@@ -248,7 +251,7 @@ struct EditorInspector: View {
     private func arrange(_ element: SlideElement, slide: SlideDocument) -> some View {
         section("Arrange") {
             if let frame = element.frame {
-                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                Grid(alignment: .leading, horizontalSpacing: Spacing.sm, verticalSpacing: Spacing.sm) {
                     GridRow {
                         pointField("X", frame: frame, keyPath: \.x, axis: .horizontal, element: element, slide: slide)
                         pointField("Y", frame: frame, keyPath: \.y, axis: .vertical, element: element, slide: slide)
@@ -426,7 +429,7 @@ struct EditorInspector: View {
             Slider(value: value, in: range)
             Text(format(value.wrappedValue))
                 .monospacedDigit()
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: Widths.valueLabel, alignment: .trailing)
         }
     }
 

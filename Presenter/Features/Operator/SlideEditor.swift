@@ -45,6 +45,7 @@ struct SlideEditor: View {
                         ))
                         .font(.body)
                         .scrollContentBackground(.hidden)
+                        .padding(Spacing.sm)
                         .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
                     case .style:
                         TextStyleInspector(coordinator: coordinator, slide: slide, presentationID: presentation.id)
