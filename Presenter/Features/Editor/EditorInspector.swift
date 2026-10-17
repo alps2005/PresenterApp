@@ -32,7 +32,7 @@ struct EditorInspector: View {
                 }
             }
             .padding(Spacing.lg)
-            .overflowGuard("Editor inspector")
+            .overflowGuard("Editor inspector", minimumWidth: Widths.editorInspector.min)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .solidPanel(Palette.sidebar)
@@ -240,6 +240,8 @@ struct EditorInspector: View {
             .padding(Spacing.sm)
             .frame(height: 110)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
+            // The raised fill alone is nearly the inspector's colour in dark mode; the outline shows the field.
+            .hairlineBorder(RoundedRectangle(cornerRadius: Radius.card))
             Text("Only you see these. The audience never does.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
