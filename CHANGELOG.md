@@ -5,6 +5,24 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 ## v0.1.0-beta.5 (unreleased)
 
+### Themes
+- **Themes**, like ProPresenter's: a reusable look for each kind of text (title, body, caption) — font, size,
+  colour, position and effects — and a background. New projects start with Worship, Scripture and Lower Third.
+- Choose a presentation's theme in the editor's Document tab; Presenter asks whether to keep formatting already on
+  the slides. New Song has a theme picker, starting at the theme marked Default.
+- Edit themes from the sidebar, with a live preview. Every slide that follows the theme changes.
+- Text styled or moved by hand keeps its look. The Format tab says whether text follows the theme, with Revert to
+  Theme and Update Theme from This Text.
+- Backgrounds fall back slide, presentation, theme. Deleting a theme leaves its presentations looking the same.
+
+### Text
+- **Outline** and **Box** effects: an outline around each letter, and a filled, rounded box behind the words.
+  In the Format tab, in themes, and in Quick Edit under Effects….
+
+### Project
+- Projects are saved in format version 3. Beta 4 and earlier move a version 3 file aside (without overwriting it)
+  and open a sample project. Version 2 projects load with the starting themes and look the same as before.
+
 ### Look
 - **The slide editor's inspector keeps its margins.** With an image or video background, the Background
   section's controls were wider than the inspector, which pushed every row past the column and hid its margins.

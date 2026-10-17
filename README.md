@@ -149,15 +149,25 @@ swift test
 - **Right, chosen with the toolbar's three buttons:**
   - **Format:** the selected item's settings: text style; shape, fill and border; or image scaling and opacity. Each also has position, size, stacking order and Delete. With nothing selected, it shows the slide's background and presenter notes.
   - **Animate:** the slide's transition: None, or a **Dissolve** of 0.2–2 seconds that cross-fades the audience output when the slide goes live. Clear and Blackout are always instant.
-  - **Document:** the presentation's title and background.
+  - **Document:** the presentation's title, theme and background.
 
 The audience output keeps running while you edit, and edits don't reach it until a slide is taken live again. Build animations (moving text and shapes on and off a slide) and audio are coming in the next phase.
+
+**Themes.** A theme is a reusable look, like ProPresenter's: a font, size, colour, position and effects for each kind of text (title, body and caption) and a background. New projects start with three: **Worship**, **Scripture** (verses top left, the reference small at the bottom) and **Lower Third** (words in a dark band along the bottom, with no background, for a stream or camera feed).
+
+- **Choosing one:** in the slide editor, **Document › Theme**. If the slides already have formatting, Presenter asks whether to keep it or use the theme for all the text. New Song also has a theme picker.
+- **Editing:** double-click a theme in the sidebar (or **Edit Theme…** in the editor). Every slide that follows it changes as you edit, with a live preview. Right-click a theme to duplicate it, delete it, or **Use for New Songs**, which marks it **Default**.
+- **Formatting by hand:** text you style or move yourself keeps its look when the theme changes. With the text selected, the editor's Format tab says whether it follows the theme, and has **Revert to Theme** and **Update Theme from This Text**.
+- **Backgrounds:** a slide's own background comes first, then the presentation's, then the theme's.
+- **Deleting a theme** leaves its presentations looking the same: the look is written into their slides.
+
+**Text effects.** Text can have an **Outline** around each letter and a **Box** behind the words (a filled, rounded box with space around the text). They're in the Format tab, in a theme, and in Quick Edit under **Effects…**.
 
 **Quick Edit.** For a fast fix during a service, cue a slide and press ⌥⌘E (or the **Quick Edit** toolbar button). A panel appears under the workspace with three tabs:
 
 - **Text:** the slide's words.
 - **Style:**
-  - font, weight, italic, size, colour, alignment and shadow;
+  - font, weight, italic, size, colour, alignment and shadow, and **Effects…** for an outline and a box;
   - a 9-point **Position** grid with a margin slider, to place the text box;
   - **Reset Position**, which returns to the default centred layout;
   - **Apply to All Slides…**, which copies this slide's style and position to every slide in the presentation, leaving their text alone.

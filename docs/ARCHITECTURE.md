@@ -40,11 +40,28 @@ The coordinator is split by area into extensions in `Packages/PresenterCore/Sour
 | `+ShowControls.swift` | Timers, the stage message, and the message, prop, timer and stage-settings libraries |
 | `+Library.swift` | Presentations, playlist, songs, Reflow, arrangements |
 | `+Editing.swift` | Text formatting, backgrounds, media assets, elements, slide order, transitions, notes |
+| `+Themes.swift` | Themes, a presentation's theme, Revert to Theme, Update Theme from This Text |
 | `+Undo.swift` | The undo engine and `replaceProject` |
 
 **Not routed through the coordinator:** video transport (play/pause, scrubbing, volume) and showing or hiding the
 output windows. Those are playback and window state, not presentation state. Video *mute* does go through the
 coordinator (`setLiveVideoMuted`), because it's part of the live background.
+
+## Themes
+
+A `Theme` holds a `TextStyle` and an optional `TextBox` for each `TextRole`, and a background. A presentation
+follows one through `themeID`.
+
+- **Drawing:** every view draws a slide through `ProjectDocument.rendered(_:in:)`, which applies the presentation's
+  theme. The editor canvas, inspector and Quick Edit work on that themed slide too, and the live snapshot, Up Next
+  and the EDITED badge go through `renderedSlide(at:)`, which uses it. So all of them agree on what a slide looks
+  like. The background falls back slide, presentation, theme, then the app's default.
+- **Formatting by hand:** `TextElement.overrides` records which of `.style` and `.box` the operator set by hand;
+  the theme fills in the rest. Overrides are recorded in one place, `editPresentation`, after every edit of a
+  themed presentation (`recordFormattingOverrides`): a change counts when the new value differs both from what was
+  stored and from the theme's. So every way of formatting text counts the same, and new words alone never do.
+- **Leaving a theme:** removing or deleting a theme writes its look into the slides (`bakeTheme`), so nothing on
+  screen changes.
 
 ## The audience output
 
