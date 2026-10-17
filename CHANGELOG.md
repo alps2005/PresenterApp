@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased: planned for v0.1.0-beta.4
+## v0.1.0-beta.4 (2026-10-16)
 
 ### Tested on hardware (2026-10-16)
 Beta 3's untested changes now pass on the GS24F14 external display:
