@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 import PresenterCore
 
-/// Font, size, colour, shadow and alignment controls for one text style. Quick Edit lays them out in a
-/// short, wide grid; the slide editor's inspector stacks them in a narrow column with line spacing too.
+/// Font, size, colour, shadow, alignment and effects controls for one text style. Quick Edit lays them out in a
+/// short, wide grid with effects in a popover; the slide editor's inspector stacks them in a narrow column with line
+/// spacing too.
 struct TextStyleControls: View {
     enum Layout {
         case wide
@@ -12,6 +13,7 @@ struct TextStyleControls: View {
 
     @Binding var style: TextStyle
     var layout: Layout = .wide
+    @State private var isShowingEffects = false
 
     private static let fontFamilies = NSFontManager.shared.availableFontFamilies.sorted()
     static let sizeRange: ClosedRange<Double> = 12...400
@@ -35,6 +37,7 @@ struct TextStyleControls: View {
                         sizeField
                         colorPicker
                         shadowToggle
+                        effectsButton
                     }
                 }
                 GridRow {
@@ -79,6 +82,76 @@ struct TextStyleControls: View {
                             .frame(width: 28, alignment: .trailing)
                     }
                     .help("Extra space between lines, in slide points")
+                }
+                effectRows
+            }
+        }
+    }
+
+    // MARK: Effects
+
+    /// Quick Edit is too short for more rows, so its effects open in a popover.
+    private var effectsButton: some View {
+        Button("Effects…") { isShowingEffects = true }
+            .help("Outline and background box")
+            .popover(isPresented: $isShowingEffects, arrowEdge: .bottom) {
+                Grid(alignment: .leading, horizontalSpacing: Spacing.md, verticalSpacing: Spacing.md) {
+                    effectRows
+                }
+                .controlSize(.small)
+                .padding(Spacing.lg)
+                .frame(width: 300, alignment: .leading)
+            }
+    }
+
+    @ViewBuilder
+    private var effectRows: some View {
+        GridRow {
+            Text("Outline").foregroundStyle(.secondary)
+            HStack {
+                Toggle(isOn: Binding(
+                    get: { style.outline != nil },
+                    set: { style.outline = $0 ? TextOutline() : nil }
+                )) { Text("Outline") }
+                .labelsHidden()
+                if let outline = style.outline {
+                    ColorPicker("Outline colour", selection: Binding(
+                        get: { outline.color.color },
+                        set: { style.outline?.color = RGBAColor($0) }
+                    ), supportsOpacity: true)
+                    .labelsHidden()
+                    Slider(value: Binding(
+                        get: { outline.width },
+                        set: { style.outline?.width = $0 }
+                    ), in: TextOutline.widthRange)
+                    .frame(minWidth: Widths.compactSlider)
+                    .accessibilityLabel("Outline width")
+                    .help("Outline width")
+                }
+            }
+        }
+        GridRow {
+            Text("Box").foregroundStyle(.secondary)
+            HStack {
+                Toggle(isOn: Binding(
+                    get: { style.backgroundBox != nil },
+                    set: { style.backgroundBox = $0 ? TextBackgroundBox() : nil }
+                )) { Text("Background box") }
+                .labelsHidden()
+                .help("A filled box behind the words")
+                if let box = style.backgroundBox {
+                    ColorPicker("Box colour", selection: Binding(
+                        get: { box.color.color },
+                        set: { style.backgroundBox?.color = RGBAColor($0) }
+                    ), supportsOpacity: true)
+                    .labelsHidden()
+                    Slider(value: Binding(
+                        get: { box.padding },
+                        set: { style.backgroundBox?.padding = $0 }
+                    ), in: TextBackgroundBox.paddingRange)
+                    .frame(minWidth: Widths.compactSlider)
+                    .accessibilityLabel("Space around the words")
+                    .help("Space around the words")
                 }
             }
         }
