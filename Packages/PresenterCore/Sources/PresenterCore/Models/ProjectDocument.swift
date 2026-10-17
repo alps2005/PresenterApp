@@ -9,7 +9,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 1: presentations, playlist, slides, formatting, backgrounds and media (v0.1.0-beta.1).
     /// - 2: transparent backgrounds, song arrangements, timers, stage display, messages, props and video
     ///   (added in v0.1.0-beta.2, which still wrote 1; written as 2 from beta.3).
-    public static let currentSchemaVersion = 2
+    /// - 3: themes, text that follows them, text outlines and text background boxes (v0.1.0-beta.5).
+    public static let currentSchemaVersion = 3
 
     public let id: UUID
     public var name: String
@@ -24,6 +25,10 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public var messages: [MessageDefinition]
     /// Props are the slides of this presentation (see `PresentationDocument.propsLibrary`).
     public var props: PresentationDocument
+    /// Looks that presentations can follow (see `Theme`).
+    public var themes: [Theme]
+    /// The theme new presentations and songs start with. Nil starts them without one.
+    public var defaultThemeID: UUID?
 
     public init(
         id: UUID = UUID(),
@@ -35,7 +40,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         timers: [TimerDefinition] = TimerDefinition.defaults(),
         stage: StageSettings = StageSettings(),
         messages: [MessageDefinition] = MessageDefinition.defaults(),
-        props: PresentationDocument = .propsLibrary()
+        props: PresentationDocument = .propsLibrary(),
+        themes: [Theme] = Theme.presets(),
+        defaultThemeID: UUID? = nil
     ) {
         self.id = id
         self.name = name
@@ -47,10 +54,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.stage = stage
         self.messages = messages
         self.props = props
+        self.themes = themes
+        self.defaultThemeID = defaultThemeID
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage, messages, props
+        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage, messages, props, themes, defaultThemeID
     }
 
     public init(from decoder: any Decoder) throws {
@@ -66,6 +75,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         stage = try container.decodeIfPresent(StageSettings.self, forKey: .stage) ?? StageSettings()
         messages = try container.decodeIfPresent([MessageDefinition].self, forKey: .messages) ?? MessageDefinition.defaults()
         props = try container.decodeIfPresent(PresentationDocument.self, forKey: .props) ?? .propsLibrary()
+        // Projects saved before themes existed get the starting ones; their presentations follow none.
+        themes = try container.decodeIfPresent([Theme].self, forKey: .themes) ?? Theme.presets()
+        defaultThemeID = try container.decodeIfPresent(UUID.self, forKey: .defaultThemeID)
     }
 
     public func asset(withID assetID: UUID) -> MediaAsset? {
@@ -82,6 +94,21 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         props.slide(withID: propID)
     }
 
+    public func theme(withID themeID: UUID) -> Theme? {
+        themes.first { $0.id == themeID }
+    }
+
+    /// The theme a presentation follows, or nil if it follows none (or its theme was deleted).
+    public func theme(for presentation: PresentationDocument) -> Theme? {
+        presentation.themeID.flatMap { theme(withID: $0) }
+    }
+
+    /// A slide of `presentation`, ready to draw: themed, with its background resolved. Everything that draws a
+    /// slide goes through here, so the editor, thumbnails, previews and the audience output agree.
+    public func rendered(_ slide: SlideDocument, in presentation: PresentationDocument) -> RenderedSlide {
+        presentation.rendered(slide, theme: theme(for: presentation))
+    }
+
     public func message(withID messageID: UUID) -> MessageDefinition? {
         messages.first { $0.id == messageID }
     }
@@ -96,11 +123,11 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         presentation(forItem: position.itemID)?.slide(withID: position.slideID)
     }
 
-    /// The slide with its background resolved: the slide's own, else its presentation's.
+    /// The slide at a playlist position, ready to draw (see `rendered(_:in:)`).
     public func renderedSlide(at position: SlidePosition) -> RenderedSlide? {
         guard let presentation = presentation(forItem: position.itemID),
               let slide = presentation.slide(withID: position.slideID) else { return nil }
-        return presentation.rendered(slide)
+        return rendered(slide, in: presentation)
     }
 }
 

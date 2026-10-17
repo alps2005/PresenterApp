@@ -109,7 +109,7 @@ extension SlideElement {
     public func duplicated(offsetBy dx: Double = 0, _ dy: Double = 0) -> SlideElement {
         var copy: SlideElement = switch self {
         case .text(let text):
-            .text(TextElement(text: text.text, role: text.role, style: text.style, box: text.box))
+            .text(TextElement(text: text.text, role: text.role, style: text.style, box: text.box, overrides: text.overrides))
         case .shape(let shape):
             .shape(ShapeElement(kind: shape.kind, frame: shape.frame, fill: shape.fill, stroke: shape.stroke,
                                 strokeWidth: shape.strokeWidth, cornerRadius: shape.cornerRadius))

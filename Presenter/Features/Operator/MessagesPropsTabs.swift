@@ -182,7 +182,7 @@ struct PropsTab: View {
         let isShowing = coordinator.state.activeProps.contains(prop.id)
         let isEdited = coordinator.propHasPendingEdits(prop.id)
         return VStack(alignment: .leading, spacing: Spacing.xs) {
-            SlideRenderView(scene: .slide(props.rendered(prop)))
+            SlideRenderView(scene: .slide(coordinator.project.rendered(prop, in: props)))
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .tileFrame(TileState(isLive: isShowing), cornerRadius: Radius.badge)
             HStack(spacing: Spacing.xs) {

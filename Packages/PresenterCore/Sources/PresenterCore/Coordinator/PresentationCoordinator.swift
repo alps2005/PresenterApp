@@ -214,6 +214,9 @@ public final class PresentationCoordinator {
         }
         let before = project.presentations[index]
         edit(&project.presentations[index])
+        if let theme = project.theme(for: project.presentations[index]) {
+            project.presentations[index].recordFormattingOverrides(since: before, theme: theme)
+        }
         // Views can write back an unchanged value (e.g. a text field on appear); that isn't an edit.
         if project.presentations[index] != before {
             project.presentations[index].updatedAt = now()

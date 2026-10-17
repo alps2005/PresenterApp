@@ -49,6 +49,10 @@ public struct TextStyle: Codable, Hashable, Sendable {
     public var alignment: HorizontalTextAlignment
     public var lineSpacing: Double
     public var hasShadow: Bool
+    /// An outline around each letter. Nil draws none.
+    public var outline: TextOutline?
+    /// A filled box behind the text, e.g. for a lower third. Nil draws none.
+    public var backgroundBox: TextBackgroundBox?
 
     public init(
         fontFamily: String? = nil,
@@ -58,7 +62,9 @@ public struct TextStyle: Codable, Hashable, Sendable {
         color: RGBAColor = .white,
         alignment: HorizontalTextAlignment = .center,
         lineSpacing: Double = 0,
-        hasShadow: Bool = true
+        hasShadow: Bool = true,
+        outline: TextOutline? = nil,
+        backgroundBox: TextBackgroundBox? = nil
     ) {
         self.fontFamily = fontFamily
         self.fontSize = fontSize
@@ -68,6 +74,8 @@ public struct TextStyle: Codable, Hashable, Sendable {
         self.alignment = alignment
         self.lineSpacing = lineSpacing
         self.hasShadow = hasShadow
+        self.outline = outline
+        self.backgroundBox = backgroundBox
     }
 
     /// The look each role had before styling existed, so unstyled slides render unchanged.
@@ -77,6 +85,36 @@ public struct TextStyle: Codable, Hashable, Sendable {
         case .body: TextStyle(fontSize: 96, weight: .semibold)
         case .caption: TextStyle(fontSize: 56, weight: .regular)
         }
+    }
+}
+
+/// An outline drawn around each letter, in points on the 1920×1080 canvas.
+public struct TextOutline: Codable, Hashable, Sendable {
+    public var color: RGBAColor
+    public var width: Double
+
+    public static let widthRange: ClosedRange<Double> = 1...20
+
+    public init(color: RGBAColor = .black, width: Double = 4) {
+        self.color = color
+        self.width = width
+    }
+}
+
+/// A filled, rounded box behind a text element's words. Sizes in points on the 1920×1080 canvas.
+public struct TextBackgroundBox: Codable, Hashable, Sendable {
+    public var color: RGBAColor
+    /// Space between the words and the box's edge.
+    public var padding: Double
+    public var cornerRadius: Double
+
+    public static let paddingRange: ClosedRange<Double> = 0...120
+    public static let cornerRadiusRange: ClosedRange<Double> = 0...80
+
+    public init(color: RGBAColor = RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.6), padding: Double = 24, cornerRadius: Double = 12) {
+        self.color = color
+        self.padding = padding
+        self.cornerRadius = cornerRadius
     }
 }
 

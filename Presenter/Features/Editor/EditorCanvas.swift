@@ -128,7 +128,7 @@ struct EditorCanvas: View {
         let targets = Self.targets(in: shown)
         let selectedTarget = selectedElementID.flatMap { id in targets.first { $0.id == id } }
         return ZStack(alignment: .topLeading) {
-            SlideRenderView(scene: .slide(presentation.rendered(shown)))
+            SlideRenderView(scene: .slide(coordinator.project.rendered(shown, in: presentation)))
                 .frame(width: size.width, height: size.height)
                 .contentShape(Rectangle())
                 .onTapGesture { select(nil) }

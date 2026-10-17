@@ -39,7 +39,7 @@ struct ReflowSheet: View {
                         if let presentation {
                             ForEach(Array(presentation.slides.enumerated()), id: \.element.id) { index, slide in
                                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                                    SlideRenderView(scene: .slide(presentation.rendered(slide)))
+                                    SlideRenderView(scene: .slide(coordinator.project.rendered(slide, in: presentation)))
                                         .aspectRatio(16 / 9, contentMode: .fit)
                                         .clipShape(RoundedRectangle(cornerRadius: Radius.badge))
                                     HStack(spacing: Spacing.xs) {

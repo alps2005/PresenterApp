@@ -359,7 +359,7 @@ struct SlideWorkspace: View {
     ) -> some View {
         let position = SlidePosition(itemID: itemID, slideID: slide.id, occurrence: occurrence)
         return SlideThumbnail(
-                    slide: presentation.rendered(slide),
+            slide: coordinator.project.rendered(slide, in: presentation),
             number: number,
             isCued: coordinator.state.preview == position,
             isLive: coordinator.state.live?.position == position

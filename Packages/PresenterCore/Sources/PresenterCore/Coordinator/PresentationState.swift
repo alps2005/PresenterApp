@@ -112,6 +112,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     /// A background or image referenced a media asset that isn't in the project.
     case unknownMediaAsset
     case unknownElement
+    case unknownTheme
 
     public var message: String {
         switch self {
@@ -131,6 +132,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownProp: "That prop no longer exists."
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
+        case .unknownTheme: "That theme no longer exists."
         }
     }
 }

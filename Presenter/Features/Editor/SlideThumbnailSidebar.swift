@@ -56,7 +56,7 @@ struct SlideThumbnailSidebar: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .trailing)
             VStack(alignment: .trailing, spacing: Spacing.xs) {
-                SlideRenderView(scene: .slide(presentation.rendered(slide)))
+                SlideRenderView(scene: .slide(coordinator.project.rendered(slide, in: presentation)))
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .tileFrame(TileState(isLive: isLive, isCued: isCued), cornerRadius: Radius.badge)
                 if isLive || isCued || slide.label != nil {
