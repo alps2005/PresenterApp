@@ -25,10 +25,9 @@ Beta 3's untested changes now pass on the GS24F14 external display:
 - All operator and editor views now use the design tokens for spacing and corner radius. A few gaps shift by
   1 or 2 points to fit the scale. The audience and stage outputs, which scale with the output size, are unchanged.
 
-### To do
-- **Before the repository goes public:**
-  - a real contact in CODE_OF_CONDUCT;
-  - turn on GitHub private vulnerability reporting, which SECURITY.md relies on.
+### Project
+- The repository is public. Security problems can be reported privately from its Security tab, and the Code of
+  Conduct has a contact email.
 
 ## v0.1.0-beta.3 (2026-10-15)
 
