@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## v0.1.0-beta.5 (unreleased)
+## v0.1.0-beta.5 (2026-10-17)
 
 ### Themes
 - **Themes**, like ProPresenter's: a reusable look for each kind of text (title, body, caption) — font, size,
