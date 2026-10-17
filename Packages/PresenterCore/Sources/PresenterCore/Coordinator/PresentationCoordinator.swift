@@ -68,6 +68,18 @@ public final class PresentationCoordinator {
         upNextPosition.flatMap(project.renderedSlide(at:))
     }
 
+    /// True after Clear Background when the live slide (taken live again) or the next one has a background of its
+    /// own: going live puts that background back, as in ProPresenter. Clear is for now; the slide keeps its background.
+    public var clearedBackgroundReturnsWithNextSlide: Bool {
+        guard state.clearedBackground != nil else { return false }
+        // Mirrors goLive: transparent keeps the layer as it is, and no background means the app's default.
+        func bringsBackground(_ slide: RenderedSlide?) -> Bool {
+            guard let background = slide?.background else { return false }
+            return background != .transparent
+        }
+        return bringsBackground(state.live?.rendered) || bringsBackground(upNextSlide)
+    }
+
     public var previewSlide: RenderedSlide? {
         state.preview.flatMap(project.renderedSlide(at:))
     }
