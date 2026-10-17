@@ -60,7 +60,7 @@ struct LivePanel: View {
                 ShowControls(coordinator: coordinator, outputManager: outputManager, onEditProps: onEditProps)
             }
             .padding(Spacing.lg)
-            .overflowGuard("Live panel")
+            .overflowGuard("Live panel", minimumWidth: Widths.livePanelWidths.lowerBound)
         }
         .hardScrollEdges()
         .solidPanel()

@@ -54,5 +54,5 @@ for tab in format animate document; do
 done
 
 echo "Overflow logged by the Debug build (none is good):"
-log show --start "$start" --predicate 'subsystem == "io.github.alps2005.Presenter" AND category == "Layout"' \
+/usr/bin/log show --start "$start" --predicate 'subsystem == "io.github.alps2005.Presenter" AND category == "Layout"' \
     --style compact | grep -v '^Timestamp' || true

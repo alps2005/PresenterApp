@@ -14,8 +14,12 @@ image and video background rows held controls that couldn't shrink:
 Together they came to about 300 pt, in a column with 278 pt of room. A `VStack` is as wide as its widest row, so
 the whole inspector grew past its column and the clipping took the padding with it, on every row.
 
-Development happens on macOS 27, where the inspector floats as an inset pane and the overflow didn't show. On
-macOS 14 and 15 the inspector sits flush with the window edge, and controls are measured slightly differently.
+Development happens on macOS 27, where the overflow didn't show: the inspector column simply widened to its
+420 pt maximum to fit the row, squeezing the canvas instead. On a smaller screen, or on macOS 14 and 15, where the
+inspector sits flush with the window edge, there's no room to widen and the margins go.
+
+The same check later found the live panel's Timers | Messages | Props | Stage picker (about 290 pt) too wide for
+the live panel at its narrowest (300 pt less its padding).
 
 An audit also found:
 - panels padding 10, 16 or 20 pt with no rule;
@@ -41,7 +45,8 @@ An audit also found:
   - give its stretchy part a minimum width instead of a fixed one.
 
   Segmented pickers in a narrow column hide their label (`.labelsHidden()`) and keep an `accessibilityLabel`.
-- **Text editors inset their text** by `Spacing.sm` inside their raised background.
+- **Text editors inset their text** by `Spacing.sm` inside their raised background, and outline it with a hairline:
+  in dark mode the raised fill alone is nearly the panel's colour.
 - **Hairlines are one pixel** (`hairlineBorder`), not 0.5 pt.
 
 ## Consequences
@@ -49,5 +54,7 @@ An audit also found:
 - **Good:** the inspector keeps its margins at any width it allows, on every macOS version Presenter supports,
   and new panels have a rule to follow.
 - **Cost:** Quick Edit and the media bin grow by a few points, and `ViewThatFits` builds a row's controls twice.
-- **Checking it:** in a Debug build, `overflowGuard` outlines in amber any panel whose content is wider than its
-  column, and `scripts/layout-screenshots.sh` captures each inspector tab at its narrowest width.
+- **Checking it:** in a Debug build, `overflowGuard` outlines in amber, and logs, any panel whose content doesn't
+  fit its column at the column's narrowest width, even while the column is wider. `scripts/layout-screenshots.sh`
+  captures each inspector tab at its narrowest width and prints what the guard logged. Run against beta 4's
+  background rows, it reports "Editor inspector is 465 pt wide in 270 pt".

@@ -6,13 +6,16 @@ import SwiftUI
 // floats with margins of its own, so Debug builds outline the panel in amber and log it.
 
 extension View {
-    /// Debug builds: outlines this view in amber, and logs under the `Layout` category, when it's laid out wider
-    /// than the width it was offered. Apply it to a panel's padded content, inside any scroll view. Release builds
-    /// lay the view out unchanged.
+    /// Debug builds: outlines this view in amber, and logs under the `Layout` category, when it doesn't fit the
+    /// width it was offered, or `minimumWidth` if that's narrower. Apply it to a panel's padded content, inside any
+    /// scroll view. Release builds lay the view out unchanged.
+    ///
+    /// Pass a resizable column's narrowest width as `minimumWidth`: a row that can't shrink may otherwise just
+    /// widen the column on a big screen, and only overflow on a smaller one.
     @ViewBuilder
-    func overflowGuard(_ name: String) -> some View {
+    func overflowGuard(_ name: String, minimumWidth: CGFloat? = nil) -> some View {
         #if DEBUG
-        OverflowGuardLayout(name: name) {
+        OverflowGuardLayout(name: name, minimumWidth: minimumWidth) {
             self
             Rectangle()
                 .strokeBorder(Palette.warning, lineWidth: 2)
@@ -26,11 +29,13 @@ extension View {
 }
 
 #if DEBUG
-/// Lays out its first subview as usual, and stretches its second (the outline) over it only when the first is
-/// wider than offered. A layout rather than a GeometryReader, so it sees the width offered as well as the
-/// width taken, without a layout pass of its own.
+/// Lays out its first subview as usual, and stretches its second (the outline) over it only when the first
+/// doesn't fit the width offered (or the minimum width). A layout rather than a GeometryReader, so it can ask
+/// how wide the content is at any width offered, without a layout pass of its own.
 private struct OverflowGuardLayout: Layout {
     let name: String
+    let minimumWidth: CGFloat?
+    private static let narrowestPanel: CGFloat = 100
     /// Each overflow is logged once, not on every layout pass.
     private static let reported = OSAllocatedUnfairLock(initialState: Set<String>())
 
@@ -39,14 +44,16 @@ private struct OverflowGuardLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let size = subviews[0].sizeThatFits(proposal)
         subviews[0].place(at: bounds.origin, proposal: proposal)
-        guard let offered = proposal.width, size.width > offered + 0.5 else {
+        let offered = [proposal.width, minimumWidth].compactMap { $0 }.min()
+        let width = offered.map { subviews[0].sizeThatFits(ProposedViewSize(width: $0, height: proposal.height)).width }
+        // SwiftUI probes split view columns with a few points while it sizes the window; no panel is that narrow.
+        guard let offered, offered >= Self.narrowestPanel, let width, width > offered + 0.5 else {
             subviews[1].place(at: bounds.origin, proposal: .zero)
             return
         }
-        subviews[1].place(at: bounds.origin, proposal: ProposedViewSize(width: size.width, height: size.height))
-        let report = "\(name) is \(Int(size.width.rounded())) pt wide in \(Int(offered.rounded())) pt"
+        subviews[1].place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
+        let report = "\(name) is \(Int(width.rounded())) pt wide in \(Int(offered.rounded())) pt"
         if Self.reported.withLock({ $0.insert(report).inserted }) {
             Log.layout.warning("\(report, privacy: .public): a row can't shrink (docs/adr/0002-spacing-and-panel-padding.md)")
         }
