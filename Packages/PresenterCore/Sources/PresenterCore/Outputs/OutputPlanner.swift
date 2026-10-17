@@ -108,6 +108,12 @@ public struct OutputPlanner: Equatable, Sendable {
         return displays.filter { $0.id != operatorID && !taken.contains($0.id) }
     }
 
+    /// Connected displays the other output fills, so the menu can say why they aren't offered for this one.
+    public func displaysInUse(byOtherThan role: OutputRole) -> [DisplayInfo] {
+        let taken = takenDisplays(otherThan: role)
+        return displays.filter { taken.contains($0.id) }
+    }
+
     /// Turns the output on at `target`. Returns false, changing nothing, if the other output already fills
     /// that display: two outputs never share a screen.
     @discardableResult

@@ -7,13 +7,18 @@ struct OutputMenu: View {
 
     var body: some View {
         Menu {
-            section(.audience)
+            Section(OutputRole.audience.title) { section(.audience) }
             Divider()
-            Menu("Stage Display") { section(.stage) }
+            Menu(OutputRole.stage.title) { section(.stage) }
         } label: {
-            statusLabel
+            if status.isWarning {
+                Label(status.text, systemImage: status.systemImage).foregroundStyle(Palette.warning)
+            } else {
+                Label(status.text, systemImage: status.systemImage)
+            }
         }
-        .help("Audience output and stage display")
+        // The toolbar shows only the icon, so the status text is here too.
+        .help(status.text)
     }
 
     @ViewBuilder
@@ -22,13 +27,19 @@ struct OutputMenu: View {
 
         Section("Full Screen") {
             let candidates = outputManager.fullScreenCandidates(role)
-            if candidates.isEmpty {
+            let inUse = outputManager.displaysInUse(byOtherThan: role)
+            if candidates.isEmpty && inUse.isEmpty {
                 Text("Connect another display for full-screen output")
             }
             ForEach(candidates) { display in
                 Button("\(display.name) (\(display.resolutionDescription))") {
                     outputManager.show(.display(display.id), for: role)
                 }
+            }
+            // Two outputs never share a screen; say which one has it rather than leaving it out.
+            ForEach(inUse) { display in
+                Button("\(display.name) – used by the \(otherRole(than: role).title)") {}
+                    .disabled(true)
             }
         }
 
@@ -37,24 +48,20 @@ struct OutputMenu: View {
             .disabled(!outputManager.isEnabled(role))
     }
 
+    private func otherRole(than role: OutputRole) -> OutputRole {
+        OutputRole.allCases.first { $0 != role } ?? role
+    }
+
     /// The audience output's state, unless an output has lost its display: that warning wins.
-    @ViewBuilder
-    private var statusLabel: some View {
+    private var status: (text: String, systemImage: String, isWarning: Bool) {
         if case .displayMissing(let name) = outputManager.status(.stage), !isAudienceMissing {
-            Label("Stage display \(name) disconnected", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(Palette.warning)
-        } else {
-            switch outputManager.status {
-            case .off:
-                Label("Output Off", systemImage: "display")
-            case .windowed:
-                Label("Output: Window", systemImage: "macwindow")
-            case .fullScreen(let name):
-                Label("Output: \(name)", systemImage: "display")
-            case .displayMissing(let name):
-                Label("\(name) disconnected", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(Palette.warning)
-            }
+            return ("Stage display \(name) disconnected", "exclamationmark.triangle.fill", true)
+        }
+        switch outputManager.status {
+        case .off: return ("Output Off", "display", false)
+        case .windowed: return ("Output: Window", "macwindow", false)
+        case .fullScreen(let name): return ("Output: \(name)", "display", false)
+        case .displayMissing(let name): return ("\(name) disconnected", "exclamationmark.triangle.fill", true)
         }
     }
 

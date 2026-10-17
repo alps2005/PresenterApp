@@ -32,6 +32,21 @@ final class OutputPlannerTests: XCTestCase {
         XCTAssertEqual(planner.fullScreenCandidates(.stage).map(\.id), [2, 3])
     }
 
+    func testDisplaysInUseByTheOtherOutput() {
+        var planner = OutputPlanner(displays: [laptop, projector], operatorDisplayID: 1)
+        XCTAssertEqual(planner.displaysInUse(byOtherThan: .stage), [])
+        planner.show(.display(2), for: .audience)
+        // The stage display has nowhere to go full screen, and the menu can say why.
+        XCTAssertEqual(planner.fullScreenCandidates(.stage), [])
+        XCTAssertEqual(planner.displaysInUse(byOtherThan: .stage).map(\.id), [2])
+        XCTAssertEqual(planner.displaysInUse(byOtherThan: .audience), [])
+        planner.show(.windowed, for: .audience)
+        XCTAssertEqual(planner.displaysInUse(byOtherThan: .stage), [])
+        planner.show(.display(2), for: .audience)
+        planner.hide(.audience)
+        XCTAssertEqual(planner.displaysInUse(byOtherThan: .stage), [])
+    }
+
     func testBothOutputsNeverShareAScreen() {
         var planner = OutputPlanner(displays: [laptop, projector, monitor], operatorDisplayID: 1)
         XCTAssertTrue(planner.show(.display(2), for: .audience))
