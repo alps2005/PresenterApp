@@ -83,7 +83,9 @@ struct PresentationEditor: View {
                 selection: $selectedSlideID,
                 onAddSlide: { addSlide() }
             )
-            .navigationSplitViewColumnWidth(min: 150, ideal: 190, max: 280)
+            .navigationSplitViewColumnWidth(
+                min: Widths.editorThumbnails.min, ideal: Widths.editorThumbnails.ideal, max: Widths.editorThumbnails.max
+            )
         } detail: {
             Group {
                 if let slide {
@@ -111,7 +113,9 @@ struct PresentationEditor: View {
                     tab: inspectorTab,
                     selectedElementID: $selectedElementID
                 )
-                .inspectorColumnWidth(min: 270, ideal: 310, max: 420)
+                .inspectorColumnWidth(
+                    min: Widths.editorInspector.min, ideal: Widths.editorInspector.ideal, max: Widths.editorInspector.max
+                )
             }
         }
         .navigationTitle(presentation.title.isEmpty ? "Untitled" : presentation.title)

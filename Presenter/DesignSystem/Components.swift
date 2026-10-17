@@ -140,6 +140,21 @@ extension View {
                     .strokeBorder(color, lineWidth: state == .idle ? 1 : 3)
             }
     }
+
+    /// Outlines a shape with a hairline exactly one pixel wide: half a point on Retina, a full point on a
+    /// 1x display, where half a point blurs to a faint grey.
+    func hairlineBorder<S: InsettableShape>(_ shape: S) -> some View {
+        modifier(HairlineBorder(shape: shape))
+    }
+}
+
+private struct HairlineBorder<S: InsettableShape>: ViewModifier {
+    let shape: S
+    @Environment(\.displayScale) private var displayScale
+
+    func body(content: Content) -> some View {
+        content.overlay { shape.strokeBorder(Palette.hairline, lineWidth: 1 / max(displayScale, 1)) }
+    }
 }
 
 // MARK: - Labels, rows and headers

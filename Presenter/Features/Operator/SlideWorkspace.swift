@@ -105,7 +105,7 @@ struct SlideWorkspace: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .background(Palette.panelRaised, in: Capsule())
-        .overlay { Capsule().strokeBorder(Palette.hairline, lineWidth: 0.5) }
+        .hairlineBorder(Capsule())
         .padding(Spacing.md)
         .help("Thumbnail size")
     }
