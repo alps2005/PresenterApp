@@ -20,11 +20,16 @@ struct ShowControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Picker("Show Controls", selection: $tab) {
-                ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+            // Four segments need about 290 pt; at the live panel's narrowest (300 pt less its padding), a menu
+            // (docs/adr/0002-spacing-and-panel-padding.md).
+            ViewThatFits(in: .horizontal) {
+                tabPicker
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                tabPicker
+                    .pickerStyle(.menu)
+                    .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
             switch tab {
             case .timers: TimersTab(coordinator: coordinator)
@@ -34,6 +39,13 @@ struct ShowControls: View {
             }
         }
         .controlSize(.small)
+    }
+
+    private var tabPicker: some View {
+        Picker("Show Controls", selection: $tab) {
+            ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .labelsHidden()
     }
 }
 
