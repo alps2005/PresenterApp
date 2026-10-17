@@ -3,6 +3,26 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v0.1.0-beta.5 (unreleased)
+
+### Look
+- **The slide editor's inspector keeps its margins.** With an image or video background, the Background
+  section's controls were wider than the inspector, which pushed every row past the column and hid its margins.
+  It showed on macOS 14 and 15, where the inspector sits flush with the window edge (reported on a 2019 iMac).
+  The Scaling, Dim, Loop and Mute controls now wrap onto their own lines in a narrow inspector, and the
+  Background choice turns into a menu when its five buttons don't fit.
+- The font menu has a fixed width, so a long font name installed on the Mac can't widen the inspector.
+- The inspector has the same solid background as the rest of the editor.
+- Presenter Notes and Quick Edit's text box leave space between the words and the box's edge.
+- Quick Edit and the media bin have the same 16 pt margins as the side panels.
+- The thumbnail-size slider's outline is one pixel wide, so it stays visible on non-Retina displays.
+
+### For contributors
+- [ADR 0002](docs/adr/0002-spacing-and-panel-padding.md) sets the panel padding rule and the 238 pt width every
+  inspector row must fit. Column widths are tokens (`Widths`).
+- Debug builds outline in amber, and log, any panel whose content is wider than its column.
+  `scripts/layout-screenshots.sh` captures each inspector tab at its narrowest width.
+
 ## v0.1.0-beta.4 (2026-10-16)
 
 ### Tested on hardware (2026-10-16)
