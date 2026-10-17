@@ -148,15 +148,17 @@ extension View {
 struct WarningLabel: View {
     let text: String
     var systemImage = "exclamationmark.triangle.fill"
+    var font = Font.caption
 
-    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill") {
+    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill", font: Font = .caption) {
         self.text = text
         self.systemImage = systemImage
+        self.font = font
     }
 
     var body: some View {
         Label(text, systemImage: systemImage)
-            .font(.caption)
+            .font(font)
             .foregroundStyle(Palette.warning)
     }
 }

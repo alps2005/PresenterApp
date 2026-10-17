@@ -13,6 +13,13 @@ struct LivePanel: View {
             VStack(alignment: .leading, spacing: Spacing.xl) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     PanelHeader(title: "Audience") { liveBadge }
+                    // In words, here, because the toolbar's output menu shows only a warning icon.
+                    ForEach(disconnectedOutputs, id: \.role) { output in
+                        WarningLabel(
+                            "\(output.role.title): \(output.displayName) disconnected. It comes back full screen when you reconnect it.",
+                            font: .callout.bold()
+                        )
+                    }
                     SlideRenderView(scene: coordinator.audienceScene)
                         .overlay { OverlayLayers(coordinator: coordinator) }
                         .environment(\.showsLiveVideo, true)
@@ -50,6 +57,13 @@ struct LivePanel: View {
         }
         .hardScrollEdges()
         .solidPanel()
+    }
+
+    /// Outputs whose chosen display has gone. Each is hidden until its display comes back.
+    private var disconnectedOutputs: [(role: OutputRole, displayName: String)] {
+        OutputRole.allCases.compactMap { role in
+            if case .displayMissing(let name) = outputManager.status(role) { (role, name) } else { nil }
+        }
     }
 
     /// Red while something is on the audience output, so the preview reads as live at a glance.
