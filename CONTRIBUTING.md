@@ -47,7 +47,8 @@ Or open `Presenter.xcodeproj`, choose the shared **Presenter** scheme and **My M
   `tileFrame`, `WarningLabel`, `PopoverForm`…), not ad hoc colours and borders.
   - State is never shown by colour alone.
   - Icon-only buttons need an `accessibilityLabel`.
-  - See [ADR 0001](docs/adr/0001-quiet-native-design.md).
+  - Pad panels by the rule on `Spacing`, and make every inspector row fit `Widths.inspectorContentWidth` or wrap.
+  - See [ADR 0001](docs/adr/0001-quiet-native-design.md) and [ADR 0002](docs/adr/0002-spacing-and-panel-padding.md).
 - **Style:** match the code around you. Comments explain why, not what. Log with `os.Logger` under the
   `io.github.alps2005.Presenter` subsystem.
 

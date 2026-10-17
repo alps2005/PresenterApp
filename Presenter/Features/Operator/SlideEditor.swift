@@ -63,6 +63,6 @@ struct SlideEditor: View {
             }
             .frame(height: Self.contentHeight, alignment: .top)
         }
-        .padding(Spacing.md)
+        .padding(Spacing.lg)
     }
 }

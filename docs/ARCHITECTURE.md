@@ -105,10 +105,11 @@ Support/Presenter/`.
 
 ## The design system
 
-`Presenter/DesignSystem` holds the operator UI's tokens (`Spacing`, `Radius`, `Palette`, `Typography`), its shared
+`Presenter/DesignSystem` holds the operator UI's tokens (`Spacing`, `Widths`, `Radius`, `Palette`, `Typography`), its shared
 components (`StateBadge`, `tileFrame`, `WarningLabel`, `RowCard`, `RowMenuButton`, `PanelHeader`, `PopoverForm`) and
 `QuietChrome`, which turns Liquid Glass down where Presenter controls it. The reasons are in
-[ADR 0001: Quiet native design](adr/0001-quiet-native-design.md).
+[ADR 0001: Quiet native design](adr/0001-quiet-native-design.md). Panel padding and the rule that every inspector
+row fits its column are in [ADR 0002](adr/0002-spacing-and-panel-padding.md).
 
 ## Testing
 

@@ -59,6 +59,7 @@ Quiet native:
   - NOTHING LIVE is a dashed, hairline outline.
 - **One tile frame:** `tileFrame` outlines a live tile in red and a cued tile in blue everywhere: the slide grid,
   the live panel's Audience, Up Next and Cued, the media bin, props, and the editor's thumbnails.
+- **Spacing and panel padding** follow [ADR 0002](0002-spacing-and-panel-padding.md).
 - **Popovers, menus and sheets stay as the system draws them.** Glass can't be removed there, and they're brief.
 - **No shared glass capsule in the operator toolbar.** On macOS 26+, Quick Edit, Media and Output each use
   `sharedBackgroundVisibility(.hidden)`. Compared side by side on screen, the buttons no longer sit in translucent

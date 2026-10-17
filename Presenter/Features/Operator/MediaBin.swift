@@ -12,7 +12,8 @@ struct MediaBin: View {
     @State private var isImporting = false
     @State private var importErrors: [String] = []
 
-    static let height: CGFloat = 170
+    /// Header, one row of 160 × 90 tiles with their names, and the panel padding.
+    static let height: CGFloat = 180
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -43,7 +44,7 @@ struct MediaBin: View {
                 }
             }
         }
-        .padding(Spacing.md)
+        .padding(Spacing.lg)
         .frame(height: Self.height)
     }
 
