@@ -44,6 +44,8 @@ enum Widths {
     static let fontMenu: CGFloat = 170
     /// A slider beside other controls on one row; it may grow, never shrink below this.
     static let compactSlider: CGFloat = 80
+    /// "Dim" and its slider when they share a row with other controls.
+    static let dimRow: CGFloat = 130
     /// A small number field: a size, an X or Y.
     static let numberField: CGFloat = 56
     /// A value shown beside a slider or transport, e.g. "1.0 s" or "-4:05".

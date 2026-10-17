@@ -58,17 +58,16 @@ struct BackgroundInspector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
-            Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
-                Text(inheritLabel).tag(Mode.inherit)
-                Text("Color").tag(Mode.color)
-                Text("Image").tag(Mode.image)
-                Text("Video").tag(Mode.video)
-                Text("None").tag(Mode.transparent)
+            // Five segments only just fit a narrow inspector; past that, a menu, so the row never pushes the
+            // panel wider than its column (docs/adr/0002-spacing-and-panel-padding.md).
+            ViewThatFits(in: .horizontal) {
+                modePicker
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                modePicker
+                    .pickerStyle(.menu)
+                    .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
 
             switch background {
             case nil:
@@ -98,6 +97,18 @@ struct BackgroundInspector: View {
         .controlSize(.small)
     }
 
+    private var modePicker: some View {
+        // A closure, not `set: select`: Xcode 26's compiler crashes converting the method reference.
+        Picker("Background", selection: Binding(get: { mode }, set: { select($0) })) {
+            Text(inheritLabel).tag(Mode.inherit)
+            Text("Color").tag(Mode.color)
+            Text("Image").tag(Mode.image)
+            Text("Video").tag(Mode.video)
+            Text("None").tag(Mode.transparent)
+        }
+        .labelsHidden()
+    }
+
     @ViewBuilder
     private func imageControls(_ image: ImageBackground) -> some View {
         HStack {
@@ -111,24 +122,23 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(image.assetID) {
             WarningLabel("The image file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: Spacing.lg) {
-            Picker("Scaling", selection: Binding(
-                get: { image.scaling },
-                set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
-            )) {
-                Text("Fit").tag(ImageScaling.fit)
-                Text("Fill").tag(ImageScaling.fill)
-                Text("Stretch").tag(ImageScaling.stretch)
+        let scaling = Binding(
+            get: { image.scaling },
+            set: { scaling in apply(.image(ImageBackground(assetID: image.assetID, scaling: scaling, dimming: image.dimming))) }
+        )
+        let dimming = Binding(
+            get: { image.dimming },
+            set: { dimming in apply(.image(ImageBackground(assetID: image.assetID, scaling: image.scaling, dimming: dimming))) }
+        )
+        // One row where there's room (Quick Edit), two in a narrow inspector.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.lg) {
+                scalingPicker(scaling)
+                dimRow(dimming).frame(width: Widths.dimRow)
             }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            HStack(spacing: Spacing.xs) {
-                Text("Dim")
-                Slider(value: Binding(
-                    get: { image.dimming },
-                    set: { dimming in apply(.image(ImageBackground(assetID: image.assetID, scaling: image.scaling, dimming: dimming))) }
-                ), in: ImageBackground.dimmingRange)
-                .frame(width: 100)
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                scalingPicker(scaling)
+                dimRow(dimming)
             }
         }
     }
@@ -158,18 +168,12 @@ struct BackgroundInspector: View {
         if mediaLibrary.isMissing(video.assetID) {
             WarningLabel("The video file is missing or unreadable. Slides show the default background instead.")
         }
-        HStack(spacing: Spacing.lg) {
-            Picker("Scaling", selection: Binding(get: { video.scaling }, set: { value in
-                var updated = video
-                updated.scaling = value
-                apply(.video(updated))
-            })) {
-                Text("Fit").tag(ImageScaling.fit)
-                Text("Fill").tag(ImageScaling.fill)
-                Text("Stretch").tag(ImageScaling.stretch)
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
+        let scaling = Binding(get: { video.scaling }, set: { value in
+            var updated = video
+            updated.scaling = value
+            apply(.video(updated))
+        })
+        let toggles = HStack(spacing: Spacing.lg) {
             Toggle("Loop", isOn: Binding(get: { video.loops }, set: { value in
                 var updated = video
                 updated.loops = value
@@ -181,14 +185,44 @@ struct BackgroundInspector: View {
                 apply(.video(updated))
             }))
         }
+        .fixedSize()
+        // One row where there's room (Quick Edit), two in a narrow inspector.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.lg) {
+                scalingPicker(scaling)
+                toggles
+            }
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                scalingPicker(scaling)
+                toggles
+            }
+        }
+        dimRow(Binding(get: { video.dimming }, set: { value in
+            var updated = video
+            updated.dimming = value
+            apply(.video(updated))
+        }))
+        .frame(maxWidth: Widths.inspectorContentWidth, alignment: .leading)
+    }
+
+    private func scalingPicker(_ scaling: Binding<ImageScaling>) -> some View {
+        Picker("Scaling", selection: scaling) {
+            Text("Fit").tag(ImageScaling.fit)
+            Text("Fill").tag(ImageScaling.fill)
+            Text("Stretch").tag(ImageScaling.stretch)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel("Scaling")
+    }
+
+    /// "Dim" and a slider that takes the rest of the row.
+    private func dimRow(_ dimming: Binding<Double>) -> some View {
         HStack(spacing: Spacing.xs) {
             Text("Dim")
-            Slider(value: Binding(get: { video.dimming }, set: { value in
-                var updated = video
-                updated.dimming = value
-                apply(.video(updated))
-            }), in: ImageBackground.dimmingRange)
-            .frame(width: 100)
+            Slider(value: dimming, in: ImageBackground.dimmingRange)
+                .frame(minWidth: Widths.compactSlider)
         }
     }
 
