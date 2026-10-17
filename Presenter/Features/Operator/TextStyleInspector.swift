@@ -54,7 +54,7 @@ struct TextStyleInspector: View {
     private var positionControls: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Position").foregroundStyle(.secondary)
-            Grid(horizontalSpacing: 2, verticalSpacing: 2) {
+            Grid(horizontalSpacing: Spacing.xxs, verticalSpacing: Spacing.xxs) {
                 ForEach(0..<3) { row in
                     GridRow {
                         ForEach(0..<3) { column in

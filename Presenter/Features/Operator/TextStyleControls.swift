@@ -20,11 +20,11 @@ struct TextStyleControls: View {
     var body: some View {
         switch layout {
         case .wide:
-            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: Spacing.md, verticalSpacing: Spacing.md) {
                 GridRow {
                     Text("Font").foregroundStyle(.secondary)
                     HStack {
-                        fontPicker.frame(width: 170)
+                        fontPicker
                         weightPicker
                         italicToggle
                     }
@@ -43,7 +43,7 @@ struct TextStyleControls: View {
                 }
             }
         case .narrow:
-            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: Spacing.md, verticalSpacing: Spacing.md) {
                 GridRow {
                     Text("Font").foregroundStyle(.secondary)
                     fontPicker
@@ -95,6 +95,8 @@ struct TextStyleControls: View {
             ForEach(Self.fontFamilies, id: \.self) { Text($0).tag(Optional($0)) }
         }
         .labelsHidden()
+        // A fixed width: a menu is otherwise as wide as the longest font name installed on this Mac.
+        .frame(width: Widths.fontMenu)
     }
 
     private var weightPicker: some View {
@@ -114,7 +116,7 @@ struct TextStyleControls: View {
     private var sizeField: some View {
         HStack(spacing: Spacing.xs) {
             TextField("Size", value: sizeBinding, format: .number.precision(.fractionLength(0)))
-                .frame(width: 56)
+                .frame(width: Widths.numberField)
                 .labelsHidden()
             Stepper("Size", value: sizeBinding, in: Self.sizeRange, step: 4)
                 .labelsHidden()
