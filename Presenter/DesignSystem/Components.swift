@@ -72,7 +72,7 @@ struct StateBadge: View {
             .font(Typography.badge)
             .lineLimit(1)
             .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 2)
+            .padding(.vertical, Spacing.xxs)
             .foregroundStyle(foreground)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.badge))
             .overlay {
@@ -148,15 +148,17 @@ extension View {
 struct WarningLabel: View {
     let text: String
     var systemImage = "exclamationmark.triangle.fill"
+    var font = Font.caption
 
-    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill") {
+    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill", font: Font = .caption) {
         self.text = text
         self.systemImage = systemImage
+        self.font = font
     }
 
     var body: some View {
         Label(text, systemImage: systemImage)
-            .font(.caption)
+            .font(font)
             .foregroundStyle(Palette.warning)
     }
 }
@@ -168,7 +170,7 @@ struct RowCard<Content: View>: View {
 
     var body: some View {
         HStack(spacing: Spacing.sm) { content }
-            .padding(8)
+            .padding(Spacing.md)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
             .overlay {
                 if isHighlighted {

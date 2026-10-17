@@ -20,7 +20,7 @@ struct SlideEditor: View {
     @State private var tab: Tab = .text
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Text("Quick Edit · Cued Slide")
                     .font(.headline)
@@ -62,6 +62,6 @@ struct SlideEditor: View {
             }
             .frame(height: Self.contentHeight, alignment: .top)
         }
-        .padding(12)
+        .padding(Spacing.md)
     }
 }

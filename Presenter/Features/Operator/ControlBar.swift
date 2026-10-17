@@ -37,7 +37,7 @@ struct ControlBar: View {
             .menuStyle(.button)
             .fixedSize()
             .disabled(!hasAnythingToClear)
-            .help("Click to clear the slide, keeping its background (⌥⌘C). Use the arrow for Clear Background (⌥⌘X) or Clear All (⌥⌘A).")
+            .help("Click to clear the slide, keeping its background (⌥⌘C). Use the arrow for Clear Background (⌥⌘X) or Clear All (⌥⌘A). A cleared background comes back with the next slide that has its own.")
 
             // Set apart from Clear and Restore: it takes everything off the screen at once.
             Button { coordinator.blackout() } label: {

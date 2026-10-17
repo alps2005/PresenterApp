@@ -17,13 +17,13 @@ struct ArrangementSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
             Text(draft.arrangement == nil ? "New Arrangement" : "Edit Arrangement").font(.title2.bold())
 
             TextField("Name, e.g. Sunday Morning", text: $name)
                 .textFieldStyle(.roundedBorder)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
                 Text("Groups").font(.subheadline.bold())
                 Text("Click a group to add it to the end. A group can play more than once.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -38,7 +38,7 @@ struct ArrangementSheet: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
                 Text("Play order").font(.subheadline.bold())
                 if groups.isEmpty {
                     Text("Empty: the presentation plays in slide order.")
@@ -48,7 +48,7 @@ struct ArrangementSheet: View {
                         Button {
                             groups.remove(at: entry.index)
                         } label: {
-                            HStack(spacing: 3) {
+                            HStack(spacing: Spacing.xs) {
                                 GroupLabelTag(label: entry.name)
                                 Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.secondary)
                             }
@@ -72,7 +72,7 @@ struct ArrangementSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
+        .padding(Spacing.xl)
         .frame(width: 520)
         .onAppear {
             name = draft.arrangement?.name ?? ""
@@ -113,7 +113,7 @@ struct FlowRow<Item: Hashable, Content: View>: View {
     @ViewBuilder let content: (Item) -> Content
 
     var body: some View {
-        FlowLayout(spacing: 6) {
+        FlowLayout(spacing: Spacing.sm) {
             ForEach(items, id: \.self) { item in content(item) }
         }
     }

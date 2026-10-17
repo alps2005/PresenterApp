@@ -18,25 +18,25 @@ struct NewSongSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Text("New Song").font(.title2.bold())
 
             TextField("Title", text: $title)
                 .textFieldStyle(.roundedBorder)
 
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Spacing.md) {
                 TextEditor(text: $lyrics)
                     .font(.body.monospaced())
                     .scrollContentBackground(.hidden)
-                    .padding(6)
+                    .padding(Spacing.sm)
                     .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
                     .frame(minWidth: 320, minHeight: 300)
                     .overlay(alignment: .topLeading) {
                         if lyrics.isEmpty {
                             Text("Paste or type the lyrics here.")
                                 .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 11)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, Spacing.sm + 5) // + the TextEditor's own text inset
+                                .padding(.vertical, Spacing.sm)
                                 .allowsHitTesting(false)
                         }
                     }
@@ -72,21 +72,21 @@ struct NewSongSheet: View {
                 .disabled(slides.isEmpty)
             }
         }
-        .padding(20)
+        .padding(Spacing.xl)
         .frame(width: 600)
     }
 
     /// The slides the lyrics will make, with their labels, so the split can be checked before adding.
     private var preview: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(slides.count == 1 ? "1 slide" : "\(slides.count) slides")
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
             ScrollView {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     ForEach(Array(slides.enumerated()), id: \.offset) { index, slide in
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 4) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            HStack(spacing: Spacing.xs) {
                                 Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
                                 if let label = slide.label { GroupLabelTag(label: label) }
                             }
@@ -95,9 +95,9 @@ struct NewSongSheet: View {
                                 .font(.caption)
                                 .lineLimit(4)
                         }
-                        .padding(6)
+                        .padding(Spacing.sm)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 5))
+                        .background(.background.secondary, in: RoundedRectangle(cornerRadius: Radius.card))
                     }
                 }
             }
@@ -113,8 +113,8 @@ struct GroupLabelTag: View {
         Text(label)
             .font(.caption2.bold())
             .lineLimit(1)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xxs)
             .background(SongSectionKind(label: label).color, in: Capsule())
             .foregroundStyle(.white)
     }

@@ -112,7 +112,7 @@ struct TextStyleControls: View {
     }
 
     private var sizeField: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xs) {
             TextField("Size", value: sizeBinding, format: .number.precision(.fractionLength(0)))
                 .frame(width: 56)
                 .labelsHidden()

@@ -37,7 +37,7 @@ struct SlideWorkspace: View {
     }
 
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: thumbnailWidth, maximum: thumbnailWidth * 1.45), spacing: 14)]
+        [GridItem(.adaptive(minimum: thumbnailWidth, maximum: thumbnailWidth * 1.45), spacing: Spacing.lg)]
     }
 
     static let thumbnailWidths: ClosedRange<Double> = 120...420
@@ -93,7 +93,7 @@ struct SlideWorkspace: View {
 
     /// Like ProPresenter's slide size slider, bottom right of the slide view.
     private var sizeSlider: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: "square.grid.3x3").font(.caption).accessibilityHidden(true)
             Slider(value: $thumbnailWidth, in: Self.thumbnailWidths)
                 .frame(width: 110)
@@ -102,11 +102,11 @@ struct SlideWorkspace: View {
             Image(systemName: "square.grid.2x2").font(.caption).accessibilityHidden(true)
         }
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
         .background(Palette.panelRaised, in: Capsule())
         .overlay { Capsule().strokeBorder(Palette.hairline, lineWidth: 0.5) }
-        .padding(10)
+        .padding(Spacing.md)
         .help("Thumbnail size")
     }
 
@@ -249,9 +249,9 @@ struct SlideWorkspace: View {
                     .labelStyle(.iconOnly)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 14)
-        .padding(.bottom, 4)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.lg)
+        .padding(.bottom, Spacing.xs)
     }
 
     /// The title is plain text until clicked. An always-present text field would get keyboard focus whenever a
@@ -300,11 +300,11 @@ struct SlideWorkspace: View {
                 get: { presentationEditingBackground == presentation.id },
                 set: { if !$0 { presentationEditingBackground = nil } }
             ), arrowEdge: .bottom) {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Spacing.md) {
                     Text("Presentation Background").font(.headline)
                     BackgroundInspector(coordinator: coordinator, target: .presentation(presentation.id))
                 }
-                .padding(16)
+                .padding(Spacing.lg)
                 .frame(width: 380)
             }
 
@@ -339,7 +339,7 @@ struct SlideWorkspace: View {
     }
 
     private func grid(presentation: PresentationDocument, itemID: UUID) -> some View {
-        LazyVGrid(columns: columns, spacing: 14) {
+        LazyVGrid(columns: columns, spacing: Spacing.lg) {
             // In play order: the active arrangement's order, with repeated slides shown again.
             ForEach(Array(presentation.arrangedSlides.enumerated()), id: \.element) { index, arranged in
                 if let slide = presentation.slide(withID: arranged.slideID) {
@@ -347,7 +347,7 @@ struct SlideWorkspace: View {
                 }
             }
         }
-        .padding(16)
+        .padding(Spacing.lg)
     }
 
     private func thumbnail(
@@ -466,11 +466,11 @@ struct SlideThumbnail: View {
     let isLive: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             SlideRenderView(scene: .slide(slide))
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .tileFrame(TileState(isLive: isLive, isCued: isCued))
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.sm) {
                 Text("\(number)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)

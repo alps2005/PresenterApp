@@ -67,6 +67,29 @@ final class LayerTests: XCTestCase {
         XCTAssertEqual(f.coordinator.audienceScene, .slide(RenderedSlide(slide: f.s1, background: f.image)))
     }
 
+    func testClearedBackgroundReturnsWithASlideThatHasItsOwn() {
+        let f = makeFixture()
+        XCTAssertFalse(f.coordinator.clearedBackgroundReturnsWithNextSlide, "nothing cleared")
+
+        // s1 has its own image: taking it live again would put the image back.
+        f.coordinator.takeLive(slideID: f.s1.id, inItem: f.item.id)
+        f.coordinator.clearBackground()
+        XCTAssertTrue(f.coordinator.clearedBackgroundReturnsWithNextSlide)
+
+        // s2 and s3 are transparent, so clearing under s2 stays cleared.
+        f.coordinator.takeLive(slideID: f.s2.id, inItem: f.item.id)
+        f.coordinator.restoreOutput()
+        f.coordinator.clearBackground()
+        XCTAssertFalse(f.coordinator.clearedBackgroundReturnsWithNextSlide)
+
+        // Under s3, the next slide is s4 with its own red, which brings a background back.
+        f.coordinator.nextSlide()
+        XCTAssertTrue(f.coordinator.clearedBackgroundReturnsWithNextSlide)
+        f.coordinator.nextSlide()
+        XCTAssertEqual(f.coordinator.state.liveBackground, f.red)
+        XCTAssertFalse(f.coordinator.clearedBackgroundReturnsWithNextSlide, "nothing cleared any more")
+    }
+
     func testClearAllThenRestoreBringsBothBack() {
         let f = makeFixture()
         f.coordinator.takeLive(slideID: f.s1.id, inItem: f.item.id)

@@ -3,22 +3,31 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased: planned for v0.1.0-beta.4
+## v0.1.0-beta.4 (2026-10-16)
 
-### Not yet tested on hardware
-Beta 3 changed these and covered them with unit tests, but they still need a check on a real external display
-(the GS24F14 projector used for beta 2):
-- the stage display full screen on its own display;
-- unplugging and replugging a display: the output comes back full screen on the right screen;
-- video mute from the transport lasting across slide changes;
-- the "Exporting…" progress sheet. The export ran in the background, but on the test machine it finished too fast
-  to see the sheet.
+### Tested on hardware (2026-10-16)
+Beta 3's untested changes now pass on the GS24F14 external display:
+- the stage display and the audience output each go full screen on it;
+- unplugging and replugging it: the output hides, then comes back full screen on the GS24F14 by itself;
+- video mute from the transport lasts across slide changes, forwards and back;
+- the "Exporting…" sheet shows for a 585 MB project, and the window keeps responding.
 
-### To do
-- Finish moving the remaining hard-coded spacing in the views onto the design tokens.
-- **Before the repository goes public:**
-  - a real contact in CODE_OF_CONDUCT;
-  - turn on GitHub private vulnerability reporting, which SECURITY.md relies on.
+### Show
+- **Output menu:** the first section is headed Audience Output. A display the other output is using is listed as
+  "GS24F14 – used by the Audience Output" instead of being left out, so the stage display no longer looks unable
+  to use it.
+- **A disconnected display** is shown in words in the Live panel, not only as an icon in the toolbar. The toolbar
+  icon's tooltip gives the output status.
+- **Clear Background:** a slide with its own background brings it back when it goes live, as in ProPresenter.
+  The Live panel now says so after a clear, and points to the slide's Background button for removing it for good.
+
+### Look
+- All operator and editor views now use the design tokens for spacing and corner radius. A few gaps shift by
+  1 or 2 points to fit the scale. The audience and stage outputs, which scale with the output size, are unchanged.
+
+### Project
+- The repository is public. Security problems can be reported privately from its Security tab, and the Code of
+  Conduct has a contact email.
 
 ## v0.1.0-beta.3 (2026-10-15)
 

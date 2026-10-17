@@ -53,6 +53,7 @@ final class OutputManager {
     func target(_ role: OutputRole) -> OutputTarget { planner.target(role) }
     func status(_ role: OutputRole) -> OutputStatus { planner.status(role) }
     func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] { planner.fullScreenCandidates(role) }
+    func displaysInUse(byOtherThan role: OutputRole) -> [DisplayInfo] { planner.displaysInUse(byOtherThan: role) }
 
     func show(_ target: OutputTarget, for role: OutputRole = .audience) {
         planner.show(target, for: role)

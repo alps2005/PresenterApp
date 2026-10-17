@@ -21,7 +21,7 @@ struct EditorInspector: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
                 Text(title)
                     .font(.headline)
                     .frame(maxWidth: .infinity)
@@ -31,7 +31,7 @@ struct EditorInspector: View {
                 case .document: documentTab
                 }
             }
-            .padding(16)
+            .padding(Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .controlSize(.small)
@@ -266,7 +266,7 @@ struct EditorInspector: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 orderButton("Send to Back", systemImage: "arrow.down.to.line", .back, element: element, slide: slide)
                 orderButton("Send Backward", systemImage: "arrow.down", .backward, element: element, slide: slide)
                 orderButton("Bring Forward", systemImage: "arrow.up", .forward, element: element, slide: slide)
@@ -292,7 +292,7 @@ struct EditorInspector: View {
         slide: SlideDocument
     ) -> some View {
         let points = axis == .horizontal ? SlideRenderView.canvasSize.width : SlideRenderView.canvasSize.height
-        return HStack(spacing: 4) {
+        return HStack(spacing: Spacing.xs) {
             Text(label).foregroundStyle(.secondary).frame(width: 14, alignment: .leading)
             TextField(label, value: Binding(
                 get: { (frame[keyPath: keyPath] * points).rounded() },
@@ -396,7 +396,7 @@ struct EditorInspector: View {
     // MARK: Building blocks
 
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Divider()
             Text(title).font(.subheadline.bold())
             content()
@@ -407,7 +407,7 @@ struct EditorInspector: View {
         Text(text)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 20)
+            .padding(.top, Spacing.xl)
     }
 
     private func comingSoon(_ text: String) -> some View {

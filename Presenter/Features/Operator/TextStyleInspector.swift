@@ -17,8 +17,8 @@ struct TextStyleInspector: View {
     private var style: TextStyle { element.style }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .top, spacing: Spacing.xl) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
                 TextStyleControls(style: Binding(
                     get: { style },
                     set: { coordinator.setTextStyle($0, slideID: slide.id, inPresentation: presentationID) }
@@ -52,7 +52,7 @@ struct TextStyleInspector: View {
     }
 
     private var positionControls: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Position").foregroundStyle(.secondary)
             Grid(horizontalSpacing: 2, verticalSpacing: 2) {
                 ForEach(0..<3) { row in
@@ -63,7 +63,7 @@ struct TextStyleInspector: View {
                     }
                 }
             }
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 Text("Margin").foregroundStyle(.secondary)
                 Slider(value: Binding(
                     get: { margin },

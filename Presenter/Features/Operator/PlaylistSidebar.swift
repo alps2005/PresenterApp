@@ -44,7 +44,7 @@ struct PlaylistSidebar: View {
         .hardScrollEdges()
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search titles and words")
         .safeAreaInset(edge: .bottom) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
                 Button {
                     coordinator.addPresentation(title: "Untitled")
                 } label: {
@@ -56,7 +56,7 @@ struct PlaylistSidebar: View {
                 .help("Paste lyrics to make one slide per stanza (⌥⌘N)")
             }
             .buttonStyle(.borderless)
-            .padding(10)
+            .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .confirmationDialog(
