@@ -49,7 +49,11 @@ struct SlideEditor: View {
                         .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
                         .hairlineBorder(RoundedRectangle(cornerRadius: Radius.card))
                     case .style:
-                        TextStyleInspector(coordinator: coordinator, slide: slide, presentationID: presentation.id)
+                        TextStyleInspector(
+                            coordinator: coordinator,
+                            slide: coordinator.project.rendered(slide, in: presentation).slide,
+                            presentationID: presentation.id
+                        )
                     case .background:
                         BackgroundInspector(
                             coordinator: coordinator,

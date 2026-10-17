@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 struct EditorCanvas: View {
     let coordinator: PresentationCoordinator
     let presentation: PresentationDocument
+    /// The slide as drawn, with its presentation's theme applied.
     let slide: SlideDocument
     @Binding var selectedElementID: UUID?
     let zoom: EditorZoom
@@ -128,7 +129,8 @@ struct EditorCanvas: View {
         let targets = Self.targets(in: shown)
         let selectedTarget = selectedElementID.flatMap { id in targets.first { $0.id == id } }
         return ZStack(alignment: .topLeading) {
-            SlideRenderView(scene: .slide(coordinator.project.rendered(shown, in: presentation)))
+            // `slide` is already themed; theming the drag preview again would put dragged text back in place.
+            SlideRenderView(scene: .slide(RenderedSlide(slide: shown, background: background)))
                 .frame(width: size.width, height: size.height)
                 .contentShape(Rectangle())
                 .onTapGesture { select(nil) }
@@ -203,6 +205,11 @@ struct EditorCanvas: View {
     }
 
     // MARK: Model of what's shown
+
+    /// The slide's background as drawn: its own, else its presentation's, else the theme's.
+    private var background: SlideBackground? {
+        coordinator.project.rendered(slide, in: presentation).background
+    }
 
     /// The slide as drawn right now: the in-progress drag applied, and the text being typed hidden
     /// (the editor shows it instead).

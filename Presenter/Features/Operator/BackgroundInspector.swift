@@ -3,10 +3,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PresenterCore
 
-/// Which background the inspector edits: one slide's override, or a presentation's default.
+/// Which background the inspector edits: one slide's override, a presentation's default, or a theme's.
 enum BackgroundTarget: Equatable {
     case slide(UUID, presentationID: UUID)
     case presentation(UUID)
+    case theme(UUID)
 }
 
 /// Picks a colour or an imported image as a background, clears it so it inherits, or makes it transparent so
@@ -28,22 +29,38 @@ struct BackgroundInspector: View {
     @State private var importError: String?
     @State private var isImporting = false
 
-    private var presentationID: UUID {
-        switch target {
-        case .slide(_, let presentationID), .presentation(let presentationID): presentationID
-        }
-    }
-
     private var background: SlideBackground? {
-        let presentation = coordinator.project.presentation(withID: presentationID)
         switch target {
-        case .slide(let slideID, _): return presentation?.slide(withID: slideID)?.background
-        case .presentation: return presentation?.background
+        case .slide(let slideID, let presentationID):
+            coordinator.project.presentation(withID: presentationID)?.slide(withID: slideID)?.background
+        case .presentation(let presentationID):
+            coordinator.project.presentation(withID: presentationID)?.background
+        case .theme(let themeID):
+            coordinator.project.theme(withID: themeID)?.background
         }
     }
 
     private var inheritLabel: String {
-        if case .slide = target { "Presentation" } else { "Default" }
+        switch target {
+        case .slide: "Presentation"
+        case .presentation: hasThemeBackground ? "Theme" : "Default"
+        case .theme: "Default"
+        }
+    }
+
+    /// The presentation follows a theme with a background, which its slides get when it sets none.
+    private var hasThemeBackground: Bool {
+        guard case .presentation(let presentationID) = target,
+              let presentation = coordinator.project.presentation(withID: presentationID) else { return false }
+        return coordinator.project.theme(for: presentation)?.background != nil
+    }
+
+    private var inheritedText: String {
+        switch target {
+        case .slide: "This slide uses its presentation's background."
+        case .presentation: hasThemeBackground ? "Slides use the theme's background." : "Slides use the app's default background."
+        case .theme: "Slides use their presentation's background, or the app's default."
+        }
     }
 
     private var mode: Mode {
@@ -71,10 +88,9 @@ struct BackgroundInspector: View {
 
             switch background {
             case nil:
-                Text(target == .presentation(presentationID)
-                     ? "Slides use the app's default background."
-                     : "This slide uses its presentation's background.")
+                Text(inheritedText)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             case .color(let color):
                 ColorPicker("Color", selection: Binding(
                     get: { color.color },
@@ -283,6 +299,10 @@ struct BackgroundInspector: View {
             coordinator.setSlideBackground(background, slideID: slideID, inPresentation: presentationID)
         case .presentation(let presentationID):
             coordinator.setPresentationBackground(background, presentationID: presentationID)
+        case .theme(let themeID):
+            guard var theme = coordinator.project.theme(withID: themeID) else { return }
+            theme.background = background
+            coordinator.updateTheme(theme)
         }
     }
 }

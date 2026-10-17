@@ -12,6 +12,8 @@ struct NewSongSheet: View {
     @State private var lyrics = ""
     /// 0 keeps whole stanzas on one slide.
     @State private var maxLines = 0
+    /// Starts as the project's default theme.
+    @State private var themeID: UUID?
 
     private var slides: [SlideDocument] {
         LyricsParser.slides(from: lyrics, maxLinesPerSlide: maxLines == 0 ? nil : maxLines)
@@ -58,12 +60,20 @@ struct NewSongSheet: View {
                     Text("4 lines").tag(4)
                 }
                 .fixedSize()
+                Picker("Theme", selection: $themeID) {
+                    Text("None").tag(UUID?.none)
+                    Divider()
+                    ForEach(coordinator.project.themes) { theme in
+                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                    }
+                }
+                .fixedSize()
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button("Add Song") {
                     if let item = coordinator.addSong(title: title, lyrics: lyrics,
-                                                      maxLinesPerSlide: maxLines == 0 ? nil : maxLines) {
+                                                      maxLinesPerSlide: maxLines == 0 ? nil : maxLines, themeID: themeID) {
                         onAdded(item)
                     }
                     dismiss()
@@ -74,6 +84,7 @@ struct NewSongSheet: View {
         }
         .padding(Spacing.xl)
         .frame(width: 600)
+        .onAppear { themeID = coordinator.defaultThemeID }
     }
 
     /// The slides the lyrics will make, with their labels, so the split can be checked before adding.

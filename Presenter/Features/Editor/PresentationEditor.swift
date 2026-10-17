@@ -98,10 +98,11 @@ struct PresentationEditor: View {
         } detail: {
             Group {
                 if let slide {
+                    // Themed, so what's selected, dragged and edited is what's drawn.
                     EditorCanvas(
                         coordinator: coordinator,
                         presentation: presentation,
-                        slide: slide,
+                        slide: coordinator.project.rendered(slide, in: presentation).slide,
                         selectedElementID: $selectedElementID,
                         zoom: zoom,
                         onExit: { onDone() }
