@@ -74,6 +74,15 @@ struct PresentationEditor: View {
         }
     }
 
+    private var inspectorIdealWidth: CGFloat {
+        #if DEBUG
+        // `-PresenterDebugInspectorWidth 270` opens the inspector at its narrowest, where rows overflow first.
+        let width = UserDefaults.standard.double(forKey: "PresenterDebugInspectorWidth")
+        if width > 0 { return width }
+        #endif
+        return Widths.editorInspector.ideal
+    }
+
     private func editor(_ presentation: PresentationDocument) -> some View {
         NavigationSplitView {
             SlideThumbnailSidebar(
@@ -114,7 +123,7 @@ struct PresentationEditor: View {
                     selectedElementID: $selectedElementID
                 )
                 .inspectorColumnWidth(
-                    min: Widths.editorInspector.min, ideal: Widths.editorInspector.ideal, max: Widths.editorInspector.max
+                    min: Widths.editorInspector.min, ideal: inspectorIdealWidth, max: Widths.editorInspector.max
                 )
             }
         }
@@ -123,6 +132,14 @@ struct PresentationEditor: View {
         .solidToolbar()
         .onAppear {
             selectedSlideID = session.initialSlideID ?? presentation.slides.first?.id
+            #if DEBUG
+            // `-PresenterDebugEditorTab format|animate|document`, for scripts/layout-screenshots.sh.
+            switch UserDefaults.standard.string(forKey: "PresenterDebugEditorTab") {
+            case "animate": inspectorTab = .animate
+            case "document": inspectorTab = .document
+            default: break
+            }
+            #endif
         }
         // Keep a valid slide selected when the selected one is deleted.
         .onChange(of: presentation.slides.map(\.id)) { old, new in

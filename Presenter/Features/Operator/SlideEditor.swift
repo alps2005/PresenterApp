@@ -64,5 +64,6 @@ struct SlideEditor: View {
             .frame(height: Self.contentHeight, alignment: .top)
         }
         .padding(Spacing.lg)
+        .overflowGuard("Quick Edit")
     }
 }

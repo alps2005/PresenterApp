@@ -14,9 +14,7 @@ final class MediaLibrary {
 
     /// `Application Support/Presenter/Media`, inside the app's sandbox container.
     static var defaultDirectory: URL {
-        URL.applicationSupportDirectory
-            .appendingPathComponent("Presenter", isDirectory: true)
-            .appendingPathComponent("Media", isDirectory: true)
+        AppDirectories.data.appendingPathComponent("Media", isDirectory: true)
     }
 
     let store: MediaStore

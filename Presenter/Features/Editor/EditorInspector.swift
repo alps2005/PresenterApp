@@ -32,6 +32,7 @@ struct EditorInspector: View {
                 }
             }
             .padding(Spacing.lg)
+            .overflowGuard("Editor inspector")
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .solidPanel(Palette.sidebar)
@@ -476,3 +477,35 @@ struct EditorInspector: View {
         }
     }
 }
+
+#if DEBUG
+// At the inspector's narrowest width, with an image background so the widest Format rows show
+// (docs/adr/0002-spacing-and-panel-padding.md). The image is missing on purpose; its warning wraps too.
+private struct EditorInspectorPreview: View {
+    let tab: EditorInspectorTab
+    @State private var coordinator: PresentationCoordinator = {
+        var project = ProjectDocument.sample()
+        let assetID = UUID()
+        project.presentations[0].slides[0].background = .image(ImageBackground(assetID: assetID, dimming: 0.2))
+        return PresentationCoordinator(project: project)
+    }()
+    @State private var mediaLibrary = MediaLibrary(directory: .temporaryDirectory.appendingPathComponent("PresenterPreview"))
+
+    var body: some View {
+        let presentation = coordinator.project.presentations[0]
+        EditorInspector(
+            coordinator: coordinator,
+            presentation: presentation,
+            slide: presentation.slides.first,
+            tab: tab,
+            selectedElementID: .constant(nil)
+        )
+        .environment(mediaLibrary)
+        .frame(width: Widths.editorInspector.min, height: 700)
+    }
+}
+
+#Preview("Format, narrowest") { EditorInspectorPreview(tab: .format) }
+#Preview("Animate, narrowest") { EditorInspectorPreview(tab: .animate) }
+#Preview("Document, narrowest") { EditorInspectorPreview(tab: .document) }
+#endif

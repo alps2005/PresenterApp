@@ -33,6 +33,9 @@ struct OperatorView: View {
         }
         .preferredColorScheme(followsSystemAppearance ? nil : .dark)
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
+        #if DEBUG
+        .onAppear { openEditorIfAsked() }
+        #endif
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -53,6 +56,16 @@ struct OperatorView: View {
             Text(persistence.problem ?? "")
         }
     }
+
+    #if DEBUG
+    /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
+    /// scripts/layout-screenshots.sh.
+    private func openEditorIfAsked() {
+        guard UserDefaults.standard.bool(forKey: "PresenterDebugOpenEditor"),
+              let item = coordinator.project.playlist.items.first else { return }
+        editSession = EditSession(itemID: item.id, presentationID: item.presentationID, initialSlideID: nil)
+    }
+    #endif
 
     /// The live show: playlist, continuous slide workspace, live panel and controls.
     private var showView: some View {
