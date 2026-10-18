@@ -3,6 +3,15 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Themes
+- **Duplicating or pasting text that a theme places** (like Scripture's verses) puts the copy beside the original,
+  ready to move, instead of exactly on top of it.
+- **Revert to Theme in Quick Edit:** on the Style tab, when the cued slide's text has its own formatting.
+- **The theme editor's preview** shows the title, body and caption together, as a slide would, with each on its own
+  below; click one to edit it.
+
 ## v0.1.0-beta.9 (2026-10-18)
 
 ### Slides that move on by themselves
