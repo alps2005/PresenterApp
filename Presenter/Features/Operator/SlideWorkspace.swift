@@ -25,8 +25,10 @@ struct SlideWorkspace: View {
     @State private var slidePendingDeletion: SlideDeletion?
     @State private var presentationEditingBackground: UUID?
     @State private var goToNextTarget: GoToNextTarget?
-    /// The presentation whose Slideshow › Custom… sheet is open.
+    /// The presentation whose Slideshow sheet (Custom…) is open.
     @State private var slideshowCustomID: UUID?
+    /// The presentation whose Slideshow popover is open.
+    @State private var slideshowPopoverID: UUID?
     /// The playlist item whose section is at the top of the viewport.
     @State private var topItemID: UUID?
     /// Where each on-screen slide sits. A plain reference, so scrolling doesn't re-render the workspace.
@@ -437,31 +439,53 @@ struct SlideWorkspace: View {
     // MARK: Slideshow
 
     /// Like ProPresenter's Slideshow button: every slide moves on by itself after the chosen time, looping.
+    /// A button and popover, not a `Menu`: a menu in every presentation header made scrolling the workspace noticeably
+    /// heavier (measured). Custom… opens the Slideshow sheet.
     private func slideshowMenu(presentation: PresentationDocument) -> some View {
-        Menu {
-            Picker("Slideshow", selection: Binding(
-                get: { presentation.slideshowInterval },
-                set: { coordinator.setSlideshowInterval($0, presentation: presentation.id) }
-            )) {
-                Text("Off").tag(Double?.none)
-                ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
-                    Text("Every \(AdvanceTime.label(seconds))").tag(Optional(seconds))
-                }
-                // A custom interval still shows as chosen.
-                if let interval = presentation.slideshowInterval, !AdvanceTime.slideshowPresets.contains(interval) {
-                    Text("Every \(AdvanceTime.label(interval))").tag(Optional(interval))
-                }
-            }
-            .pickerStyle(.inline)
-            Divider()
-            Button("Custom…") { slideshowCustomID = presentation.id }
+        Button {
+            slideshowPopoverID = presentation.id
         } label: {
             // Filled while on, so the icon alone (in a narrow header) still says so.
             Label(presentation.slideshowInterval.map { "Slideshow \(AdvanceTime.label($0))" } ?? "Slideshow",
                   systemImage: presentation.slideshowInterval == nil ? "play.square.stack" : "play.square.stack.fill")
         }
-        .fixedSize()
         .help("Move through every slide by itself, looping. A slide's own Go To Next Timer comes first.")
+        .popover(isPresented: Binding(
+            get: { slideshowPopoverID == presentation.id },
+            set: { if !$0 { slideshowPopoverID = nil } }
+        ), arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Slideshow").font(.headline)
+                Picker("Slideshow", selection: Binding(
+                    get: { presentation.slideshowInterval },
+                    set: {
+                        coordinator.setSlideshowInterval($0, presentation: presentation.id)
+                        slideshowPopoverID = nil
+                    }
+                )) {
+                    Text("Off").tag(Double?.none)
+                    ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
+                        Text("Every \(AdvanceTime.label(seconds))").tag(Optional(seconds))
+                    }
+                    // A custom interval still shows as chosen.
+                    if let interval = presentation.slideshowInterval, !AdvanceTime.slideshowPresets.contains(interval) {
+                        Text("Every \(AdvanceTime.label(interval))").tag(Optional(interval))
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+                Button("Custom…") {
+                    slideshowPopoverID = nil
+                    slideshowCustomID = presentation.id
+                }
+                Text("Every slide moves on by itself and loops. A slide's own Go To Next Timer comes first.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Spacing.lg)
+            .frame(width: 260)
+        }
     }
 
     // MARK: Arrangements
@@ -552,6 +576,7 @@ struct SlideThumbnail: View {
                     .foregroundStyle(.secondary)
                 if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
+                if slide.slide.hasElementTransitions { ElementTransitionsMark() }
                 if let advanceSeconds { AdvanceBadge(seconds: advanceSeconds, advance: advance) }
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }

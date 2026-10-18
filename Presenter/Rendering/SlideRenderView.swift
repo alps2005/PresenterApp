@@ -172,6 +172,7 @@ private struct BackgroundLayer: View {
 
 private struct SlideContent: View {
     let slide: SlideDocument
+    @Environment(\.elementClock) private var clock
 
     /// Text without a box keeps the original centred, stacked layout, underneath everything placed in a frame.
     private var flowElements: [TextElement] {
@@ -179,10 +180,22 @@ private struct SlideContent: View {
     }
 
     var body: some View {
+        // Redrawn every frame only while the audience output plays this slide's element transitions.
+        if let clock, slide.hasElementTransitions || clock.hidesStill {
+            TimelineView(.animation) { context in
+                content(clock: clock, elapsed: context.date.timeIntervalSince(clock.start))
+            }
+        } else {
+            content(clock: nil, elapsed: 0)
+        }
+    }
+
+    private func content(clock: ElementClock?, elapsed: Double) -> some View {
         ZStack(alignment: .topLeading) {
             VStack(spacing: 48) {
                 ForEach(flowElements) { text in
                     StyledText(element: text)
+                        .elementTransition(.text(text), clock: clock, elapsed: elapsed)
                 }
             }
             .padding(120)
@@ -194,11 +207,35 @@ private struct SlideContent: View {
                     let rect = SlideRenderView.canvasRect(for: frame)
                     SlideElementView(element: element)
                         .frame(width: rect.width, height: rect.height)
+                        // Before the offset, so a Zoom scales about the element's own centre.
+                        .elementTransition(element, clock: clock, elapsed: elapsed)
                         .offset(x: rect.minX, y: rect.minY)
                 }
             }
         }
         .frame(width: SlideRenderView.canvasSize.width, height: SlideRenderView.canvasSize.height, alignment: .topLeading)
+    }
+}
+
+private extension View {
+    /// The element's own In or Out transition at `elapsed` seconds on `clock`. Without a clock (thumbnails, the
+    /// editor, or once the transitions are over) the element is drawn as it is.
+    @ViewBuilder
+    func elementTransition(_ element: SlideElement, clock: ElementClock?, elapsed: Double) -> some View {
+        if let clock {
+            let transition = element[transition: clock.phase]
+            let frame: TransitionFrame = if let transition {
+                TransitionMath.frame(for: transition, phase: clock.phase,
+                                     progress: transition.progress(elapsed: elapsed, phase: clock.phase))
+            } else if clock.hidesStill {
+                TransitionFrame(opacity: 0)
+            } else {
+                .identity
+            }
+            transitionFrame(frame, canvas: SlideRenderView.canvasSize, wipes: transition?.kind == .wipe)
+        } else {
+            self
+        }
     }
 }
 

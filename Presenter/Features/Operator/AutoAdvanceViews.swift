@@ -171,39 +171,63 @@ struct GoToNextSheet: View {
     }
 }
 
-/// The presentation header's Slideshow menu › Custom….
+/// The presentation header's Slideshow button: off, a preset interval, or a custom one.
 struct SlideshowIntervalSheet: View {
     let coordinator: PresentationCoordinator
     let presentationID: UUID
-    @State private var seconds: Double
+    @State private var choice: Choice
+    @State private var customSeconds: Double
     @Environment(\.dismiss) private var dismiss
+
+    private enum Choice: Hashable {
+        case off
+        case preset(Double)
+        case custom
+    }
 
     init(coordinator: PresentationCoordinator, presentationID: UUID) {
         self.coordinator = coordinator
         self.presentationID = presentationID
-        _seconds = State(initialValue: coordinator.project.presentation(withID: presentationID)?.slideshowInterval ?? 10)
+        let interval = coordinator.project.presentation(withID: presentationID)?.slideshowInterval
+        _choice = State(initialValue: interval.map { AdvanceTime.slideshowPresets.contains($0) ? .preset($0) : .custom } ?? .off)
+        _customSeconds = State(initialValue: interval ?? 20)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             Text("Slideshow").font(.headline)
-            HStack(spacing: Spacing.sm) {
-                Text("Every slide moves on after")
-                TextField("Seconds", value: $seconds, format: .number.precision(.fractionLength(0...1)))
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 64)
-                    .multilineTextAlignment(.trailing)
-                    .accessibilityLabel("Seconds")
-                Text("seconds")
+            Picker("Slideshow", selection: $choice) {
+                Text("Off").tag(Choice.off)
+                ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
+                    Text("Every \(AdvanceTime.label(seconds))").tag(Choice.preset(seconds))
+                }
+                HStack(spacing: Spacing.sm) {
+                    Text("Every")
+                    TextField("Seconds", value: $customSeconds, format: .number.precision(.fractionLength(0...1)))
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 56)
+                        .multilineTextAlignment(.trailing)
+                        .accessibilityLabel("Seconds")
+                    Text("seconds")
+                }
+                .tag(Choice.custom)
             }
-            Text("After the last slide it starts again from the first. A slide's own Go To Next Timer comes first.")
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            Text("Every slide moves on by itself, and after the last it starts again from the first. A slide's own Go To Next Timer comes first.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Start Slideshow") {
+                Button("Done") {
+                    let seconds: Double? = switch choice {
+                    case .off: nil
+                    case .preset(let seconds): seconds
+                    case .custom: customSeconds
+                    }
                     coordinator.setSlideshowInterval(seconds, presentation: presentationID)
                     dismiss()
                 }

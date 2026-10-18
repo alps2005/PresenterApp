@@ -20,8 +20,8 @@ struct LivePanel: View {
                             font: .callout.bold()
                         )
                     }
-                    SlideRenderView(scene: coordinator.audienceScene)
-                        .overlay { OverlayLayers(coordinator: coordinator) }
+                    // The output's own view, so slide and element transitions play here too.
+                    AudienceOutputView(coordinator: coordinator)
                         .environment(\.showsLiveVideo, true)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .tileFrame(audienceTileState)
