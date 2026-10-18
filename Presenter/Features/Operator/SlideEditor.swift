@@ -25,6 +25,8 @@ struct SlideEditor: View {
                 Text("Quick Edit · Cued Slide")
                     .font(.headline)
                 Spacer()
+                // Up here, not in the tab: the tab's height is fixed and the style controls fill it.
+                if tab == .style { revertToThemeButton }
                 Picker("Editor", selection: $tab) {
                     ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
                 }
@@ -34,9 +36,7 @@ struct SlideEditor: View {
             }
 
             Group {
-                if let preview = coordinator.state.preview,
-                   let presentation = coordinator.project.presentation(forItem: preview.itemID),
-                   let slide = presentation.slide(withID: preview.slideID) {
+                if let (presentation, slide) = cued {
                     switch tab {
                     case .text:
                         TextEditor(text: Binding(
@@ -70,5 +70,25 @@ struct SlideEditor: View {
         }
         .padding(Spacing.lg)
         .overflowGuard("Quick Edit")
+    }
+
+    private var cued: (presentation: PresentationDocument, slide: SlideDocument)? {
+        guard let preview = coordinator.state.preview,
+              let presentation = coordinator.project.presentation(forItem: preview.itemID),
+              let slide = presentation.slide(withID: preview.slideID) else { return nil }
+        return (presentation, slide)
+    }
+
+    /// Shown when the cued slide's text was formatted by hand under a theme.
+    @ViewBuilder
+    private var revertToThemeButton: some View {
+        if let (presentation, slide) = cued, let text = slide.primaryTextElement, !text.overrides.isEmpty,
+           let theme = coordinator.project.theme(for: presentation) {
+            Button("Revert to Theme") {
+                coordinator.revertToTheme(elementID: text.id, inPresentation: presentation.id)
+            }
+            .controlSize(.small)
+            .help("Use “\(theme.name)”'s style and position for this text again")
+        }
     }
 }
