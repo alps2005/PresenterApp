@@ -7,6 +7,15 @@ public enum TransitionEdge: String, Codable, Hashable, Sendable, CaseIterable {
     case top
     case bottom
 
+    var opposite: TransitionEdge {
+        switch self {
+        case .left: .right
+        case .right: .left
+        case .top: .bottom
+        case .bottom: .top
+        }
+    }
+
     /// Points from the centre towards this edge, in fractions of the canvas (y grows downwards).
     var direction: (x: Double, y: Double) {
         switch self {
@@ -100,13 +109,15 @@ public enum TransitionMath {
         case outgoing
     }
 
-    /// A slide layer `progress` (0...1) of the way through `transition`.
-    public static func frame(for transition: SlideTransition, role: Role, progress: Double) -> TransitionFrame {
+    /// A slide layer `progress` (0...1) of the way through `transition`. An `opaque` layer (the background) hides
+    /// whatever is under it, so the outgoing one can simply stay put underneath. A see-through layer (the slide's
+    /// words and elements) can't, so its outgoing copy fades or is wiped away as the incoming one arrives.
+    public static func frame(for transition: SlideTransition, role: Role, progress: Double, opaque: Bool = true) -> TransitionFrame {
         let p = min(max(progress, 0), 1)
+        let outgoingFades = opaque ? TransitionFrame.identity : TransitionFrame(opacity: 1 - p)
         switch transition {
         case .dissolve:
-            // The outgoing slide stays under the incoming one as it fades in.
-            return role == .incoming ? TransitionFrame(opacity: p) : .identity
+            return role == .incoming ? TransitionFrame(opacity: p) : outgoingFades
         case .fadeThroughBlack:
             // Out over the first half, in over the second, so the middle is black.
             return role == .incoming ? TransitionFrame(opacity: max(0, 2 * p - 1)) : TransitionFrame(opacity: max(0, 1 - 2 * p))
@@ -116,9 +127,11 @@ public enum TransitionMath {
                 ? TransitionFrame(offsetX: d.x * (1 - p), offsetY: d.y * (1 - p))
                 : TransitionFrame(offsetX: -d.x * p, offsetY: -d.y * p)
         case .wipe(let edge, _):
-            return role == .incoming ? TransitionFrame(reveal: p, revealEdge: edge) : .identity
+            if role == .incoming { return TransitionFrame(reveal: p, revealEdge: edge) }
+            // What's left of the outgoing slide is the part the line hasn't reached yet.
+            return opaque ? .identity : TransitionFrame(reveal: 1 - p, revealEdge: edge.opposite)
         case .zoom:
-            return role == .incoming ? TransitionFrame(opacity: p, scale: 0.85 + 0.15 * p) : .identity
+            return role == .incoming ? TransitionFrame(opacity: p, scale: 0.85 + 0.15 * p) : outgoingFades
         }
     }
 

@@ -38,6 +38,12 @@ final class TransitionTests: XCTestCase {
         // Dissolve: the incoming slide fades in over an unchanged outgoing one.
         XCTAssertEqual(M.frame(for: .dissolve(duration: 1), role: .incoming, progress: 0.25).opacity, 0.25)
         XCTAssertEqual(M.frame(for: .dissolve(duration: 1), role: .outgoing, progress: 0.25), .identity)
+        // On the see-through slide layer the outgoing words fade out instead, so the two don't pile up.
+        XCTAssertEqual(M.frame(for: .dissolve(duration: 1), role: .outgoing, progress: 0.25, opaque: false).opacity, 0.75)
+        XCTAssertEqual(M.frame(for: .zoom(duration: 1), role: .outgoing, progress: 1, opaque: false).opacity, 0)
+        XCTAssertEqual(M.frame(for: .wipe(edge: .left, duration: 1), role: .outgoing, progress: 0.3, opaque: false),
+                       TransitionFrame(reveal: 0.7, revealEdge: .right), "Hidden where the incoming slide is revealed")
+        XCTAssertEqual(M.frame(for: .wipe(edge: .left, duration: 1), role: .outgoing, progress: 0.3), .identity)
         // Fade Through Black is black halfway.
         let fade = SlideTransition.fadeThroughBlack(duration: 1)
         XCTAssertEqual(M.frame(for: fade, role: .outgoing, progress: 0.5).opacity, 0)
