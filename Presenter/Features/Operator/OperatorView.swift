@@ -16,6 +16,8 @@ struct OperatorView: View {
     @Bindable var ui: OperatorUIState
     /// A sidebar click asks the workspace to scroll to that item.
     @State private var scrollRequest: UUID?
+    /// A library presentation clicked in the sidebar, shown in place of the show's slides.
+    @State private var browsedPresentationID: UUID?
     /// Set while the slide editor is open; it then fills the window in place of the show view.
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
@@ -70,7 +72,12 @@ struct OperatorView: View {
     /// The live show: playlist, continuous slide workspace, live panel and controls.
     private var showView: some View {
         NavigationSplitView {
-            PlaylistSidebar(coordinator: coordinator, scrollRequest: $scrollRequest, onNewSong: { ui.isAddingSong = true })
+            PlaylistSidebar(
+                coordinator: coordinator,
+                scrollRequest: $scrollRequest,
+                browsedPresentationID: $browsedPresentationID,
+                onNewSong: { ui.isAddingSong = true }
+            )
                 .navigationSplitViewColumnWidth(min: Widths.operatorSidebar.min, ideal: Widths.operatorSidebar.ideal, max: Widths.operatorSidebar.max)
         } detail: {
             // Plain SwiftUI stacks on purpose. HSplitView (AppKit-backed) ignored these minimum widths and
@@ -81,7 +88,7 @@ struct OperatorView: View {
                     // HStack would split space evenly and overflow; size the live panel from what's available.
                     let liveWidth = min(max(proxy.size.width * 0.34, Widths.livePanelWidths.lowerBound), Widths.livePanelWidths.upperBound)
                     HStack(spacing: 0) {
-                        SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
+                        workspace
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
                         LivePanel(coordinator: coordinator, outputManager: outputManager) { propID in
@@ -94,9 +101,30 @@ struct OperatorView: View {
                 ControlBar(coordinator: coordinator)
             }
         }
-        .navigationTitle(coordinator.project.name)
+        .navigationTitle(coordinator.project.playlist.title)
         .solidToolbar()
         .toolbar { operatorToolbar }
+    }
+
+    /// The show's slides, or a library presentation clicked in the sidebar (until it's deleted).
+    @ViewBuilder
+    private var workspace: some View {
+        if let browsedPresentationID,
+           browsedPresentationID != coordinator.project.props.id,
+           let presentation = coordinator.project.presentation(withID: browsedPresentationID) {
+            LibraryPresentationView(
+                coordinator: coordinator,
+                presentation: presentation,
+                editSession: $editSession,
+                onAddToShow: {
+                    self.browsedPresentationID = nil
+                    if let item = coordinator.addToPlaylist(presentation.id) { scrollRequest = item.id }
+                },
+                onBackToShow: { self.browsedPresentationID = nil }
+            )
+        } else {
+            SlideWorkspace(coordinator: coordinator, scrollRequest: $scrollRequest, editSession: $editSession)
+        }
     }
 
     /// On macOS 26+, each button sits on its own instead of sharing one glass capsule (see ADR 0001).

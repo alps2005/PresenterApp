@@ -1,16 +1,26 @@
 import SwiftUI
 import PresenterCore
 
+/// What a sidebar row selects. Typed, so rows of other kinds (themes) can't pass their IDs off as playlist items.
+enum SidebarSelection: Hashable {
+    case item(UUID)
+    case presentation(UUID)
+}
+
 struct PlaylistSidebar: View {
     let coordinator: PresentationCoordinator
     /// Clicking an item asks the workspace to scroll to it.
     @Binding var scrollRequest: UUID?
+    /// The library presentation shown in the workspace in place of the show. Nil shows the show.
+    @Binding var browsedPresentationID: UUID?
     let onNewSong: () -> Void
     @State private var itemPendingRemoval: PresentationItem?
     @State private var presentationPendingDeletion: PresentationDocument?
     @State private var searchText = ""
     @State private var editingThemeID: UUID?
     @State private var themePendingDeletion: Theme?
+    @State private var isRenamingShow = false
+    @State private var showTitleDraft = ""
     @AppStorage("libraryExpanded") private var isLibraryExpanded = true
     @AppStorage("themesExpanded") private var isThemesExpanded = true
 
@@ -18,10 +28,10 @@ struct PlaylistSidebar: View {
 
     var body: some View {
         List(selection: selection) {
-            Section(coordinator.project.playlist.title) {
+            Section {
                 ForEach(playlistItems) { item in
                     row(for: item)
-                        .tag(item.id)
+                        .tag(SidebarSelection.item(item.id))
                         .contextMenu {
                             Button("Remove from Playlist…", role: .destructive) {
                                 itemPendingRemoval = item
@@ -30,12 +40,19 @@ struct PlaylistSidebar: View {
                 }
                 // Reordering a filtered list would move the wrong items, so only while not searching.
                 .onMove(perform: isSearching ? nil : { coordinator.moveItems(fromOffsets: $0, toOffset: $1) })
+            } header: {
+                Text(coordinator.project.playlist.title)
+                    .contextMenu {
+                        Button("Rename Show…") { startRenamingShow() }
+                    }
+                    .help("Right-click to rename the show")
             }
 
             // Every presentation, including ones taken off the playlist, like ProPresenter's library.
             Section("Library", isExpanded: Binding(get: { isLibraryExpanded || isSearching }, set: { isLibraryExpanded = $0 })) {
                 ForEach(libraryPresentations) { presentation in
                     libraryRow(presentation)
+                        .tag(SidebarSelection.presentation(presentation.id))
                 }
                 if libraryPresentations.isEmpty {
                     Text(isSearching ? "No matches" : "No presentations yet")
@@ -75,6 +92,11 @@ struct PlaylistSidebar: View {
             .buttonStyle(.borderless)
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .alert("Rename Show", isPresented: $isRenamingShow) {
+            TextField("Name", text: $showTitleDraft)
+            Button("Rename") { coordinator.renamePlaylist(to: showTitleDraft) }
+            Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog(
             "Delete this presentation?",
@@ -118,15 +140,30 @@ struct PlaylistSidebar: View {
         }
     }
 
-    private var selection: Binding<UUID?> {
+    private var selection: Binding<SidebarSelection?> {
         Binding(
-            get: { coordinator.state.selectedItemID },
-            set: { itemID in
-                guard let itemID else { return }
-                coordinator.selectItem(itemID)
-                scrollRequest = itemID
+            get: {
+                if let browsedPresentationID { return .presentation(browsedPresentationID) }
+                return coordinator.state.selectedItemID.map { .item($0) }
+            },
+            set: { selection in
+                switch selection {
+                case .item(let itemID):
+                    browsedPresentationID = nil
+                    coordinator.selectItem(itemID)
+                    scrollRequest = itemID
+                case .presentation(let presentationID):
+                    browsedPresentationID = presentationID
+                case nil:
+                    break
+                }
             }
         )
+    }
+
+    private func startRenamingShow() {
+        showTitleDraft = coordinator.project.playlist.title
+        isRenamingShow = true
     }
 
     private var playlistItems: [PresentationItem] {
@@ -208,6 +245,7 @@ struct PlaylistSidebar: View {
 
     private func addToPlaylist(_ presentation: PresentationDocument) {
         if let item = coordinator.addToPlaylist(presentation.id) {
+            browsedPresentationID = nil
             scrollRequest = item.id
         }
     }
