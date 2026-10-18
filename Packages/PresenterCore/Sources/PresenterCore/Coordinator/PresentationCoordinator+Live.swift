@@ -54,6 +54,7 @@ extension PresentationCoordinator {
         guard let live = state.live else { return reject(.nothingLive) }
         state.cleared = live
         state.live = nil
+        state.autoAdvance = nil
         Log.coordinator.info("Slide cleared")
         return applied()
     }
@@ -86,11 +87,12 @@ extension PresentationCoordinator {
     @discardableResult
     public func blackout() -> CommandResult {
         state.isBlackout = true
+        state.autoAdvance = nil
         Log.coordinator.info("Blackout on")
         return applied()
     }
 
-    /// Lifts blackout and brings back a cleared slide, if any.
+    /// Lifts blackout and brings back a cleared slide, if any. Its automatic advancing starts again.
     @discardableResult
     public func restoreOutput() -> CommandResult {
         var changed = false
@@ -119,6 +121,8 @@ extension PresentationCoordinator {
             changed = true
         }
         guard changed else { return reject(.nothingToRestore) }
+        // The slide back on screen starts its countdown again; a running one carries on.
+        if state.autoAdvance == nil, let live = state.live { startAutoAdvance(for: live) }
         Log.coordinator.info("Output restored")
         return applied()
     }

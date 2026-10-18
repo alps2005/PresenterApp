@@ -163,6 +163,7 @@ public final class PresentationCoordinator {
             state.liveBackground = background
             state.clearedBackground = nil
         }
+        startAutoAdvance(for: LiveSlide(position: position, rendered: rendered))
         Log.coordinator.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }

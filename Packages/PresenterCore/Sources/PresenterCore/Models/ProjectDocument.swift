@@ -10,7 +10,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 2: transparent backgrounds, song arrangements, timers, stage display, messages, props and video
     ///   (added in v0.1.0-beta.2, which still wrote 1; written as 2 from beta.3).
     /// - 3: themes, text that follows them, text outlines and text background boxes (v0.1.0-beta.5).
-    public static let currentSchemaVersion = 3
+    /// - 4: automatic advancing: slide Go To Next timers and presentation Slideshow intervals.
+    public static let currentSchemaVersion = 4
 
     public let id: UUID
     public var name: String

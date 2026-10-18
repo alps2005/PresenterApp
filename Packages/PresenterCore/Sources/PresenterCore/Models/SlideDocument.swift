@@ -11,6 +11,9 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     public var transition: SlideTransition?
     /// A group name such as "Verse 1" or "Chorus", shown on the slide's thumbnail. Never shown to the audience.
     public var label: String?
+    /// Moves the live slide on by itself after a while. Nil leaves it to the operator, or to the presentation's
+    /// Slideshow interval.
+    public var goToNext: GoToNextTimer?
 
     public init(
         id: UUID = UUID(),
@@ -18,7 +21,8 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         notes: String? = nil,
         background: SlideBackground? = nil,
         transition: SlideTransition? = nil,
-        label: String? = nil
+        label: String? = nil,
+        goToNext: GoToNextTimer? = nil
     ) {
         self.id = id
         self.elements = elements
@@ -26,6 +30,7 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         self.background = background
         self.transition = transition
         self.label = label
+        self.goToNext = goToNext
     }
 
     public func element(withID elementID: UUID) -> SlideElement? {
