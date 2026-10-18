@@ -69,7 +69,7 @@ final class ScriptureTests: XCTestCase {
     func testVersesPerSlideNumbersAndCaptions() throws {
         let slides = ScriptureSlides.make(try passage("John 3:16-18"), options: .init(versesPerSlide: 2, maxCharactersPerSlide: 1000))
         XCTAssertEqual(slides.count, 2)
-        XCTAssertEqual(slides.map(\.label), ["3:16-17", "3:18"])
+        XCTAssertEqual(slides.map(\.label), [nil, nil], "Labels are for song sections")
         XCTAssertTrue(slides[0].primaryText.hasPrefix("¹⁶ For God so loved"))
         XCTAssertTrue(slides[0].primaryText.contains(" ¹⁷ For God sent not"))
         guard case .text(let caption) = slides[1].elements.last else { return XCTFail("No caption") }
@@ -88,7 +88,8 @@ final class ScriptureTests: XCTestCase {
         XCTAssertTrue(slides[0].primaryText.hasPrefix("¹⁶ "), "Only the first part is numbered")
         XCTAssertFalse(slides[1].primaryText.hasPrefix("¹⁶"))
         XCTAssertTrue(slides[0].primaryText.hasSuffix(","), "Split after a comma, not mid-phrase")
-        XCTAssertEqual(slides.map(\.label), ["3:16", "3:16"])
+        guard case .text(let caption) = slides[1].elements.last else { return XCTFail("No caption") }
+        XCTAssertEqual(caption.text, "John 3:16 · KJV", "Both parts carry the verse's reference")
         XCTAssertEqual(ScriptureSlides.split("short", max: 80), ["short"])
         XCTAssertEqual(ScriptureSlides.superscript(120), "¹²⁰")
     }
@@ -96,7 +97,9 @@ final class ScriptureTests: XCTestCase {
     func testCharacterLimitStartsANewSlide() throws {
         let slides = ScriptureSlides.make(try passage("John 3:16-18"), options: .init(versesPerSlide: 4, maxCharactersPerSlide: 160))
         XCTAssertEqual(slides.count, 2, "Verses 16 and 17 together are too long for one slide")
-        XCTAssertEqual(slides.map(\.label), ["3:16", "3:17-18"])
+        XCTAssertEqual(slides.compactMap { slide -> String? in
+            if case .text(let caption) = slide.elements.last { caption.text } else { nil }
+        }, ["John 3:16 · KJV", "John 3:17-18 · KJV"])
     }
 
     // MARK: Adding to the show

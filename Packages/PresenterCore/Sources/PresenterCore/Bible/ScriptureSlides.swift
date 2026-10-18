@@ -83,7 +83,8 @@ public enum ScriptureSlides {
                 let caption = "\(passage.reference.book.name(in: passage.language)) \(numbers) · \(passage.translationAbbreviation)"
                 elements.append(.text(TextElement(text: caption, role: .caption)))
             }
-            slides.append(SlideDocument(elements: elements, label: numbers))
+            // No group label: labels are for song sections, and would offer arrangements.
+            slides.append(SlideDocument(elements: elements))
             current = []
         }
 
