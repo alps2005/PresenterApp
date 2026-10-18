@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v0.1.0-beta.6 (2026-10-17)
 
 ### Project
 - **New installs start clean.** The first launch opens an empty project with only the starting themes (Worship,
