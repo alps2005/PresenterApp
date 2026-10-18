@@ -100,6 +100,8 @@ struct PlaylistSidebar: View {
             .buttonStyle(.borderless)
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // A long library scrolls under these buttons; without a background its rows show through them.
+            .background(Palette.sidebar)
         }
         .alert("Rename Show", isPresented: $isRenamingShow) {
             TextField("Name", text: $showTitleDraft)
