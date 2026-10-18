@@ -3,6 +3,22 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v0.1.0-beta.6 (2026-10-17)
+
+### Project
+- **New installs start clean.** The first launch opens an empty project with only the starting themes (Worship,
+  Scripture, Lower Third): no sample presentations, media, timers, messages or props. A project that can't be
+  read is still moved aside, and an empty project opens instead of the sample.
+
+### Media
+- **Delete media from the media bin.** Right-click an image or video and choose Delete…. If slides or themes use
+  it, Presenter says which ones; they lose that background or image. Undo brings it back. What's on screen stays
+  until you change it. The file is removed from the media folder at the next launch, unless a backup still uses it.
+
+### Development
+- Debug builds use the bundle ID `io.github.alps2005.Presenter.debug`, so Xcode builds keep their own data and a
+  downloaded release never opens a developer's test project or media.
+
 ## v0.1.0-beta.5 (2026-10-17)
 
 ### Themes

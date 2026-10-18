@@ -72,3 +72,21 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         return RenderedSlide(slide: theme.applied(to: slide), background: slide.background ?? background ?? theme.background)
     }
 }
+
+extension PresentationDocument {
+    /// True when the presentation's background, or any slide's background or image, uses the asset.
+    public func uses(_ assetID: UUID) -> Bool {
+        background?.assetID == assetID || slides.contains { slide in
+            slide.background?.assetID == assetID || slide.elements.contains { $0.assetID == assetID }
+        }
+    }
+
+    /// Clears backgrounds that use the asset and removes images of it, for deleting it from the project.
+    mutating func removeMedia(_ assetID: UUID) {
+        if background?.assetID == assetID { background = nil }
+        for index in slides.indices {
+            if slides[index].background?.assetID == assetID { slides[index].background = nil }
+            slides[index].elements.removeAll { $0.assetID == assetID }
+        }
+    }
+}

@@ -62,14 +62,43 @@ extension PresentationCoordinator {
     }
 
     /// Records an imported media file so backgrounds can reference it. Adding the same asset twice is a no-op.
-    /// Not an undoable edit: assets are never removed, and undo keeps them (see `restore(_:)`).
+    /// Not an undoable edit: the asset is added to every undo and redo snapshot too, so undoing an earlier edit
+    /// never loses an import (its file is already in the media folder). Deleting it is undoable.
     @discardableResult
     public func addMediaAsset(_ asset: MediaAsset) -> CommandResult {
         if project.asset(withID: asset.id) == nil {
             project.mediaAssets.append(asset)
+            for index in undoStack.indices where undoStack[index].project.asset(withID: asset.id) == nil {
+                undoStack[index].project.mediaAssets.append(asset)
+            }
+            for index in redoStack.indices where redoStack[index].project.asset(withID: asset.id) == nil {
+                redoStack[index].project.mediaAssets.append(asset)
+            }
             Log.coordinator.info("Added media asset \(asset.id, privacy: .public)")
         }
         return applied()
+    }
+
+    /// Removes a media file from the project, and from every background and image that uses it (those fall back
+    /// to the next background, or lose the image). Undoable. The audience output is left alone, and the file stays
+    /// in the media folder until a relaunch, so Undo can bring it back.
+    @discardableResult
+    public func removeMediaAsset(_ assetID: UUID) -> CommandResult {
+        recordingUndo("Delete Media") {
+            guard project.asset(withID: assetID) != nil else { return reject(.unknownMediaAsset) }
+            let date = now()
+            for index in project.presentations.indices where project.presentations[index].uses(assetID) {
+                project.presentations[index].removeMedia(assetID)
+                project.presentations[index].updatedAt = date
+            }
+            if project.props.uses(assetID) { project.props.removeMedia(assetID) }
+            for index in project.themes.indices where project.themes[index].background?.assetID == assetID {
+                project.themes[index].background = nil
+            }
+            project.mediaAssets.removeAll { $0.id == assetID }
+            Log.coordinator.info("Deleted media asset \(assetID, privacy: .public)")
+            return applied()
+        }
     }
 
     // MARK: - Element commands

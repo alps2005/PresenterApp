@@ -89,4 +89,19 @@ public struct MediaStore: Sendable {
     public func fileExists(for asset: MediaAsset) -> Bool {
         FileManager.default.fileExists(atPath: url(for: asset).path)
     }
+
+    /// The names of the files in the media folder.
+    public func filenames() -> [String] {
+        (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    }
+
+    /// Deletes the files among `candidates` not named in `storedFilenames`, for media deleted from the project.
+    /// Returns the names removed. Failures are skipped; an extra file is harmless.
+    @discardableResult
+    public func removeFiles(among candidates: [String], keeping storedFilenames: Set<String>) -> [String] {
+        candidates.filter { name in
+            guard !storedFilenames.contains(name) else { return false }
+            return (try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))) != nil
+        }
+    }
 }

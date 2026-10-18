@@ -28,7 +28,7 @@ public final class PresentationCoordinator {
     static let coalescingInterval: TimeInterval = 1
 
     struct UndoEntry {
-        let project: ProjectDocument
+        var project: ProjectDocument
         let actionName: String
     }
 

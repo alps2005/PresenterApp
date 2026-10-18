@@ -5,12 +5,13 @@ import PresenterCore
 
 /// Like ProPresenter's media bin: every image and video in the project. Clicking one puts it straight on the
 /// audience output's background layer; the words on screen stay. Right-click to use it as a slide's or a
-/// presentation's background instead.
+/// presentation's background instead, or to delete it.
 struct MediaBin: View {
     let coordinator: PresentationCoordinator
     @Environment(MediaLibrary.self) private var mediaLibrary
     @State private var isImporting = false
     @State private var importErrors: [String] = []
+    @State private var pendingDeletion: MediaAsset?
 
     /// Header, one row of 160 × 90 tiles with their names, and the panel padding.
     static let height: CGFloat = 180
@@ -46,6 +47,23 @@ struct MediaBin: View {
         }
         .padding(Spacing.lg)
         .frame(height: Self.height)
+        .confirmDeletion("Delete “\(pendingDeletion?.originalFilename ?? "")”?",
+                         message: pendingDeletion.map(deletionMessage) ?? "",
+                         of: $pendingDeletion) { asset in
+            coordinator.removeMediaAsset(asset.id)
+        }
+    }
+
+    /// Names what loses the file, so the operator knows which slides change.
+    private func deletionMessage(for asset: MediaAsset) -> String {
+        let titles = coordinator.project.presentationsUsing(asset: asset.id).map { $0.title.isEmpty ? "Untitled" : $0.title }
+        let themeCount = coordinator.project.themesUsing(asset: asset.id).count
+        var users = titles.count > 3 ? Array(titles.prefix(2)) + ["\(titles.count - 2) other presentations"] : titles
+        if themeCount > 0 { users.append(themeCount == 1 ? "1 theme" : "\(themeCount) themes") }
+        guard !users.isEmpty else { return "You can undo this." }
+        let list = users.count == 1 ? users[0] : users.dropLast().joined(separator: ", ") + " and " + users.last!
+        return "Used in \(list). Those slides lose this background or image. If it's on screen, it stays until "
+            + "you change it. You can undo this."
     }
 
     private func tile(_ asset: MediaAsset) -> some View {
@@ -92,7 +110,7 @@ struct MediaBin: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .onTapGesture { coordinator.showBackground(background) }
-        .help("Click to show on the audience output, behind the words")
+        .help("Click to show on the audience output, behind the words. Right-click to use as a background or delete.")
         .contextMenu {
             Button("Show on Output") { coordinator.showBackground(background) }
             Divider()
@@ -106,6 +124,8 @@ struct MediaBin: View {
             } else {
                 Text("Cue a slide to use this as its background")
             }
+            Divider()
+            Button("Delete…", role: .destructive) { pendingDeletion = asset }
         }
     }
 

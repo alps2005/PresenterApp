@@ -35,14 +35,25 @@ final class ProjectPersistence {
         self.mediaDirectory = mediaDirectory
         backups = ProjectBackups(projectFileURL: store.fileURL)
         problem = loadProblem
-        // What's on disk already matches; a sample project isn't written until the operator changes it.
+        // What's on disk already matches; a new project isn't written until the operator changes it.
         lastSaved = coordinator.project
         observeProject()
     }
 
     /// The project to start with (see `ProjectLoader`), logging what happened.
-    static func loadInitialProject(from store: ProjectStore) -> (project: ProjectDocument, problem: String?) {
-        let outcome = ProjectLoader.loadInitialProject(from: store, backups: ProjectBackups(projectFileURL: store.fileURL))
+    static func loadInitialProject(
+        from store: ProjectStore
+    ) -> (project: ProjectDocument, problem: String?, loadedFromDisk: Bool) {
+        var starter: () -> ProjectDocument = { .starter() }
+        #if DEBUG
+        // A debug data directory with nothing in it (scripts/layout-screenshots.sh) gets the demo presentations.
+        if let path = UserDefaults.standard.string(forKey: "PresenterDebugDataDirectory"), !path.isEmpty {
+            starter = { .sample() }
+        }
+        #endif
+        let outcome = ProjectLoader.loadInitialProject(
+            from: store, backups: ProjectBackups(projectFileURL: store.fileURL), starter: starter
+        )
         if outcome.loadedFromDisk {
             Log.persistence.info("Loaded project from \(store.fileURL.path, privacy: .public)")
         }
@@ -52,7 +63,7 @@ final class ProjectPersistence {
         if let backupError = outcome.backupError {
             Log.persistence.error("Launch backup failed: \(backupError, privacy: .public)")
         }
-        return (outcome.project, outcome.problem)
+        return (outcome.project, outcome.problem, outcome.loadedFromDisk)
     }
 
     // MARK: - Saving

@@ -84,6 +84,16 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         mediaAssets.first { $0.id == assetID }
     }
 
+    /// Library presentations with a background or image that uses the asset.
+    public func presentationsUsing(asset assetID: UUID) -> [PresentationDocument] {
+        presentations.filter { $0.uses(assetID) }
+    }
+
+    /// Themes whose background uses the asset.
+    public func themesUsing(asset assetID: UUID) -> [Theme] {
+        themes.filter { $0.background?.assetID == assetID }
+    }
+
     /// A library presentation, or the props library (so the slide editor can edit props).
     public func presentation(withID presentationID: UUID) -> PresentationDocument? {
         if presentationID == props.id { return props }

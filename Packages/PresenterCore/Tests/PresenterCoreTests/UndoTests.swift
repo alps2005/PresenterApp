@@ -150,4 +150,74 @@ final class UndoTests: XCTestCase {
         XCTAssertNil(slides(c, p.id)[0].background)
         XCTAssertEqual(c.project.mediaAssets.map(\.id), [asset.id])
     }
+
+    // MARK: - Deleting media
+
+    private func importAsset(_ c: PresentationCoordinator, _ name: String = "sky.jpg") -> MediaAsset {
+        let asset = MediaAsset(originalFilename: name, storedFilename: "\(UUID().uuidString).jpg", pixelWidth: 4, pixelHeight: 3)
+        c.addMediaAsset(asset)
+        return asset
+    }
+
+    func testDeletingMediaRemovesItFromBackgroundsImagesAndThemes() throws {
+        let (c, _, p) = makeCoordinator()
+        let asset = importAsset(c)
+        let other = importAsset(c, "sea.jpg")
+        let image = SlideElement.image(ImageElement(assetID: asset.id, frame: .centered(width: 0.2, height: 0.2)))
+        c.setPresentationBackground(.image(ImageBackground(assetID: asset.id)), presentationID: p.id)
+        c.setSlideBackground(.image(ImageBackground(assetID: other.id)), slideID: p.slides[0].id, inPresentation: p.id)
+        c.setSlideBackground(.video(VideoBackground(assetID: asset.id)), slideID: p.slides[1].id, inPresentation: p.id)
+        c.addElement(image, toSlide: p.slides[0].id, inPresentation: p.id)
+        var theme = try XCTUnwrap(c.project.themes.first)
+        theme.background = .image(ImageBackground(assetID: asset.id))
+        c.updateTheme(theme)
+        XCTAssertEqual(c.project.presentationsUsing(asset: asset.id).map(\.id), [p.id])
+        XCTAssertEqual(c.project.themesUsing(asset: asset.id).map(\.id), [theme.id])
+
+        XCTAssertTrue(c.removeMediaAsset(asset.id).isApplied)
+
+        XCTAssertNil(c.project.asset(withID: asset.id))
+        XCTAssertNotNil(c.project.asset(withID: other.id))
+        let presentation = try XCTUnwrap(c.project.presentation(withID: p.id))
+        XCTAssertNil(presentation.background)
+        XCTAssertEqual(presentation.slides[0].background?.assetID, other.id, "Other media is left alone")
+        XCTAssertNil(presentation.slides[1].background)
+        XCTAssertTrue(presentation.slides[0].elements.allSatisfy { $0.assetID == nil })
+        XCTAssertNil(c.project.theme(withID: theme.id)?.background)
+        XCTAssertTrue(c.project.presentationsUsing(asset: asset.id).isEmpty)
+        XCTAssertEqual(c.undoActionName, "Delete Media")
+    }
+
+    func testUndoBringsDeletedMediaBackAndRedoDeletesItAgain() {
+        let (c, _, p) = makeCoordinator()
+        let asset = importAsset(c)
+        c.setSlideBackground(.image(ImageBackground(assetID: asset.id)), slideID: p.slides[0].id, inPresentation: p.id)
+        c.removeMediaAsset(asset.id)
+
+        c.undo()
+        XCTAssertNotNil(c.project.asset(withID: asset.id))
+        XCTAssertEqual(slides(c, p.id)[0].background?.assetID, asset.id)
+
+        c.redo()
+        XCTAssertNil(c.project.asset(withID: asset.id))
+        XCTAssertNil(slides(c, p.id)[0].background)
+    }
+
+    func testMediaImportedAfterADeleteSurvivesUndoingIt() {
+        let (c, _, _) = makeCoordinator()
+        let deleted = importAsset(c)
+        c.removeMediaAsset(deleted.id)
+        let later = importAsset(c, "sea.jpg")
+
+        c.undo()
+        XCTAssertEqual(Set(c.project.mediaAssets.map(\.id)), [deleted.id, later.id])
+        c.redo()
+        XCTAssertEqual(c.project.mediaAssets.map(\.id), [later.id])
+    }
+
+    func testDeletingUnknownMediaIsRejected() {
+        let (c, _, _) = makeCoordinator()
+        XCTAssertEqual(c.removeMediaAsset(UUID()), .rejected(.unknownMediaAsset))
+        XCTAssertFalse(c.canUndo)
+    }
 }

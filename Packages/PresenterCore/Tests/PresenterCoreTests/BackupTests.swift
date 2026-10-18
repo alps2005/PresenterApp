@@ -94,4 +94,20 @@ final class BackupTests: XCTestCase {
         }
         XCTAssertEqual(try backupNames(backups), ["Project-2.json", "Project-3.json"])
     }
+
+    // MARK: - Media the backups use
+
+    func testReferencedMediaIncludesBackupsAndFilesMovedAside() throws {
+        let backups = ProjectBackups(projectFileURL: projectURL)
+        var backedUp = ProjectDocument(name: "Backed up")
+        backedUp.mediaAssets = [MediaAsset(originalFilename: "a.jpg", storedFilename: "A.jpg", pixelWidth: 1, pixelHeight: 1)]
+        try backups.save(backedUp, now: Date(timeIntervalSince1970: 1))
+        // A newer format this build can't decode still counts.
+        var newer = ProjectDocument(name: "Newer")
+        newer.schemaVersion = ProjectDocument.currentSchemaVersion + 1
+        newer.mediaAssets = [MediaAsset(originalFilename: "b.jpg", storedFilename: "B.jpg", pixelWidth: 1, pixelHeight: 1)]
+        try ProjectStore.encode(newer).write(to: root.appendingPathComponent("Project.newer-2.json"))
+
+        XCTAssertEqual(backups.referencedMediaFilenames(), ["A.jpg", "B.jpg"])
+    }
 }

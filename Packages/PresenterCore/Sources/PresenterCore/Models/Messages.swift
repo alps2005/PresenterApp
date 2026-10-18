@@ -91,8 +91,9 @@ public struct ActiveMessage: Equatable, Sendable {
 
 extension PresentationDocument {
     /// The library of props: each slide is one prop (its label is the prop's name), drawn over the slides
-    /// when shown. Kept out of the playlist and library; edited in the slide editor.
-    public static func propsLibrary() -> PresentationDocument {
+    /// when shown. Kept out of the playlist and library; edited in the slide editor. `slides` defaults to a logo.
+    public static func propsLibrary(slides: [SlideDocument]? = nil) -> PresentationDocument {
+        if let slides { return PresentationDocument(title: "Props", slides: slides, background: .transparent) }
         var logo = SlideDocument(
             elements: [.text(TextElement(text: "Our Church", role: .caption,
                                          box: TextBox(frame: NormalizedRect(x: 0.72, y: 0.04, width: 0.25, height: 0.08))))],
