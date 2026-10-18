@@ -74,6 +74,14 @@ struct PlaylistSidebar: View {
                 }
             }
         }
+        // Double-clicking a library row adds it to the playlist. The List's primary action, not a tap gesture on
+        // the row: a row's tap gesture swallows single clicks on its content, so only its margin selected it.
+        .contextMenu(forSelectionType: SidebarSelection.self) { _ in } primaryAction: { selection in
+            if selection.count == 1, case .presentation(let id) = selection.first,
+               let presentation = coordinator.project.presentation(withID: id) {
+                addToPlaylist(presentation)
+            }
+        }
         .solidSidebar()
         .hardScrollEdges()
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search titles and words")
@@ -202,7 +210,6 @@ struct PlaylistSidebar: View {
             .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Playlist")
         }
         .contentShape(Rectangle())
-        .onTapGesture(count: 2) { addToPlaylist(presentation) }
         .contextMenu {
             Button("Add to Playlist") { addToPlaylist(presentation) }
             Divider()
