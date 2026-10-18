@@ -279,6 +279,12 @@ struct EditorInspector: View {
         section("Background") {
             BackgroundInspector(coordinator: coordinator, target: .slide(slide.id, presentationID: presentation.id))
         }
+        section("Go To Next") {
+            GoToNextControls(timer: Binding(
+                get: { slide.goToNext },
+                set: { coordinator.setGoToNext($0, forSlides: [slide.id], inPresentation: presentation.id) }
+            ))
+        }
         section("Presenter Notes") {
             TextEditor(text: Binding(
                 get: { slide.notes ?? "" },
