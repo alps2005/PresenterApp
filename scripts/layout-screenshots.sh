@@ -4,7 +4,7 @@
 #
 # Usage: scripts/layout-screenshots.sh [data directory]
 #   The data directory holds a Project.json and Media/ to test with. It defaults to build/layout/data; empty,
-#   the app opens its sample project there. Use a project with image and video backgrounds to check those rows.
+#   the Debug build opens its demo project there. Use a project with image and video backgrounds to check those rows.
 #   The operator's own show is never opened or changed.
 #
 # Needs: Terminal allowed under Privacy & Security › Screen Recording and › Accessibility, and no other copy of

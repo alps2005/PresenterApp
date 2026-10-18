@@ -1,6 +1,6 @@
 import Foundation
 
-/// Chooses the project to start with: the saved one, else the sample. UI-free; the app shows `problem`.
+/// Chooses the project to start with: the saved one, else the starter. UI-free; the app shows `problem`.
 public enum ProjectLoader {
     public struct Outcome: Sendable {
         public var project: ProjectDocument
@@ -18,11 +18,11 @@ public enum ProjectLoader {
         from store: ProjectStore,
         backups: ProjectBackups,
         now: Date = .now,
-        sample: () -> ProjectDocument = { .sample() }
+        starter: () -> ProjectDocument = { .starter() }
     ) -> Outcome {
         do {
             guard let project = try store.load() else {
-                return Outcome(project: sample(), problem: nil, loadedFromDisk: false)
+                return Outcome(project: starter(), problem: nil, loadedFromDisk: false)
             }
             var backupError: String?
             do {
@@ -36,11 +36,11 @@ public enum ProjectLoader {
             let problem: String
             do {
                 let moved = try store.quarantine(now: now)
-                problem = "\(message) It was moved to \(moved.path) and a sample project was opened instead."
+                problem = "\(message) It was moved to \(moved.path) and a new, empty project was opened instead."
             } catch {
-                problem = "\(message) A sample project was opened instead."
+                problem = "\(message) A new, empty project was opened instead."
             }
-            return Outcome(project: sample(), problem: problem, loadedFromDisk: false)
+            return Outcome(project: starter(), problem: problem, loadedFromDisk: false)
         }
     }
 }

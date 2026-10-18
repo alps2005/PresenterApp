@@ -17,15 +17,15 @@ final class ProjectLoaderTests: XCTestCase {
 
     private var store: ProjectStore { ProjectStore(fileURL: root.appendingPathComponent("Project.json")) }
     private var backups: ProjectBackups { ProjectBackups(projectFileURL: store.fileURL) }
-    private let sample = ProjectDocument(name: "Sample")
+    private let starter = ProjectDocument(name: "Starter")
 
     private func load() -> ProjectLoader.Outcome {
-        ProjectLoader.loadInitialProject(from: store, backups: backups, now: launch, sample: { self.sample })
+        ProjectLoader.loadInitialProject(from: store, backups: backups, now: launch, starter: { self.starter })
     }
 
-    func testNothingSavedStartsWithTheSampleAndWritesNothing() throws {
+    func testNothingSavedStartsWithTheStarterAndWritesNothing() throws {
         let outcome = load()
-        XCTAssertEqual(outcome.project, sample)
+        XCTAssertEqual(outcome.project, starter)
         XCTAssertNil(outcome.problem)
         XCTAssertFalse(outcome.loadedFromDisk)
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: root.path), [])
@@ -44,12 +44,12 @@ final class ProjectLoaderTests: XCTestCase {
         XCTAssertEqual(try ProjectStore(fileURL: backup).load(), saved)
     }
 
-    func testUnreadableFileIsMovedAsideAndTheSampleOpens() throws {
+    func testUnreadableFileIsMovedAsideAndTheStarterOpens() throws {
         try Data("{ not json".utf8).write(to: store.fileURL)
 
         let outcome = load()
 
-        XCTAssertEqual(outcome.project, sample)
+        XCTAssertEqual(outcome.project, starter)
         XCTAssertFalse(outcome.loadedFromDisk)
         let problem = try XCTUnwrap(outcome.problem)
         XCTAssertTrue(problem.contains("moved to"), problem)
@@ -64,8 +64,20 @@ final class ProjectLoaderTests: XCTestCase {
 
         let outcome = load()
 
-        XCTAssertEqual(outcome.project, sample)
+        XCTAssertEqual(outcome.project, starter)
         XCTAssertTrue(outcome.problem?.contains("newer version") ?? false)
         XCTAssertFalse(FileManager.default.fileExists(atPath: store.fileURL.path))
+    }
+
+    func testStarterHasThemesAndNothingElse() {
+        let project = ProjectDocument.starter()
+        XCTAssertEqual(project.themes.map(\.name), Theme.presets().map(\.name))
+        XCTAssertTrue(project.presentations.isEmpty)
+        XCTAssertTrue(project.playlist.items.isEmpty)
+        XCTAssertTrue(project.mediaAssets.isEmpty)
+        XCTAssertTrue(project.timers.isEmpty)
+        XCTAssertTrue(project.messages.isEmpty)
+        XCTAssertTrue(project.props.slides.isEmpty)
+        XCTAssertNil(project.defaultThemeID)
     }
 }
