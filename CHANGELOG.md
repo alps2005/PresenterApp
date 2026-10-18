@@ -3,6 +3,18 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Slides that move on by themselves
+- **Slideshow:** a presentation's **Slideshow** menu moves through its slides every 5, 8, 10, 15 or 30 seconds (or a
+  custom time), looping. Good for announcement loops.
+- **Go To Next Timer:** right-click a slide (or use the slide editor) to give it its own time, with an option to loop
+  to the first slide. It comes before the Slideshow's time.
+- **Videos:** a slide whose video plays once waits for it to end; a looping video doesn't hold the slide up.
+- **Seeing and stopping it:** a timer under each thumbnail, a countdown circle on the live slide, and **Next slide
+  in…** with **Stop** in the Live panel (Live › Stop Auto-Advance, ⌥⌘.). Clear and Blackout stop it.
+- **File format 4:** projects are saved in a new format. Earlier betas can't open them, so export a backup first.
+
 ## v0.1.0-beta.8 (2026-10-18)
 
 ### Library
