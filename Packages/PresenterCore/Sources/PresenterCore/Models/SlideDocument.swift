@@ -89,6 +89,9 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
     /// What the operator formatted by hand, so the presentation's theme leaves it alone. The rest follows the theme;
     /// with no theme, `style` and `box` are used as they are.
     public var overrides: Set<ThemedProperty>
+    /// Its own transitions as the slide arrives and leaves. Nil follows the slide.
+    public var transitionIn: ElementTransition?
+    public var transitionOut: ElementTransition?
 
     public init(
         id: UUID = UUID(),
@@ -96,7 +99,9 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
         role: TextRole = .body,
         style: TextStyle? = nil,
         box: TextBox? = nil,
-        overrides: Set<ThemedProperty> = []
+        overrides: Set<ThemedProperty> = [],
+        transitionIn: ElementTransition? = nil,
+        transitionOut: ElementTransition? = nil
     ) {
         self.id = id
         self.text = text
@@ -104,14 +109,16 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
         self.style = style ?? .default(for: role)
         self.box = box
         self.overrides = overrides
+        self.transitionIn = transitionIn
+        self.transitionOut = transitionOut
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, text, role, style, box, overrides
+        case id, text, role, style, box, overrides, transitionIn, transitionOut
     }
 
     /// Text saved before styling existed has no style; it gets its role's default look. Text saved before themes
-    /// existed has no overrides.
+    /// existed has no overrides, and text saved before element transitions has none.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -120,6 +127,8 @@ public struct TextElement: Identifiable, Codable, Hashable, Sendable {
         style = try container.decodeIfPresent(TextStyle.self, forKey: .style) ?? .default(for: role)
         box = try container.decodeIfPresent(TextBox.self, forKey: .box)
         overrides = try container.decodeIfPresent(Set<ThemedProperty>.self, forKey: .overrides) ?? []
+        transitionIn = try container.decodeIfPresent(ElementTransition.self, forKey: .transitionIn)
+        transitionOut = try container.decodeIfPresent(ElementTransition.self, forKey: .transitionOut)
     }
 }
 
