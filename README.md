@@ -108,6 +108,7 @@ swift test
 **Video backgrounds and the media bin.**
 - **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.
 - **Media cues:** click an item to put it straight on the audience output's background layer, behind the words on screen, like a ProPresenter media cue. Right-click to make it the background of the cued slide or of its presentation instead.
+- **Deleting media:** right-click an item and choose **Delete…**. Presenter names the slides and themes that use it; they lose that background or image, and Undo brings it back. The file leaves the media folder at the next launch, unless a backup still uses it.
 - **Video backgrounds:** a video plays on the background layer and keeps playing, without restarting, while transparent slides change the words over it. In the Background inspector, choose **Video** to pick one and set its fill, looping, mute and dimming.
 - **Transport:** while a video is live, controls under the Audience preview play and pause it, scrub, show the time left, mute it and set the volume.
 - **Missing files:** a missing or unplayable video shows the default background with a warning and never holds up slide changes.
@@ -132,7 +133,7 @@ swift test
 - **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images and videos the project uses, so it opens complete on the other Mac.
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
 - A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost.
-- If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and a sample project opens instead.
+- If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and an empty project opens instead.
 
 **Appearance.** The operator window is dark, with solid panels, so it stays readable in a dark booth. LIVE is always red, CUED always blue and warnings amber, and every state badge has an icon and a word. To use the system's light or dark setting instead, turn on **View › Follow System Appearance**.
 

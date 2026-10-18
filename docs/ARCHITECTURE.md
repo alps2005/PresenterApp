@@ -104,7 +104,7 @@ keeps playing, without restarting, while transparent slides change the words ove
 | Type | Job |
 |---|---|
 | `ProjectStore` | Reads and writes `Project.json` atomically. It checks `schemaVersion` first, so a file from a newer version is reported as newer rather than corrupt. |
-| `ProjectLoader` | Chooses the project at launch: the saved one; or the sample if nothing is saved; or, if the file can't be read, moves it aside (`Project.unreadable-<time>.json`) and opens the sample. |
+| `ProjectLoader` | Chooses the project at launch: the saved one; or the starter (themes only, `ProjectDocument.starter()`) if nothing is saved; or, if the file can't be read, moves it aside (`Project.unreadable-<time>.json`) and opens the starter. |
 | `ProjectBackups` | Dated copies in `Backups/`: one at launch (skipped when unchanged) and one before Open replaces the project. Keeps the newest 10. |
 | `ProjectArchive` | Export and Open: the project plus the media files it uses, in one JSON file. The app runs it off the main thread. |
 | `MediaStore` / `MediaLibrary` | Imported media is copied into `Media/`, named by UUID. `MediaLibrary` (app) decodes images ahead of time. |
