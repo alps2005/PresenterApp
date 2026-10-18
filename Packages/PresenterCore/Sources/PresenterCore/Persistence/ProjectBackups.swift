@@ -64,6 +64,31 @@ public struct ProjectBackups: Sendable {
         return url
     }
 
+    /// The media files that the backups, and project files moved aside next to the project, use, so cleaning up
+    /// the media folder never breaks one of them. Read loosely, so files in a newer format count too.
+    public func referencedMediaFilenames() -> Set<String> {
+        let fileManager = FileManager.default
+        var names: Set<String> = []
+        for folder in [directory, directory.deletingLastPathComponent()] {
+            let files = (try? fileManager.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+            for file in files where file.pathExtension == "json" {
+                guard let data = try? Data(contentsOf: file),
+                      let json = try? JSONSerialization.jsonObject(with: data) else { continue }
+                Self.collectStoredFilenames(in: json, into: &names)
+            }
+        }
+        return names
+    }
+
+    private static func collectStoredFilenames(in json: Any, into names: inout Set<String>) {
+        if let object = json as? [String: Any] {
+            if let name = object["storedFilename"] as? String { names.insert(name) }
+            for value in object.values { collectStoredFilenames(in: value, into: &names) }
+        } else if let array = json as? [Any] {
+            for value in array { collectStoredFilenames(in: value, into: &names) }
+        }
+    }
+
     /// Deletes all but the newest `limit` backups. Failures are ignored; a stale backup is harmless.
     public func prune() {
         for name in Self.filenamesToPrune(filenames(), keeping: limit) {

@@ -27,11 +27,7 @@ extension PresentationCoordinator {
     }
 
     func restore(_ snapshot: ProjectDocument) {
-        // The media library only grows, and imports aren't recorded: an asset added after the snapshot was taken
-        // stays, so undoing an earlier edit never loses an import (its file is already in the media folder).
-        var snapshot = snapshot
-        let snapshotAssetIDs = Set(snapshot.mediaAssets.map(\.id))
-        snapshot.mediaAssets += project.mediaAssets.filter { !snapshotAssetIDs.contains($0.id) }
+        // Imports are already in every snapshot (see `addMediaAsset(_:)`), so undo never loses one.
         project = snapshot
         coalescingKey = nil
         // Keep selection and cue pointing at things that still exist; live state is left alone.

@@ -68,4 +68,16 @@ final class MediaStoreTests: XCTestCase {
 
         XCTAssertFalse(store.fileExists(for: asset))
     }
+
+    func testRemoveFilesDeletesOnlyUnkeptCandidates() throws {
+        let store = MediaStore(directory: root)
+        for name in ["kept.png", "deleted.png", "new.png"] {
+            try Data([1]).write(to: root.appendingPathComponent(name))
+        }
+
+        let removed = store.removeFiles(among: ["kept.png", "deleted.png"], keeping: ["kept.png"])
+
+        XCTAssertEqual(removed, ["deleted.png"])
+        XCTAssertEqual(store.filenames().sorted(), ["kept.png", "new.png"], "Files that weren't candidates stay")
+    }
 }

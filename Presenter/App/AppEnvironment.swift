@@ -1,4 +1,5 @@
 import Observation
+import os
 import PresenterCore
 
 /// Requests from menu commands to the operator window.
@@ -30,6 +31,27 @@ final class AppEnvironment {
         playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         preloadProjectMedia()
+        if initial.loadedFromDisk {
+            removeDeletedMedia(keeping: initial.project, backups: ProjectBackups(projectFileURL: store.fileURL))
+        }
+    }
+
+    /// Deletes the files of media deleted from the project. Done at launch, when Undo can no longer bring them
+    /// back; files a backup or a project file moved aside still uses are kept. Skipped when the saved project
+    /// couldn't be loaded, so a failed load never empties the media folder.
+    private func removeDeletedMedia(keeping project: ProjectDocument, backups: ProjectBackups) {
+        let store = mediaLibrary.store
+        let inUse = Set(project.mediaAssets.map(\.storedFilename))
+        // Listed now, so a file imported while the backups are read is never a candidate.
+        let candidates = store.filenames()
+        Task {
+            let removed = await Task.detached(priority: .utility) {
+                store.removeFiles(among: candidates, keeping: inUse.union(backups.referencedMediaFilenames()))
+            }.value
+            if !removed.isEmpty {
+                Log.persistence.info("Removed \(removed.count) deleted media files")
+            }
+        }
     }
 
     /// Keeps every image the project uses decoded and ready, re-checking whenever the project changes.
