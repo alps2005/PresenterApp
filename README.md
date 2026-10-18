@@ -100,7 +100,7 @@ swift test
 - **Renaming:** click a presentation's title to rename it.
 
 **Moving on by itself.** Like ProPresenter, slides can advance without anyone pressing → or Space.
-- **Slideshow:** the **Slideshow** menu in a presentation's header moves through every slide after the chosen time (5, 8, 10, 15 or 30 seconds, or **Custom…**) and starts again from the first after the last. Good for announcement loops before the service.
+- **Slideshow:** the **Slideshow** button in a presentation's header moves through every slide after the chosen time (5, 8, 10, 15 or 30 seconds, or **Custom…**) and starts again from the first after the last. Good for announcement loops before the service.
 - **Go To Next Timer:** right-click a slide and choose **Go To Next Timer…** (or use **Go To Next** in the slide editor) to give that slide its own time; it comes before the Slideshow's. **Loop to the first slide** goes back to the presentation's first slide; without it, the last slide moves on to the next item in the show, as → does, and stops at the end of the show.
 - **Videos:** a slide whose video background plays once (Loop off) waits for the video to end before its countdown starts, so 0 seconds moves on the moment it finishes. A looping video doesn't hold the slide up.
 - **Seeing it:** slides that move on by themselves show their time under the thumbnail; the live one fills a small red circle as it counts down, and the Live panel shows **Next slide in…** with a **Stop** button (Live › Stop Auto-Advance, ⌥⌘.). Pressing → or ←, or taking another slide live, starts that slide's own countdown. Clear and Blackout stop it; Restore starts it again.
@@ -157,7 +157,8 @@ swift test
 - **Toolbar:** **Done**, **Take Live**, **Add Slide**, **Text**, **Shape** (rectangle, rounded rectangle, oval), **Media** (an image from your Mac) and zoom (Fit, 25–200%).
 - **Right, chosen with the toolbar's three buttons:**
   - **Format:** the selected item's settings: text style; shape, fill and border; or image scaling and opacity. Each also has position, size, stacking order and Delete. With nothing selected, it shows the slide's background and presenter notes.
-  - **Animate:** the slide's transition: None, or a **Dissolve** of 0.2–2 seconds that cross-fades the audience output when the slide goes live. Clear and Blackout are always instant.
+  - **Animate:** the slide's transition, 0.2–2 seconds, played on the audience output (and the Live panel's Audience preview) when the slide goes live: **Dissolve** (cross-fade), **Fade Through Black**, **Push** and **Wipe** (from the left, right, top or bottom) and **Zoom**. Clear and Blackout are always instant.
+  - **Element transitions:** select a text, shape or image and give it its own **In** and **Out** transition (Fade, Push, Wipe or Zoom), for when the whole slide shouldn't move. They play with the slide change: one → brings the slide, its elements transition in (an In can wait up to 5 seconds), and the previous slide's elements transition out without holding the new slide back. Everything else follows the slide's own transition. Slides with element transitions show ✦ under their thumbnail.
   - **Document:** the presentation's title, theme and background.
 
 The audience output keeps running while you edit, and edits don't reach it until a slide is taken live again. Build animations (moving text and shapes on and off a slide) and audio are coming in the next phase.

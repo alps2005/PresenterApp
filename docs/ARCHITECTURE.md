@@ -103,6 +103,14 @@ SwiftUI view, so they outlive the operator window.
 `PlaybackPlan.decide` (core) says whether to stop, keep playing, reload, load or report a missing file. So a video
 keeps playing, without restarting, while transparent slides change the words over it.
 
+### Transitions
+
+`TransitionMath` (core) gives every slide and element transition's geometry (opacity, offset, scale, wipe reveal) as a
+pure function of progress. `AudienceOutputView` animates one `progress` per layer through `SlideTransitionEffect`: the
+opaque background layer's outgoing copy stays put underneath, while the see-through slide layer's fades or is wiped
+away. Element transitions read an `elementClock` environment value (set only by the audience output and its preview)
+inside one `TimelineView`, which runs only while they play; thumbnails and the editor draw slides still.
+
 ### Automatic advancing
 
 `goLive(at:)` starts the live slide's countdown when it has a Go To Next timer or its presentation a Slideshow
