@@ -104,7 +104,7 @@ swift test
 - **Go To Next Timer:** right-click a slide and choose **Go To Next Timer…** (or use **Go To Next** in the slide editor) to give that slide its own time; it comes before the Slideshow's. **Loop to the first slide** goes back to the presentation's first slide; without it, the last slide moves on to the next item in the show, as → does, and stops at the end of the show.
 - **Videos:** a slide whose video background plays once (Loop off) waits for the video to end before its countdown starts, so 0 seconds moves on the moment it finishes. A looping video doesn't hold the slide up.
 - **Seeing it:** slides that move on by themselves show their time under the thumbnail; the live one fills a small red circle as it counts down, and the Live panel shows **Next slide in…** with a **Stop** button (Live › Stop Auto-Advance, ⌥⌘.). Pressing → or ←, or taking another slide live, starts that slide's own countdown. Clear and Blackout stop it; Restore starts it again.
-- Projects with these timers are saved in file format 4, which earlier versions of Presenter can't open.
+- From beta 9, projects are saved in file format 4, which earlier versions of Presenter can't open.
 
 **Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
 - **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
