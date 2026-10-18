@@ -20,6 +20,19 @@ final class UndoTests: XCTestCase {
         coordinator.project.presentation(withID: presentationID)?.slides ?? []
     }
 
+    func testRenamePlaylistTrimsIgnoresEmptyAndUndoes() {
+        let (c, _, _) = makeCoordinator()
+
+        XCTAssertEqual(c.renamePlaylist(to: "  Sunday, October 19 "), .applied)
+        XCTAssertEqual(c.project.playlist.title, "Sunday, October 19")
+        c.renamePlaylist(to: "   ")
+        XCTAssertEqual(c.project.playlist.title, "Sunday, October 19")
+        XCTAssertEqual(c.undoActionName, "Rename Show")
+
+        c.undo()
+        XCTAssertEqual(c.project.playlist.title, "P")
+    }
+
     func testUndoAndRedoAnElementEdit() {
         let (c, _, p) = makeCoordinator()
         let slideID = p.slides[0].id

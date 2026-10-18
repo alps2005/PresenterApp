@@ -60,6 +60,13 @@ struct PresentationEditor: View {
         coordinator.project.presentation(withID: session.presentationID)
     }
 
+    private var liveHelp: String {
+        guard session.itemID == nil else { return "Take this slide live on the audience output" }
+        return session.presentationID == coordinator.project.props.id
+            ? "Props are shown from Show Controls, not sent live"
+            : "Opened from the Library. Add it to the show to take it live."
+    }
+
     private var slide: SlideDocument? {
         guard let selectedSlideID else { return nil }
         return presentation?.slide(withID: selectedSlideID)
@@ -184,7 +191,7 @@ struct PresentationEditor: View {
             Button { takeLive() } label: {
                 Label("Take Live", systemImage: "play.fill")
             }
-            .help(session.itemID == nil ? "Props are shown from Show Controls, not sent live" : "Take this slide live on the audience output")
+            .help(liveHelp)
             .disabled(slide == nil || session.itemID == nil)
 
             Button { addSlide() } label: {

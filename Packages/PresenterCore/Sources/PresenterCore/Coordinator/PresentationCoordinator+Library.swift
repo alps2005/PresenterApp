@@ -193,6 +193,16 @@ extension PresentationCoordinator {
         }
     }
 
+    /// Renames the show (the playlist). Empty text keeps the current name.
+    @discardableResult
+    public func renamePlaylist(to title: String) -> CommandResult {
+        recordingUndo("Rename Show", coalescing: "rename-playlist") {
+            let trimmed = title.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty { project.playlist.title = trimmed }
+            return applied()
+        }
+    }
+
     /// Inserts a blank slide after the cued slide (if it belongs to this item) or at the end, and cues it.
     @discardableResult
     public func addSlide(toItem itemID: UUID) -> CommandResult {

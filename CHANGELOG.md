@@ -3,6 +3,17 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Library
+- **Click a song or presentation in the Library to see its slides.** It opens in the workspace, where you can
+  look through it, edit it (double-click a slide or click Edit) or add it to the show. Before, clicking it showed
+  "That playlist item no longer exists." Clicking a theme no longer shows that message either.
+
+### Show
+- **Rename the show.** Right-click the show's name at the top of the sidebar and choose Rename Show…. The window
+  title shows the show's name.
+
 ## v0.1.0-beta.6 (2026-10-17)
 
 ### Project
