@@ -30,7 +30,8 @@ struct PresenterCommands: Commands {
                 }
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
-            .disabled(coordinator.selectedPresentation == nil)
+            // Not the selection: it changes while scrolling the workspace, and each change would rebuild the menus.
+            .disabled(coordinator.project.playlist.items.isEmpty)
 
             Button("New Song…") { ui.isAddingSong = true }
                 .keyboardShortcut("n", modifiers: [.command, .option])

@@ -7,7 +7,7 @@ import Observation
 @Observable
 public final class PresentationCoordinator {
     public internal(set) var project: ProjectDocument
-    public internal(set) var state = PresentationState()
+    public let state = PresentationState()
     /// The most recent rejected command, for surfacing to the operator. Cleared by the next applied command.
     public internal(set) var lastRejection: CommandRejection?
 
