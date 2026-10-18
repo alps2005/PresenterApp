@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v0.1.0-beta.7 (2026-10-18)
 
 ### Library
 - **Click a song or presentation in the Library to see its slides.** It opens in the workspace, where you can
