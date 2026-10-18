@@ -90,6 +90,12 @@ swift test
 
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
 
+**Scripture.** **Scripture…** (⌥⌘V, or the sidebar) adds a Bible passage to the show as text slides.
+- **Reference or words:** type a reference in English or Spanish, like *Juan 3:16-18*, *1 Co 13:4-7*, *Jn 3:16*, *Salmo 23* or *Mateo 5:3-12; 6:9-13*, or search for words and click a verse. Accents and capitals don't matter.
+- **Slides:** choose 1 to 4 verses per slide, with or without small verse numbers and the reference ("Juan 3:16-17 · RVR1909") on each slide. A long verse is split at a sentence or clause. New passages follow the **Scripture** theme: verses at the top left, the reference small at the bottom.
+- **Bibles:** Presenter doesn't include or download any. **Import Bible…** reads a Zefania or OSIS XML file, the free formats public-domain translations are shared in. The [open-bibles](https://github.com/seven1m/open-bibles) collection has several, including the King James Version (OSIS), and the Zefania XML Bible project shares Zefania files on SourceForge. Check each translation's license first: use only public-domain or freely licensed ones. USFX files aren't supported yet.
+- Imported Bibles are kept in `Application Support/Presenter/Bibles`, outside the project; the slides are ordinary text, so a project never needs the Bible file.
+
 **Song tools.**
 - **Reflow:** the **Reflow** button on a presentation (and in the slide editor) shows all its words as one document. Type, and the slides update as you go; they keep their style, and new slides copy the one before them. It uses the same format as New Song: a blank line starts a slide, and a section name (Verse 1, Coro…) labels the slides after it. ⌘Z undoes a run of typing in one step.
 - **Arrangements:** for a song with group labels, the arrangement menu next to Add Slide sets the order the groups play in, like ProPresenter, e.g. *Verse 1 · Chorus · Verse 2 · Chorus · Bridge · Chorus*. A repeated chorus plays again without copying its slides. The workspace shows the slides in that order, and → / Space step through each repeat. **Slide Order** plays every slide once, in order.

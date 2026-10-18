@@ -222,6 +222,14 @@ extension SlideElement {
         }
     }
 
+    /// For a copy of drawn (themed) text: a box that came from the theme becomes the text's own, so the copy can be
+    /// moved apart from the original. Otherwise the theme would put every copy back in the same place.
+    public func ownsThemedPlace() -> SlideElement {
+        guard case .text(var text) = self, text.box != nil, !text.overrides.contains(.box) else { return self }
+        text.overrides.insert(.box)
+        return .text(text)
+    }
+
     /// The media asset the element needs, if any.
     public var assetID: UUID? {
         if case .image(let image) = self { return image.assetID }

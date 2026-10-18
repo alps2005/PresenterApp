@@ -432,9 +432,11 @@ extension EditorCanvas {
     private func insert(_ elements: [SlideElement]) {
         var pastedID: UUID?
         for element in elements {
-            let occupied = (coordinator.project.presentation(withID: presentation.id)?.slide(withID: slide.id)?.elements ?? [])
-                .compactMap(\.frame)
-            let copy = element.pastedCopy(avoiding: occupied, offset: PresentationCoordinator.duplicateOffset)
+            // Where elements are drawn (themed), so a pasted copy steps aside from themed text too.
+            let occupied = coordinator.project.presentation(withID: presentation.id)
+                .flatMap { presentation in presentation.slide(withID: slide.id).map { coordinator.project.rendered($0, in: presentation).slide } }?
+                .elements.compactMap(\.frame) ?? []
+            let copy = element.ownsThemedPlace().pastedCopy(avoiding: occupied, offset: PresentationCoordinator.duplicateOffset)
             // An image from another project whose file isn't in this one is skipped (rejected as unknown media).
             if coordinator.addElement(copy, toSlide: slide.id, inPresentation: presentation.id).isApplied {
                 pastedID = copy.id

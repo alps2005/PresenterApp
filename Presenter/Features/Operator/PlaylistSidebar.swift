@@ -14,6 +14,7 @@ struct PlaylistSidebar: View {
     /// The library presentation shown in the workspace in place of the show. Nil shows the show.
     @Binding var browsedPresentationID: UUID?
     let onNewSong: () -> Void
+    let onAddScripture: () -> Void
     @State private var itemPendingRemoval: PresentationItem?
     @State private var presentationPendingDeletion: PresentationDocument?
     @State private var searchText = ""
@@ -96,6 +97,10 @@ struct PlaylistSidebar: View {
                     Label("New Song…", systemImage: "music.note.list")
                 }
                 .help("Paste lyrics to make one slide per stanza (⌥⌘N)")
+                Button { onAddScripture() } label: {
+                    Label("Scripture…", systemImage: "book")
+                }
+                .help("Add a Bible passage by its reference or by searching its words (⌥⌘V)")
             }
             .buttonStyle(.borderless)
             .padding(Spacing.md)

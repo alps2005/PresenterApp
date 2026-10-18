@@ -3,6 +3,22 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v0.1.0-beta.10 (2026-10-18)
+
+### Scripture
+- **Add Scripture… (⌥⌘V):** type a reference in English or Spanish (*Juan 3:16-18*, *1 Co 13:4-7*, *Jn 3:16*) or search
+  for words, check the slides, and add the passage to the show. Choose verses per slide, verse numbers and the
+  reference caption; new passages follow the Scripture theme.
+- **Import Bible…:** reads public-domain translations in Zefania or OSIS XML. None are included; the README says
+  where to find them. Bibles are kept outside the project.
+
+### Themes
+- **Duplicating or pasting text that a theme places** (like Scripture's verses) puts the copy beside the original,
+  ready to move, instead of exactly on top of it.
+- **Revert to Theme in Quick Edit:** on the Style tab, when the cued slide's text has its own formatting.
+- **The theme editor's preview** shows the title, body and caption together, as a slide would, with each on its own
+  below; click one to edit it.
+
 ## v0.1.0-beta.9 (2026-10-18)
 
 ### Slides that move on by themselves

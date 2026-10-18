@@ -103,6 +103,15 @@ SwiftUI view, so they outlive the operator window.
 `PlaybackPlan.decide` (core) says whether to stop, keep playing, reload, load or report a missing file. So a video
 keeps playing, without restarting, while transparent slides change the words over it.
 
+### Scripture
+
+Core, in `Bible/`: `BibleBook` and `BibleBookLookup` (66 books, English and Spanish names and abbreviations),
+`ScriptureReference` (parse and format), `BibleFileParser` (Zefania and OSIS XML, external entities off),
+`BibleTranslation.passage(for:)` (bounds-checked lookup), `BibleSearch`, `ScriptureSlides` and `BibleStore`
+(`Application Support/Presenter/Bibles`, one JSON per translation plus an index). `addScripture` (`+Scripture.swift`)
+adds a passage like `addSong`. App: `BibleLibrary` reads and parses off the main actor and keeps one translation
+open; `ScriptureSheet` is the UI.
+
 ### Transitions
 
 `TransitionMath` (core) gives every slide and element transition's geometry (opacity, offset, scale, wipe reveal) as a

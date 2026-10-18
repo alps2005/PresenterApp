@@ -86,13 +86,41 @@ struct ThemeEditorSheet: View {
         .controlSize(.small)
     }
 
+    /// All three text roles together, as a slide would show them, and each on its own below: click one to edit it.
     private func preview(_ theme: Theme) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Preview").font(.subheadline.bold()).foregroundStyle(.secondary)
-            SlideRenderView(scene: .slide(Self.sample(role, theme: theme)))
+            SlideRenderView(scene: .slide(Self.sample(TextRole.allCases, theme: theme)))
                 .aspectRatio(16 / 9, contentMode: .fit)
+                // The column's full width, not whatever height is left over.
+                .fixedSize(horizontal: false, vertical: true)
                 .tileFrame(.idle)
-                .accessibilityLabel("Preview of the theme's \(role.rawValue) text")
+                .accessibilityLabel("Preview of the theme's title, body and caption text")
+            HStack(spacing: Spacing.md) {
+                ForEach(TextRole.allCases, id: \.self) { each in
+                    Button { role = each } label: {
+                        VStack(spacing: Spacing.xs) {
+                            SlideRenderView(scene: .slide(Self.sample([each], theme: theme)))
+                                .aspectRatio(16 / 9, contentMode: .fit)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .tileFrame(.idle)
+                                .overlay {
+                                    if each == role {
+                                        RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Color.accentColor, lineWidth: 3)
+                                    }
+                                }
+                            Text(Self.name(of: each))
+                                .font(.caption)
+                                .fontWeight(each == role ? .semibold : .regular)
+                                .foregroundStyle(each == role ? .primary : .secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Edit the \(Self.name(of: each)) text")
+                    .accessibilityAddTraits(each == role ? .isSelected : [])
+                }
+            }
             Text("Text formatted by hand on a slide keeps its own look. In the editor, Revert to Theme makes it follow the theme again.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -100,15 +128,26 @@ struct ThemeEditorSheet: View {
         }
     }
 
-    /// A slide with sample words in the role being edited, drawn with the theme.
-    private static func sample(_ role: TextRole, theme: Theme) -> RenderedSlide {
-        // Psalm 96:1 in the King James Version, which is in the public domain.
-        let text = switch role {
-        case .title: "Welcome"
-        case .body: "O sing unto the LORD a new song:\nsing unto the LORD, all the earth."
-        case .caption: "Psalm 96:1"
+    private static func name(of role: TextRole) -> String {
+        switch role {
+        case .title: "Title"
+        case .body: "Body"
+        case .caption: "Caption"
         }
-        let slide = SlideDocument(elements: [.text(TextElement(text: text, role: role))])
+    }
+
+    /// A slide with sample words in the given roles, drawn with the theme.
+    private static func sample(_ roles: [TextRole], theme: Theme) -> RenderedSlide {
+        // Psalm 96:1 in the King James Version, which is in the public domain.
+        let elements: [SlideElement] = roles.map { role in
+            let text = switch role {
+            case .title: "Welcome"
+            case .body: "O sing unto the LORD a new song:\nsing unto the LORD, all the earth."
+            case .caption: "Psalm 96:1"
+            }
+            return .text(TextElement(text: text, role: role))
+        }
+        let slide = SlideDocument(elements: elements)
         return PresentationDocument(title: "", slides: [slide]).rendered(slide, theme: theme)
     }
 

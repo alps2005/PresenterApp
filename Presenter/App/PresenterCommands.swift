@@ -36,6 +36,10 @@ struct PresenterCommands: Commands {
             Button("New Song…") { ui.isAddingSong = true }
                 .keyboardShortcut("n", modifiers: [.command, .option])
 
+            // ⌥⌘V, for verse: ⌥⌘B is Blackout.
+            Button("Add Scripture…") { ui.isAddingScripture = true }
+                .keyboardShortcut("v", modifiers: [.command, .option])
+
             Divider()
 
             Button("Open Project…") { persistence.openProject() }

@@ -141,6 +141,31 @@ final class ElementCommandTests: XCTestCase {
         XCTAssertEqual(f.coordinator.lastRejection, .unknownElement)
     }
 
+    /// Text the theme places (Scripture puts verses top left) is copied where it's drawn, as its own place, so the
+    /// copy sits beside the original instead of exactly on it.
+    func testDuplicatingThemedTextOffsetsTheThemedPlace() throws {
+        let theme = try XCTUnwrap(Theme.presets().first { $0.name == "Scripture" })
+        let verse = TextElement(text: "In the beginning")
+        let slide = SlideDocument(elements: [.text(verse)])
+        var presentation = PresentationDocument(title: "Genesis", slides: [slide])
+        presentation.themeID = theme.id
+        var project = ProjectDocument(name: "T", presentations: [presentation], playlist: PlaylistDocument(title: "S", items: []))
+        project.themes = [theme]
+        let c = PresentationCoordinator(project: project)
+
+        let copy = try XCTUnwrap(c.duplicateElement(verse.id, slideID: slide.id, inPresentation: presentation.id))
+
+        let themedBox = try XCTUnwrap(theme.body.box?.frame)
+        let drawn = c.project.rendered(c.project.presentations[0].slides[0], in: c.project.presentations[0]).slide
+        XCTAssertEqual(drawn.elements[0].frame, themedBox, "The original still follows the theme")
+        let drawnCopy = try XCTUnwrap(drawn.element(withID: copy.id)?.frame)
+        XCTAssertEqual(drawnCopy.x, themedBox.x + 20.0 / 1920, accuracy: 1e-9)
+        XCTAssertEqual(drawnCopy.y, themedBox.y + 20.0 / 1080, accuracy: 1e-9)
+        guard case .text(let copiedText) = copy else { return XCTFail("Not text") }
+        XCTAssertTrue(copiedText.overrides.contains(.box))
+        XCTAssertFalse(copiedText.overrides.contains(.style), "The copy still takes its look from the theme")
+    }
+
     func testDuplicatedFlowTextStaysUnboxed() {
         let text = SlideElement.text(TextElement(text: "Hi"))
         let copy = text.duplicated(offsetBy: 0.1, 0.1)
