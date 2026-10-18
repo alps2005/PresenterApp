@@ -149,7 +149,16 @@ extension PresentationCoordinator {
                 _ = rejectMissingElement(slideID: slideID, inPresentation: presentationID)
                 return nil
             }
-            let copy = slide.elements[index].duplicated(offsetBy: Self.duplicateOffset.dx, Self.duplicateOffset.dy)
+            var source = slide.elements[index]
+            // Text the theme places: copy it where it's drawn, as its own place, or the copy lands exactly on it.
+            if case .text(var text) = source, !text.overrides.contains(.box),
+               let presentation = project.presentation(withID: presentationID),
+               case .text(let themed)? = project.rendered(slide, in: presentation).slide.element(withID: elementID),
+               let box = themed.box {
+                text.box = box
+                source = SlideElement.text(text).ownsThemedPlace()
+            }
+            let copy = source.duplicated(offsetBy: Self.duplicateOffset.dx, Self.duplicateOffset.dy)
             let result = editSlide(slideID, inPresentation: presentationID) { $0.elements.insert(copy, at: index + 1) }
             return result.isApplied ? copy : nil
         }
