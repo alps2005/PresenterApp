@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v0.1.0-beta.9 (2026-10-18)
 
 ### Slides that move on by themselves
 - **Slideshow:** a presentation's **Slideshow** button moves through its slides every 5, 8, 10, 15 or 30 seconds (or a
@@ -23,8 +23,8 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 - **Dissolve fades the old words out** as the new ones fade in, instead of leaving them at full strength until the end.
 
 ### File format
-- **Version 4:** projects with these settings are saved in a new format. Earlier betas can't open them, so export a
-  backup first.
+- **Version 4:** beta 9 saves every project in a new format, a one-way upgrade. Earlier betas can't open it, so export
+  a backup first.
 
 ## v0.1.0-beta.8 (2026-10-18)
 
