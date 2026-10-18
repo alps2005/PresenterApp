@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v0.1.0-beta.10 (2026-10-18)
 
 ### Scripture
 - **Add Scripture… (⌥⌘V):** type a reference in English or Spanish (*Juan 3:16-18*, *1 Co 13:4-7*, *Jn 3:16*) or search
