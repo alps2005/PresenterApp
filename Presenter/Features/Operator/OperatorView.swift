@@ -41,6 +41,9 @@ struct OperatorView: View {
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
+        .sheet(isPresented: $ui.isAddingScripture) {
+            ScriptureSheet(coordinator: coordinator) { item in scrollRequest = item.id }
+        }
         .sheet(isPresented: Binding(get: { persistence.activity != nil }, set: { _ in })) {
             HStack(spacing: Spacing.md) {
                 ProgressView().controlSize(.small)
@@ -76,7 +79,8 @@ struct OperatorView: View {
                 coordinator: coordinator,
                 scrollRequest: $scrollRequest,
                 browsedPresentationID: $browsedPresentationID,
-                onNewSong: { ui.isAddingSong = true }
+                onNewSong: { ui.isAddingSong = true },
+                onAddScripture: { ui.isAddingScripture = true }
             )
                 .navigationSplitViewColumnWidth(min: Widths.operatorSidebar.min, ideal: Widths.operatorSidebar.ideal, max: Widths.operatorSidebar.max)
         } detail: {

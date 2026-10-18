@@ -6,12 +6,15 @@ import PresenterCore
 @Observable
 final class OperatorUIState {
     var isAddingSong = false
+    var isAddingScripture = false
 }
 
 /// The app's long-lived services.
 final class AppEnvironment {
     let coordinator: PresentationCoordinator
     let mediaLibrary: MediaLibrary
+    /// Imported Bible translations, kept outside the project.
+    let bibleLibrary = BibleLibrary()
     let outputManager: OutputManager
     /// Plays video backgrounds on the audience output, independent of any window.
     let playback: MediaPlaybackController
