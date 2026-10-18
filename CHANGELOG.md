@@ -3,6 +3,17 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v0.1.0-beta.8 (2026-10-18)
+
+### Library
+- **Clicking a Library row anywhere selects it.** On some Macs only the row's edge responded to a click; the title and
+  icon didn't. Double-clicking a row (or pressing Return) adds it to the show.
+- **The sidebar's New Presentation and New Song buttons stay readable.** A long library no longer shows through them.
+
+### Performance
+- **Less work while scrolling the show.** Selecting a presentation, which happens as you scroll past it, no longer
+  redraws the audience output, the stage display and the menus.
+
 ## v0.1.0-beta.7 (2026-10-18)
 
 ### Library

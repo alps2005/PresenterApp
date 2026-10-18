@@ -1,34 +1,40 @@
 import Foundation
+import Observation
 
 /// Operator and output state, kept deliberately separate:
 /// - **selected**: the playlist item the operator is looking at / editing.
 /// - **preview**: the slide cued to go live next time the operator takes it.
 /// - **live**: what the audience sees, as a snapshot so later edits don't leak to the output.
-public struct PresentationState: Equatable, Sendable {
-    public var selectedItemID: UUID?
-    public var preview: SlidePosition?
-    public var live: LiveSlide?
+///
+/// An observable class rather than a struct, so views follow each property on its own: selecting an item while
+/// scrolling doesn't redraw the outputs and every thumbnail. Only the coordinator changes it.
+@MainActor
+@Observable
+public final class PresentationState {
+    public internal(set) var selectedItemID: UUID?
+    public internal(set) var preview: SlidePosition?
+    public internal(set) var live: LiveSlide?
     /// The slide removed by `clearOutput()`, kept so `restoreOutput()` can bring it back.
-    public var cleared: LiveSlide?
+    public internal(set) var cleared: LiveSlide?
     /// Blackout overrides everything on the audience output until restored.
-    public var isBlackout: Bool
+    public internal(set) var isBlackout: Bool
     /// The background layer on the audience output, under the live slide. Nil shows the app's default
     /// background. A slide with a transparent background leaves it as it is when taken live.
-    public var liveBackground: SlideBackground?
+    public internal(set) var liveBackground: SlideBackground?
     /// The background removed by `clearBackground()`, kept so `restoreOutput()` can bring it back.
-    public var clearedBackground: SlideBackground?
+    public internal(set) var clearedBackground: SlideBackground?
     /// A message to the people on stage, shown only on the stage display.
-    public var stageMessage: String?
+    public internal(set) var stageMessage: String?
     /// The message over the slides on the audience output, and the one Clear Messages removed.
-    public var activeMessage: ActiveMessage?
-    public var clearedMessage: ActiveMessage?
+    public internal(set) var activeMessage: ActiveMessage?
+    public internal(set) var clearedMessage: ActiveMessage?
     /// Props on the audience output, in the order they were shown (later ones draw on top), and the ones
     /// Clear Props removed.
-    public var activeProps: [UUID] = []
-    public var clearedProps: [UUID] = []
+    public internal(set) var activeProps: [UUID] = []
+    public internal(set) var clearedProps: [UUID] = []
     /// Each shown prop as it was when shown. Editing a prop never changes what the audience sees until it's
     /// shown again, like a slide that has to be taken live again.
-    public var propSnapshots: [UUID: SlideDocument] = [:]
+    public internal(set) var propSnapshots: [UUID: SlideDocument] = [:]
 
     public init(
         selectedItemID: UUID? = nil,
