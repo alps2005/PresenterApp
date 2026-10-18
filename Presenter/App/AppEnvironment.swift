@@ -15,6 +15,8 @@ final class AppEnvironment {
     let outputManager: OutputManager
     /// Plays video backgrounds on the audience output, independent of any window.
     let playback: MediaPlaybackController
+    /// Moves the live slide on when its Slideshow or Go To Next countdown ends.
+    let autoAdvance: AutoAdvanceDriver
     let persistence: ProjectPersistence
     /// Window-level UI requests that menu commands make, such as opening the New Song sheet.
     let operatorUI = OperatorUIState()
@@ -30,6 +32,7 @@ final class AppEnvironment {
         )
         playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
+        autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
         preloadProjectMedia()
         if initial.loadedFromDisk {
             removeDeletedMedia(keeping: initial.project, backups: ProjectBackups(projectFileURL: store.fileURL))

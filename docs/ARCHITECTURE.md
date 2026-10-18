@@ -20,6 +20,9 @@ It keeps four ideas separate (`PresentationState`):
   live again.
 - **Up next:** what Next would take live, following playlist order and arrangements.
 
+`PresentationState` is an `@Observable` class, so views follow each of its properties on their own: the selection
+moving as the workspace scrolls doesn't redraw the outputs. Only the coordinator changes it.
+
 ### Undo
 
 - **Edits are undoable.** Each one runs inside `recordingUndo`, which keeps a snapshot of the project from before
@@ -41,6 +44,7 @@ The coordinator is split by area into extensions in `Packages/PresenterCore/Sour
 | `+Library.swift` | Presentations, playlist, songs, Reflow, arrangements |
 | `+Editing.swift` | Text formatting, backgrounds, media assets, elements, slide order, transitions, notes |
 | `+Themes.swift` | Themes, a presentation's theme, Revert to Theme, Update Theme from This Text |
+| `+AutoAdvance.swift` | Slideshow intervals and Go To Next timers (edits), the live countdown (`state.autoAdvance`), Stop Auto-Advance |
 | `+Undo.swift` | The undo engine and `replaceProject` |
 
 **Not routed through the coordinator:** video transport (play/pause, scrubbing, volume) and showing or hiding the
@@ -98,6 +102,22 @@ SwiftUI view, so they outlive the operator window.
 `MediaPlaybackController` (app) owns the one `AVQueuePlayer`. It follows `state.liveBackground`, and
 `PlaybackPlan.decide` (core) says whether to stop, keep playing, reload, load or report a missing file. So a video
 keeps playing, without restarting, while transparent slides change the words over it.
+
+### Transitions
+
+`TransitionMath` (core) gives every slide and element transition's geometry (opacity, offset, scale, wipe reveal) as a
+pure function of progress. `AudienceOutputView` animates one `progress` per layer through `SlideTransitionEffect`: the
+opaque background layer's outgoing copy stays put underneath, while the see-through slide layer's fades or is wiped
+away. Element transitions read an `elementClock` environment value (set only by the audience output and its preview)
+inside one `TimelineView`, which runs only while they play; thumbnails and the editor draw slides still.
+
+### Automatic advancing
+
+`goLive(at:)` starts the live slide's countdown when it has a Go To Next timer or its presentation a Slideshow
+interval (`state.autoAdvance`, never saved or undone). A slide that brings a video playing once waits for it first.
+`AutoAdvanceDriver` (app) runs one task that sleeps until the deadline and calls `advanceIfDue()`; while waiting on a
+video, it calls `videoDidFinish` once the player reports the end, the video is no longer live, or its file is missing.
+Tests drive the countdown with the coordinator's injectable `now`.
 
 ## Persistence
 

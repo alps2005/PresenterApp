@@ -24,11 +24,22 @@ struct SlideWorkspace: View {
     @FocusState private var editingTitle: UUID?
     @State private var slidePendingDeletion: SlideDeletion?
     @State private var presentationEditingBackground: UUID?
+    @State private var goToNextTarget: GoToNextTarget?
+    /// The presentation whose Slideshow sheet (Custom…) is open.
+    @State private var slideshowCustomID: UUID?
+    /// The presentation whose Slideshow popover is open.
+    @State private var slideshowPopoverID: UUID?
     /// The playlist item whose section is at the top of the viewport.
     @State private var topItemID: UUID?
     /// Where each on-screen slide sits. A plain reference, so scrolling doesn't re-render the workspace.
     @State private var slideFrames = SlideFrames()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct GoToNextTarget: Identifiable {
+        let slideID: UUID
+        let presentationID: UUID
+        var id: UUID { slideID }
+    }
 
     private struct SlideDeletion: Identifiable {
         let slide: SlideDocument
@@ -78,8 +89,21 @@ struct SlideWorkspace: View {
             .sheet(item: $arrangementDraft) { draft in
                 ArrangementSheet(coordinator: coordinator, draft: draft)
             }
+            .sheet(item: $goToNextTarget) { target in
+                GoToNextSheet(coordinator: coordinator, slideID: target.slideID, presentationID: target.presentationID)
+            }
+            .sheet(isPresented: Binding(
+                get: { slideshowCustomID != nil },
+                set: { if !$0 { slideshowCustomID = nil } }
+            )) {
+                if let slideshowCustomID {
+                    SlideshowIntervalSheet(coordinator: coordinator, presentationID: slideshowCustomID)
+                }
+            }
             .onChange(of: reflowPresentationID) { _, id in if id == nil { isWorkspaceFocused = true } }
             .onChange(of: arrangementDraft?.id) { _, id in if id == nil { isWorkspaceFocused = true } }
+            .onChange(of: goToNextTarget?.id) { _, id in if id == nil { isWorkspaceFocused = true } }
+            .onChange(of: slideshowCustomID) { _, id in if id == nil { isWorkspaceFocused = true } }
             .confirmSlideDeletion(of: $slidePendingDeletion) { deletion in
                 coordinator.deleteSlide(deletion.slide.id, inPresentation: deletion.presentationID)
             }
@@ -245,6 +269,8 @@ struct SlideWorkspace: View {
             ViewThatFits(in: .horizontal) {
                 headerButtons(presentation: presentation, itemID: itemID)
                     .labelStyle(.titleAndIcon)
+                headerButtons(presentation: presentation, itemID: itemID, compactSlideshow: true)
+                    .labelStyle(.titleAndIcon)
                 headerButtons(presentation: presentation, itemID: itemID)
                     .labelStyle(.iconOnly)
             }
@@ -288,7 +314,8 @@ struct SlideWorkspace: View {
         isWorkspaceFocused = true
     }
 
-    private func headerButtons(presentation: PresentationDocument, itemID: UUID) -> some View {
+    /// `compactSlideshow` shows the Slideshow menu as its icon, the first thing to give up its label when space runs out.
+    private func headerButtons(presentation: PresentationDocument, itemID: UUID, compactSlideshow: Bool = false) -> some View {
         HStack {
             Button {
                 presentationEditingBackground = presentation.id
@@ -317,6 +344,12 @@ struct SlideWorkspace: View {
 
             if !presentation.groupNames.isEmpty || !presentation.arrangements.isEmpty {
                 arrangementMenu(presentation: presentation)
+            }
+
+            if compactSlideshow {
+                slideshowMenu(presentation: presentation).labelStyle(.iconOnly)
+            } else {
+                slideshowMenu(presentation: presentation)
             }
 
             Button {
@@ -358,11 +391,14 @@ struct SlideWorkspace: View {
         itemID: UUID
     ) -> some View {
         let position = SlidePosition(itemID: itemID, slideID: slide.id, occurrence: occurrence)
+        let advance = coordinator.state.autoAdvance
         return SlideThumbnail(
             slide: coordinator.project.rendered(slide, in: presentation),
             number: number,
             isCued: coordinator.state.preview == position,
-            isLive: coordinator.state.live?.position == position
+            isLive: coordinator.state.live?.position == position,
+            advanceSeconds: slide.goToNext?.seconds ?? presentation.slideshowInterval,
+            advance: advance?.position == position ? advance : nil
         )
         .id(position.thumbnailKey)
         .background {
@@ -385,10 +421,70 @@ struct SlideWorkspace: View {
             Button("Take Live") {
                 coordinator.takeLive(slideID: slide.id, inItem: itemID, occurrence: occurrence)
             }
+            Button("Go To Next Timer…") {
+                goToNextTarget = GoToNextTarget(slideID: slide.id, presentationID: presentation.id)
+            }
+            if slide.goToNext != nil {
+                Button("Remove Go To Next Timer") {
+                    coordinator.setGoToNext(nil, forSlides: [slide.id], inPresentation: presentation.id)
+                }
+            }
             Divider()
             Button("Delete Slide…", role: .destructive) {
                 slidePendingDeletion = SlideDeletion(slide: slide, presentationID: presentation.id)
             }
+        }
+    }
+
+    // MARK: Slideshow
+
+    /// Like ProPresenter's Slideshow button: every slide moves on by itself after the chosen time, looping.
+    /// A button and popover, not a `Menu`: a menu in every presentation header made scrolling the workspace noticeably
+    /// heavier (measured). Custom… opens the Slideshow sheet.
+    private func slideshowMenu(presentation: PresentationDocument) -> some View {
+        Button {
+            slideshowPopoverID = presentation.id
+        } label: {
+            // Filled while on, so the icon alone (in a narrow header) still says so.
+            Label(presentation.slideshowInterval.map { "Slideshow \(AdvanceTime.label($0))" } ?? "Slideshow",
+                  systemImage: presentation.slideshowInterval == nil ? "play.square.stack" : "play.square.stack.fill")
+        }
+        .help("Move through every slide by itself, looping. A slide's own Go To Next Timer comes first.")
+        .popover(isPresented: Binding(
+            get: { slideshowPopoverID == presentation.id },
+            set: { if !$0 { slideshowPopoverID = nil } }
+        ), arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Slideshow").font(.headline)
+                Picker("Slideshow", selection: Binding(
+                    get: { presentation.slideshowInterval },
+                    set: {
+                        coordinator.setSlideshowInterval($0, presentation: presentation.id)
+                        slideshowPopoverID = nil
+                    }
+                )) {
+                    Text("Off").tag(Double?.none)
+                    ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
+                        Text("Every \(AdvanceTime.label(seconds))").tag(Optional(seconds))
+                    }
+                    // A custom interval still shows as chosen.
+                    if let interval = presentation.slideshowInterval, !AdvanceTime.slideshowPresets.contains(interval) {
+                        Text("Every \(AdvanceTime.label(interval))").tag(Optional(interval))
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .labelsHidden()
+                Button("Custom…") {
+                    slideshowPopoverID = nil
+                    slideshowCustomID = presentation.id
+                }
+                Text("Every slide moves on by itself and loops. A slide's own Go To Next Timer comes first.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Spacing.lg)
+            .frame(width: 260)
         }
     }
 
@@ -464,6 +560,10 @@ struct SlideThumbnail: View {
     let number: Int
     let isCued: Bool
     let isLive: Bool
+    /// How long the slide stays up before moving on by itself (Go To Next or Slideshow). Nil: until the operator moves.
+    var advanceSeconds: Double? = nil
+    /// The countdown, on the live slide while it runs.
+    var advance: AutoAdvance? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -476,6 +576,8 @@ struct SlideThumbnail: View {
                     .foregroundStyle(.secondary)
                 if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
+                if slide.slide.hasElementTransitions { ElementTransitionsMark() }
+                if let advanceSeconds { AdvanceBadge(seconds: advanceSeconds, advance: advance) }
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }
             }

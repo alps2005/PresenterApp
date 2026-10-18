@@ -2,7 +2,8 @@ import SwiftUI
 import PresenterCore
 
 /// The slide editor's right column. Format shows the selected element's settings (or the slide's when
-/// nothing is selected), Animate the slide's transition, and Document the presentation's settings.
+/// nothing is selected), Animate the slide's transition and the selected element's own transitions, and Document the
+/// presentation's settings.
 struct EditorInspector: View {
     let coordinator: PresentationCoordinator
     let presentation: PresentationDocument
@@ -279,6 +280,12 @@ struct EditorInspector: View {
         section("Background") {
             BackgroundInspector(coordinator: coordinator, target: .slide(slide.id, presentationID: presentation.id))
         }
+        section("Go To Next") {
+            GoToNextControls(timer: Binding(
+                get: { slide.goToNext },
+                set: { coordinator.setGoToNext($0, forSlides: [slide.id], inPresentation: presentation.id) }
+            ))
+        }
         section("Presenter Notes") {
             TextEditor(text: Binding(
                 get: { slide.notes ?? "" },
@@ -386,23 +393,32 @@ struct EditorInspector: View {
     private var animateTab: some View {
         if let slide {
             section("Transition") {
-                Picker("Transition", selection: Binding(
-                    get: { slide.transition == nil ? 0 : 1 },
-                    set: { choice in
-                        let transition: PresenterCore.SlideTransition? = choice == 0 ? nil : .dissolve(duration: slide.transition?.duration ?? 0.6)
+                Picker("Transition", selection: Binding<PresenterCore.SlideTransition.Kind?>(
+                    get: { slide.transition?.kind },
+                    set: { kind in
+                        let transition = kind.map {
+                            slide.transition?.with(kind: $0) ?? PresenterCore.SlideTransition(kind: $0, duration: 0.6)
+                        }
                         coordinator.setTransition(transition, slideID: slide.id, inPresentation: presentation.id)
                     }
                 )) {
-                    Text("None").tag(0)
-                    Text("Dissolve").tag(1)
+                    Text("None").tag(PresenterCore.SlideTransition.Kind?.none)
+                    ForEach(PresenterCore.SlideTransition.Kind.allCases, id: \.self) { kind in
+                        Text(kind.title).tag(Optional(kind))
+                    }
                 }
-                .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
                 if let transition = slide.transition {
+                    if transition.kind.hasEdge {
+                        TransitionEdgePicker(edge: Binding(
+                            get: { transition.edge ?? .left },
+                            set: { coordinator.setTransition(transition.with(edge: $0), slideID: slide.id, inPresentation: presentation.id) }
+                        ))
+                    }
                     labeledSlider("Duration", value: Binding(
                         get: { transition.duration },
-                        set: { coordinator.setTransition(.dissolve(duration: $0), slideID: slide.id, inPresentation: presentation.id) }
+                        set: { coordinator.setTransition(transition.with(duration: $0), slideID: slide.id, inPresentation: presentation.id) }
                     ), in: PresenterCore.SlideTransition.durationRange, format: { String(format: "%.1f s", $0) })
                 }
                 Text("Plays on the audience output when this slide goes live. Clear and Blackout are always instant.")
@@ -416,11 +432,83 @@ struct EditorInspector: View {
                     coordinator.applyTransitionToAllSlides(from: slide.id, inPresentation: presentation.id)
                 }
             }
-            section("Build In & Build Out") {
-                comingSoon("Animating text and shapes onto and off a slide is coming in the next phase.")
+            section("Element Transitions") {
+                if let element {
+                    elementTransitionControls("In", phase: .in, element: element, slide: slide)
+                    elementTransitionControls("Out", phase: .out, element: element, slide: slide)
+                    Text("Play as the slide arrives and as it leaves. Everything else on the slide follows the slide's transition.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Select a text, shape or image on the slide to give it its own transition, for when the whole slide shouldn't move.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         } else {
             placeholder("Select a slide to set its transition.")
+        }
+    }
+
+    /// One element's In or Out transition: its kind (None follows the slide), direction, duration and, for In, delay.
+    @ViewBuilder
+    private func elementTransitionControls(_ title: String, phase: ElementPhase, element: SlideElement, slide: SlideDocument) -> some View {
+        let transition = element[transition: phase]
+        let set: (ElementTransition?) -> Void = {
+            coordinator.setElementTransition($0, phase: phase, elementID: element.id, slideID: slide.id, inPresentation: presentation.id)
+        }
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text(title).foregroundStyle(.secondary)
+                Spacer()
+                Picker(title, selection: Binding<ElementTransition.Kind?>(
+                    get: { transition?.kind },
+                    set: { kind in
+                        set(kind.map { kind in
+                            var updated = transition ?? ElementTransition(kind: kind)
+                            updated.kind = kind
+                            return updated
+                        })
+                    }
+                )) {
+                    Text("None").tag(ElementTransition.Kind?.none)
+                    ForEach(ElementTransition.Kind.allCases, id: \.self) { kind in
+                        Text(kind.title).tag(Optional(kind))
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+            }
+            if let transition {
+                if transition.kind == .push || transition.kind == .wipe {
+                    TransitionEdgePicker(edge: Binding(
+                        get: { transition.edge },
+                        set: { edge in
+                            var updated = transition
+                            updated.edge = edge
+                            set(updated)
+                        }
+                    ), phase: phase)
+                }
+                labeledSlider("Duration", value: Binding(
+                    get: { transition.duration },
+                    set: { duration in
+                        var updated = transition
+                        updated.duration = duration
+                        set(updated)
+                    }
+                ), in: ElementTransition.durationRange, format: { String(format: "%.1f s", $0) })
+                if phase == .in {
+                    labeledSlider("Delay", value: Binding(
+                        get: { transition.delay },
+                        set: { delay in
+                            var updated = transition
+                            updated.delay = (delay * 10).rounded() / 10
+                            set(updated)
+                        }
+                    ), in: 0...5, format: { String(format: "%.1f s", $0) })
+                }
+            }
         }
     }
 

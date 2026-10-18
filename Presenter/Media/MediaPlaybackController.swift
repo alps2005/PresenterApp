@@ -17,6 +17,8 @@ final class MediaPlaybackController {
     private(set) var duration: Double = 0
     private(set) var isMuted = true
     private(set) var loops = true
+    /// The video played once to its end (it doesn't loop). Automatic advancing waits for this.
+    private(set) var hasFinished = false
     var volume: Float = 1 {
         didSet { player.volume = volume }
     }
@@ -89,7 +91,10 @@ final class MediaPlaybackController {
         } else {
             player.insert(item, after: nil)
             endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.isPlaying = false }
+                MainActor.assumeIsolated {
+                    self?.isPlaying = false
+                    self?.hasFinished = true
+                }
             }
         }
         player.play()
@@ -105,6 +110,7 @@ final class MediaPlaybackController {
         endObserver = nil
         assetID = nil
         isPlaying = false
+        hasFinished = false
         currentTime = 0
         duration = 0
     }
@@ -121,6 +127,7 @@ final class MediaPlaybackController {
                 item.seek(to: .zero, completionHandler: nil)
             }
             player.play()
+            hasFinished = false
         }
         isPlaying = player.rate != 0
     }
@@ -128,6 +135,7 @@ final class MediaPlaybackController {
     func seek(to seconds: Double) {
         player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = seconds
+        if seconds < duration { hasFinished = false }
     }
 
     /// Mutes through the coordinator, so the setting lives in the live background and survives slide changes.

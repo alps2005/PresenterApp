@@ -106,6 +106,10 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("b", modifiers: [.command, .option])
             Button("Restore Output") { coordinator.restoreOutput() }
                 .keyboardShortcut("r", modifiers: [.command, .option])
+            Divider()
+            // Always enabled: its state would rebuild the menus at every slide change while a Slideshow runs.
+            Button("Stop Auto-Advance") { coordinator.stopAutoAdvance() }
+                .keyboardShortcut(".", modifiers: [.command, .option])
         }
 
         CommandMenu("Output") {

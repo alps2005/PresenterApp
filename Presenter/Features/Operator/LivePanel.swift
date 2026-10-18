@@ -20,8 +20,8 @@ struct LivePanel: View {
                             font: .callout.bold()
                         )
                     }
-                    SlideRenderView(scene: coordinator.audienceScene)
-                        .overlay { OverlayLayers(coordinator: coordinator) }
+                    // The output's own view, so slide and element transitions play here too.
+                    AudienceOutputView(coordinator: coordinator)
                         .environment(\.showsLiveVideo, true)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .tileFrame(audienceTileState)
@@ -31,6 +31,7 @@ struct LivePanel: View {
                     } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
                         TransportControls()
                     }
+                    AutoAdvanceStatus(coordinator: coordinator)
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
                         Label("Background cleared for now. Slides with their own background bring one back. To remove it for good, use the slide's Background button.",
                               systemImage: "info.circle")

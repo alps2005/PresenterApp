@@ -214,6 +214,34 @@ extension PresentationCoordinator {
         }
     }
 
+    /// Gives one element its own In or Out transition, or with nil lets it follow the slide again.
+    @discardableResult
+    public func setElementTransition(
+        _ transition: ElementTransition?,
+        phase: ElementPhase,
+        elementID: UUID,
+        slideID: UUID,
+        inPresentation presentationID: UUID
+    ) -> CommandResult {
+        recordingUndo("Transition", coalescing: "element-transition-\(elementID)-\(phase.rawValue)") {
+            guard project.presentation(withID: presentationID)?.slide(withID: slideID)?.element(withID: elementID) != nil else {
+                return rejectMissingElement(slideID: slideID, inPresentation: presentationID)
+            }
+            var transition = transition
+            if let current = transition {
+                transition?.duration = min(max(current.duration, ElementTransition.durationRange.lowerBound),
+                                           ElementTransition.durationRange.upperBound)
+                transition?.delay = min(max(current.delay, ElementTransition.delayRange.lowerBound),
+                                        ElementTransition.delayRange.upperBound)
+            }
+            return editSlide(slideID, inPresentation: presentationID) { slide in
+                if let index = slide.elements.firstIndex(where: { $0.id == elementID }) {
+                    slide.elements[index][transition: phase] = transition
+                }
+            }
+        }
+    }
+
     /// Copies one slide's transition to every slide in its presentation.
     @discardableResult
     public func applyTransitionToAllSlides(from slideID: UUID, inPresentation presentationID: UUID) -> CommandResult {

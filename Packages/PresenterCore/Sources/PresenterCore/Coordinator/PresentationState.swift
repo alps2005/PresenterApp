@@ -35,6 +35,8 @@ public final class PresentationState {
     /// Each shown prop as it was when shown. Editing a prop never changes what the audience sees until it's
     /// shown again, like a slide that has to be taken live again.
     public internal(set) var propSnapshots: [UUID: SlideDocument] = [:]
+    /// The live slide's countdown to moving on by itself, if it has one.
+    public internal(set) var autoAdvance: AutoAdvance?
 
     public init(
         selectedItemID: UUID? = nil,
@@ -119,6 +121,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case unknownMediaAsset
     case unknownElement
     case unknownTheme
+    case autoAdvanceOff
 
     public var message: String {
         switch self {
@@ -139,6 +142,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         case .unknownTheme: "That theme no longer exists."
+        case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }
 }

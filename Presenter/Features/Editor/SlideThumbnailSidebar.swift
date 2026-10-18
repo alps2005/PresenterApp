@@ -59,10 +59,11 @@ struct SlideThumbnailSidebar: View {
                 SlideRenderView(scene: .slide(coordinator.project.rendered(slide, in: presentation)))
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .tileFrame(TileState(isLive: isLive, isCued: isCued), cornerRadius: Radius.badge)
-                if isLive || isCued || slide.label != nil {
+                if isLive || isCued || slide.label != nil || slide.hasElementTransitions {
                     HStack(spacing: Spacing.xs) {
                         if let label = slide.label { GroupLabelTag(label: label) }
                         Spacer(minLength: 0)
+                        if slide.hasElementTransitions { ElementTransitionsMark() }
                         if isCued { StateBadge(.cued) }
                         if isLive { StateBadge(.live) }
                     }

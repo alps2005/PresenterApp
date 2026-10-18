@@ -32,7 +32,8 @@ struct LibraryPresentationView: View {
                                 slide: coordinator.project.rendered(slide, in: presentation),
                                 number: index + 1,
                                 isCued: false,
-                                isLive: false
+                                isLive: false,
+                                advanceSeconds: slide.goToNext?.seconds ?? presentation.slideshowInterval
                             )
                             .onTapGesture(count: 2) { edit(startingAt: slide.id) }
                             .contextMenu {
