@@ -14,6 +14,8 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     /// Moves the live slide on by itself after a while. Nil leaves it to the operator, or to the presentation's
     /// Slideshow interval.
     public var goToNext: GoToNextTimer?
+    /// Starts or stops audio when the slide is taken live. Nil leaves the audio alone.
+    public var audioCue: AudioCue?
 
     public init(
         id: UUID = UUID(),
@@ -22,7 +24,8 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         background: SlideBackground? = nil,
         transition: SlideTransition? = nil,
         label: String? = nil,
-        goToNext: GoToNextTimer? = nil
+        goToNext: GoToNextTimer? = nil,
+        audioCue: AudioCue? = nil
     ) {
         self.id = id
         self.elements = elements
@@ -31,6 +34,7 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         self.transition = transition
         self.label = label
         self.goToNext = goToNext
+        self.audioCue = audioCue
     }
 
     public func element(withID elementID: UUID) -> SlideElement? {

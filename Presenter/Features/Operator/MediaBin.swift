@@ -31,14 +31,14 @@ struct MediaBin: View {
                 WarningLabel(importErrors.joined(separator: " "))
                     .lineLimit(2)
             }
-            if coordinator.project.mediaAssets.isEmpty {
+            if visualAssets.isEmpty {
                 Text("Import images and videos to use as backgrounds. Click one to show it behind the words on screen.")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: Spacing.md) {
-                        ForEach(coordinator.project.mediaAssets.reversed()) { asset in
+                        ForEach(visualAssets.reversed()) { asset in
                             tile(asset)
                         }
                     }
@@ -52,6 +52,11 @@ struct MediaBin: View {
                          of: $pendingDeletion) { asset in
             coordinator.removeMediaAsset(asset.id)
         }
+    }
+
+    /// Images and videos. Audio has its own bin.
+    private var visualAssets: [MediaAsset] {
+        coordinator.project.mediaAssets.filter { $0.kind != .audio }
     }
 
     /// Names what loses the file, so the operator knows which slides change.
@@ -133,6 +138,8 @@ struct MediaBin: View {
         switch asset.kind {
         case .image: .image(ImageBackground(assetID: asset.id))
         case .video: .video(VideoBackground(assetID: asset.id))
+        // Never listed here; audio isn't a background.
+        case .audio: .color(.black)
         }
     }
 

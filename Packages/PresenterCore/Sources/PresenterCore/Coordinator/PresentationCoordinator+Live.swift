@@ -69,16 +69,18 @@ extension PresentationCoordinator {
         return applied()
     }
 
-    /// Clear All: removes the slide and the background.
+    /// Clear All: removes the slide, the background, messages and props, and fades out the audio.
     @discardableResult
     public func clearAll() -> CommandResult {
-        guard state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty else {
+        guard state.live != nil || state.liveBackground != nil || state.activeMessage != nil || !state.activeProps.isEmpty
+                || state.audio != nil else {
             return reject(.nothingLive)
         }
         if state.live != nil { _ = clearOutput() }
         if state.liveBackground != nil { _ = clearBackground() }
         if state.activeMessage != nil { _ = clearMessages() }
         if !state.activeProps.isEmpty { _ = clearProps() }
+        if state.audio != nil { _ = stopAudio() }
         return applied()
     }
 

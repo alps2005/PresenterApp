@@ -18,6 +18,7 @@ struct PresenterApp: App {
             )
             .environment(appDelegate.environment.mediaLibrary)
             .environment(appDelegate.environment.playback)
+            .environment(appDelegate.environment.audio)
             .environment(appDelegate.environment.bibleLibrary)
         }
         .defaultSize(width: 1280, height: 800)

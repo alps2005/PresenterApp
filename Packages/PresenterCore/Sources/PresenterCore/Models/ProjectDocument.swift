@@ -12,7 +12,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 3: themes, text that follows them, text outlines and text background boxes (v0.1.0-beta.5).
     /// - 4: automatic advancing (slide Go To Next timers, presentation Slideshow intervals); Fade Through Black, Push,
     ///   Wipe and Zoom slide transitions; and element transitions (v0.1.0-beta.9).
-    /// - 5: library folders, and more than one show (`playlists`), each with the date it was last opened (v0.1.0-beta.11).
+    /// - 5: library folders; more than one show (`playlists`), each with the date it was last opened; and audio
+    ///   (audio media, slide audio cues and presentation soundtracks) (v0.1.0-beta.11).
     public static let currentSchemaVersion = 5
 
     public let id: UUID
