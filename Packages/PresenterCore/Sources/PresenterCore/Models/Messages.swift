@@ -44,7 +44,7 @@ public struct MessageDefinition: Identifiable, Codable, Hashable, Sendable {
     /// The blanks to fill in when showing the message, in order, without duplicates or timers.
     public var fields: [String] {
         var names: [String] = []
-        for token in Self.tokens(in: text) where !token.lowercased().hasPrefix("timer:") && !names.contains(token) {
+        for token in TextTokens.tokens(in: text) where TextTokens.timerName(token) == nil && !names.contains(token) {
             names.append(token)
         }
         return names
@@ -52,29 +52,10 @@ public struct MessageDefinition: Identifiable, Codable, Hashable, Sendable {
 
     /// The text with blanks filled in and timers replaced by `timerText(name)`. Unknown values stay empty.
     public func rendered(values: [String: String], timerText: (String) -> String?) -> String {
-        var result = text
-        for token in Self.tokens(in: text) {
-            let replacement: String
-            if token.lowercased().hasPrefix("timer:") {
-                let name = String(token.dropFirst("timer:".count)).trimmingCharacters(in: .whitespaces)
-                replacement = timerText(name) ?? ""
-            } else {
-                replacement = values[token] ?? ""
-            }
-            result = result.replacingOccurrences(of: "{\(token)}", with: replacement)
+        TextTokens.replacing(in: text) { token in
+            if let name = TextTokens.timerName(token) { return timerText(name) ?? "" }
+            return values[token] ?? ""
         }
-        return result
-    }
-
-    private static func tokens(in text: String) -> [String] {
-        var tokens: [String] = []
-        var scanner = text[...]
-        while let open = scanner.firstIndex(of: "{"), let close = scanner[open...].firstIndex(of: "}") {
-            let token = String(scanner[scanner.index(after: open)..<close]).trimmingCharacters(in: .whitespaces)
-            if !token.isEmpty { tokens.append(token) }
-            scanner = scanner[scanner.index(after: close)...]
-        }
-        return tokens
     }
 }
 

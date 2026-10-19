@@ -74,7 +74,7 @@ struct StageRegionView: View {
                 }
             }
         case .notes:
-            words(coordinator.liveNotes, placeholder: nil)
+            words(coordinator.liveNotes.map { coordinator.liveText($0, at: now) }, placeholder: nil)
         case .message:
             if let message = coordinator.state.stageMessage {
                 Text(message)
@@ -123,7 +123,7 @@ struct StageRegionView: View {
 /// The words the stage shows for a slide.
 enum StageText {
     static func words(_ slide: SlideDocument, coordinator: PresentationCoordinator, at date: Date) -> String {
-        let text = slide.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = coordinator.liveText(slide.plainText, at: date).trimmingCharacters(in: .whitespacesAndNewlines)
         return text.isEmpty ? "—" : text
     }
 }

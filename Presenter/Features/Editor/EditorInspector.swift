@@ -118,10 +118,45 @@ struct EditorInspector: View {
         Text("Double-click the text on the slide to change the words.")
             .font(.caption)
             .foregroundStyle(.secondary)
+        liveValues(text, slide: slide)
         if let theme {
             themeStatus(text, theme: theme, slide: slide)
         }
         arrange(.text(text), slide: slide)
+    }
+
+    /// Timers and the clock, shown live on the audience output and the stage display.
+    private func liveValues(_ text: TextElement, slide: SlideDocument) -> some View {
+        let known = Set(coordinator.project.timers.map { $0.name.lowercased() })
+        let missing = LiveText.timerNames(in: text.text).filter { !known.contains($0.lowercased()) }
+        return section("Live Values") {
+            Menu("Insert") {
+                ForEach(coordinator.project.timers) { timer in
+                    Button("Timer: \(timer.name)") { insert("{timer:\(timer.name)}", into: text, on: slide) }
+                }
+                if !coordinator.project.timers.isEmpty { Divider() }
+                Button("Clock") { insert("{clock}", into: text, on: slide) }
+                Button("Clock with Seconds") { insert("{clock:seconds}", into: text, on: slide) }
+            }
+            .fixedSize()
+            .help("Add a timer or the clock at the end of the text")
+            ForEach(missing, id: \.self) { name in
+                WarningLabel("There's no timer called “\(name)”, so it shows nothing. Make it in the Live panel's Timers tab, or fix the name.")
+            }
+            Text("The audience and the stage see the time, updating as it runs. Here it shows as typed.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Adds a live value after the words, separated by a space.
+    private func insert(_ token: String, into text: TextElement, on slide: SlideDocument) {
+        // The stored element, not the themed copy, so the theme's look isn't written into it.
+        guard case .text(var stored) = slide.element(withID: text.id) else { return }
+        let separator = stored.text.isEmpty || stored.text.hasSuffix(" ") || stored.text.hasSuffix("\n") ? "" : " "
+        stored.text += separator + token
+        update(.text(stored), on: slide)
     }
 
     /// Whether the text follows the presentation's theme, in words, with the ways back and forth.

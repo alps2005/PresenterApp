@@ -79,7 +79,7 @@ struct StageOutputView: View {
             }
 
             if settings.showsNotes, let notes = coordinator.liveNotes {
-                Text(notes)
+                Text(coordinator.liveText(notes, at: now))
                     .font(.system(size: 40 * scale, weight: .medium))
                     .foregroundStyle(.cyan)
                     .lineLimit(3)

@@ -78,6 +78,16 @@ private struct ShowsLiveVideoKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+/// Fills in a slide's live values (`{timer:Sermon}`, `{clock}`) at a moment. Set where the audience's view is drawn
+/// (the output, its preview and the stage display); thumbnails and the editor show the tokens as typed.
+struct LiveTextResolver {
+    let resolve: @MainActor (String, Date) -> String
+}
+
+private struct LiveTextKey: EnvironmentKey {
+    static let defaultValue: LiveTextResolver? = nil
+}
+
 private struct SlideTransparencyKey: EnvironmentKey {
     static let defaultValue = SlideRenderView.Transparency.checkerboard
 }
@@ -87,6 +97,11 @@ extension EnvironmentValues {
     var showsLiveVideo: Bool {
         get { self[ShowsLiveVideoKey.self] }
         set { self[ShowsLiveVideoKey.self] = newValue }
+    }
+
+    var liveText: LiveTextResolver? {
+        get { self[LiveTextKey.self] }
+        set { self[LiveTextKey.self] = newValue }
     }
 
     var slideTransparency: SlideRenderView.Transparency {
@@ -329,20 +344,32 @@ private struct ImageElementView: View {
 
 private struct StyledText: View {
     let element: TextElement
+    @Environment(\.liveText) private var liveText
 
     /// Copies of the words around the letters make the outline: SwiftUI on macOS 14 has no text stroke.
     private static let outlineCopies = 16
 
     var body: some View {
+        if let liveText, LiveText.hasTokens(element.text) {
+            // Only text with a live value redraws, twice a second so a timer never skips a second.
+            TimelineView(.periodic(from: .now, by: 0.5)) { context in
+                styled(liveText.resolve(element.text, context.date))
+            }
+        } else {
+            styled(element.text)
+        }
+    }
+
+    private func styled(_ text: String) -> some View {
         let style = element.style
-        letters(in: style.color.color)
+        return letters(text, in: style.color.color)
             .background {
                 if let outline = style.outline {
                     // In the background, the copies are offered the words' own size, so they wrap and scale alike.
                     ZStack {
                         ForEach(0..<Self.outlineCopies, id: \.self) { index in
                             let angle = Double(index) / Double(Self.outlineCopies) * 2 * .pi
-                            letters(in: outline.color.color)
+                            letters(text, in: outline.color.color)
                                 .offset(x: cos(angle) * outline.width, y: sin(angle) * outline.width)
                         }
                     }
@@ -357,9 +384,9 @@ private struct StyledText: View {
             }
     }
 
-    private func letters(in color: Color) -> some View {
+    private func letters(_ text: String, in color: Color) -> some View {
         let style = element.style
-        return Text(element.text)
+        return Text(text)
             .font(style.font)
             .lineSpacing(style.lineSpacing)
             .multilineTextAlignment(style.alignment.textAlignment)
