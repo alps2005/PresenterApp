@@ -82,6 +82,9 @@ swift test
 | Open a project file / export a copy | ⌘O / ⇧⌘S |
 | Edit a presentation in the slide editor | **Edit** next to its title; **Done** or Esc to return |
 | Show/hide Quick Edit for the cued slide | ⌥⌘E, or the **Quick Edit** toolbar button |
+| Open another show, or make one | ⇧⌘O (File › Shows…) |
+| Show/hide the audio bin | ⌥⌘U, or the **Audio** toolbar button |
+| Stop the audio (fading it out) | **Stop** under the Audience preview, or Live › Stop Audio |
 | Bring back the operator window after closing it | ⌘0 (Window › Show Operator Window) |
 
 **Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects.
@@ -118,6 +121,19 @@ swift test
   - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
   - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
 - **Notes:** the live slide's notes also appear under the Audience preview.
+
+**Shows and the library.** A project holds one library of presentations and any number of shows. A show is a playlist: a Sunday service, a midweek meeting, Easter. All shows use the same library, so editing a song changes it in every show that has it.
+- **Shows window:** it opens at launch and from **File › Shows…** (⇧⌘O). It lists the shows with the open one first, then the most recently opened. Double-click one to open it, or use **New Show…**. Right-click to rename, duplicate or delete a show. Untick **Show this window when Presenter opens** to skip it at launch.
+- **Opening a show** never changes the audience output. What's live stays on screen until you take a slide live, and Undo starts afresh.
+- **Folders:** **New Folder…** in the Library makes a folder. Drag presentations onto it, or right-click one and choose **Move To**. Dragging one onto the **Library** header takes it out of its folder. Deleting a folder keeps its presentations: they move to the top of the library.
+- **Deleting a presentation** removes it from the library and from every show.
+
+**Audio.**
+- **Audio bin:** the **Audio** toolbar button (⌥⌘U) opens it under the workspace. **Import…** adds music and sounds (MP3, M4A, WAV, AIFF…); files that don't play are rejected. Click a track to play it for the audience. Right-click to loop it, to play it when the cued slide goes live, or to make it the soundtrack of the cued slide's presentation.
+- **Slide audio:** in the slide editor's Format tab, with nothing selected, **Audio** sets what happens when the slide is taken live: leave the audio alone, play a track (with a fade-in and looping), or fade out whatever is playing. Taking the same slide live again never restarts the music, and a cue for the track that's already playing lets it play on.
+- **Soundtracks:** in the Document tab, **Soundtrack** plays a track when you move into the presentation from another item, unless it's already playing. A slide's own audio comes first.
+- **In the Live panel:** the playing track shows under the Audience preview, with pause, a position slider, the time left and **Stop**, which fades it out over 2 seconds. A new track crossfades with the old one.
+- **Clear and Blackout:** **Clear All** fades the audio out; **Blackout** leaves it playing.
 
 **Video backgrounds and the media bin.**
 - **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.

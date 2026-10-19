@@ -42,13 +42,16 @@ The coordinator is split by area into extensions in `Packages/PresenterCore/Sour
 | `+Layers.swift` | Media cues on the background layer, live video mute, messages, props on screen |
 | `+ShowControls.swift` | Timers, the stage message, and the message, prop, timer and stage-settings libraries |
 | `+Library.swift` | Presentations, playlist, songs, Reflow, arrangements |
+| `+Folders.swift` | Library folders: add, rename, delete (contents move to the top), move presentations |
+| `+Shows.swift` | Shows: open, add, duplicate, delete (opening one clears undo, like `replaceProject`) |
+| `+Audio.swift` | Play, pause and stop audio (live), slide audio cues and presentation soundtracks (edits) |
 | `+Editing.swift` | Text formatting, backgrounds, media assets, elements, slide order, transitions, notes |
 | `+Themes.swift` | Themes, a presentation's theme, Revert to Theme, Update Theme from This Text |
 | `+AutoAdvance.swift` | Slideshow intervals and Go To Next timers (edits), the live countdown (`state.autoAdvance`), Stop Auto-Advance |
 | `+Undo.swift` | The undo engine and `replaceProject` |
 
-**Not routed through the coordinator:** video transport (play/pause, scrubbing, volume) and showing or hiding the
-output windows. Those are playback and window state, not presentation state. Video *mute* does go through the
+**Not routed through the coordinator:** video transport (play/pause, scrubbing, volume), audio scrubbing, and
+showing or hiding the output windows. Those are playback and window state, not presentation state. Video *mute* does go through the
 coordinator (`setLiveVideoMuted`), because it's part of the live background.
 
 ## Themes
@@ -102,6 +105,22 @@ SwiftUI view, so they outlive the operator window.
 `MediaPlaybackController` (app) owns the one `AVQueuePlayer`. It follows `state.liveBackground`, and
 `PlaybackPlan.decide` (core) says whether to stop, keep playing, reload, load or report a missing file. So a video
 keeps playing, without restarting, while transparent slides change the words over it.
+
+### Shows
+
+`ProjectDocument.playlists` holds every show and `activePlaylistID` the open one. `project.playlist` is the open
+show (a computed property), so the commands, Up Next and Next/Previous work on it unchanged. Opening a show clears
+undo, because an undo snapshot from another show would switch shows back. The live slide is a snapshot, so it stays
+on screen; Next waits until a slide of the open show is taken live.
+
+### Audio
+
+Audio files are `MediaAsset`s of kind `.audio`. The live track is `state.audio` (`LiveAudio`, not saved), changed by
+`playAudio`, `stopAudio` and `cueAudio(for:after:)`, which `goLive` calls with the previous live position, so taking
+the same slide live again does nothing. `AudioPlaybackController` (app) follows `state.audio`, and `AudioPlan.decide`
+(core) says whether to start, keep, crossfade, fade out or report a missing file. Each track has its own
+`AVQueuePlayer`, so one can fade out while the next fades in; volume ramps run at 30 Hz only while a fade is going.
+A track that doesn't loop reports its end with `audioDidFinish(startID:)`.
 
 ### Scripture
 
