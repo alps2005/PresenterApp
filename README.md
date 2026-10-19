@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** beta. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.0, the first stable release. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
@@ -21,8 +21,8 @@ On older macOS versions you can instead right-click Presenter in Applications an
 Push a version tag and GitHub Actions builds, tests and uploads the zip:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 Every push and pull request to `develop` or `main` also runs the tests and a build (`.github/workflows/ci.yml`).
@@ -113,7 +113,6 @@ swift test
 - **Go To Next Timer:** right-click a slide and choose **Go To Next Timer…** (or use **Go To Next** in the slide editor) to give that slide its own time; it comes before the Slideshow's. **Loop to the first slide** goes back to the presentation's first slide; without it, the last slide moves on to the next item in the show, as → does, and stops at the end of the show.
 - **Videos:** a slide whose video background plays once (Loop off) waits for the video to end before its countdown starts, so 0 seconds moves on the moment it finishes. A looping video doesn't hold the slide up.
 - **Seeing it:** slides that move on by themselves show their time under the thumbnail; the live one fills a small red circle as it counts down, and the Live panel shows **Next slide in…** with a **Stop** button (Live › Stop Auto-Advance, ⌥⌘.). Pressing → or ←, or taking another slide live, starts that slide's own countdown. Clear and Blackout stop it; Restore starts it again.
-- From beta 9, projects are saved in file format 4, which earlier versions of Presenter can't open.
 
 **Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
 - **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
@@ -162,7 +161,7 @@ swift test
 - **Backups:** each time Presenter opens your project, it copies it to `Presenter/Backups/` (unless nothing changed since the last copy), keeping the newest 10.
 - **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images and videos the project uses, so it opens complete on the other Mac.
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
-- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost.
+- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost. Presenter 1.0 saves in file format 5, which the betas can't open.
 - If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and an empty project opens instead.
 
 **Appearance.** The operator window is dark, with solid panels, so it stays readable in a dark booth. LIVE is always red, CUED always blue and warnings amber, and every state badge has an icon and a word. To use the system's light or dark setting instead, turn on **View › Follow System Appearance**.

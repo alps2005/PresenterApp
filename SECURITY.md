@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Presenter is in beta. Only the latest release on the [Releases](https://github.com/alps2005/PresenterApp/releases)
+Only the latest release on the [Releases](https://github.com/alps2005/PresenterApp/releases)
 page gets fixes.
 
 ## Reporting a vulnerability

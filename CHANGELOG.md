@@ -3,9 +3,10 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v1.0.0 (2026-10-19)
 
-This release saves projects in file format 5. Once it opens a project, older betas can't open that project.
+The first stable release. It saves projects in file format 5: once 1.0 opens a project, the betas can't open that
+project.
 
 ### Shows
 - **More than one show:** a project can hold several shows (a Sunday service, a midweek meeting, Easter…). Each is
@@ -30,12 +31,16 @@ This release saves projects in file format 5. Once it opens a project, older bet
   it the soundtrack of the cued slide's presentation.
 - **Slide audio:** in the slide editor's Format tab (with nothing selected), a slide can play a track, with a fade-in
   and looping, or fade out whatever is playing. Taking the same slide live again never restarts the music, and a
-  track that's already playing plays on.
+  track that's already playing plays on. Slides that play or stop audio show a note or a muted speaker under their
+  thumbnail.
 - **Soundtracks:** in the Document tab, a presentation can have a soundtrack that starts when you move into it from
   another item, unless it's already playing.
 - **In the Live panel,** the playing track shows with pause, a position slider, the time left and Stop, which fades
   it out. Changing tracks crossfades. **Clear All** fades the audio out; **Blackout** leaves it playing. Live ›
   **Stop Audio** and **Pause or Play Audio** work from anywhere.
+
+### Fixes
+- The sidebar, workspace and Live panel say **show** instead of playlist (**Add to Show**, **Remove from Show…**).
 
 ## v0.1.0-beta.10 (2026-10-18)
 
