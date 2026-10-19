@@ -56,6 +56,7 @@ struct AudienceOutputView: View {
                     OverlayLayers(coordinator: coordinator)
                 }
             }
+            .environment(\.liveText, LiveTextResolver { coordinator.liveText($0, at: $1) })
             .clipped()
         }
         .ignoresSafeArea()

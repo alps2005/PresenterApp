@@ -120,11 +120,19 @@ public final class PresentationCoordinator {
 
     /// The message's text right now, with blanks filled in and timers at `date`.
     public func messageText(_ message: MessageDefinition, values: [String: String], at date: Date) -> String {
-        message.rendered(values: values) { name in
-            project.timers.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
-                .flatMap { timerSeconds($0.id, at: date) }
-                .map { TimerDefinition.format($0) }
-        }
+        message.rendered(values: values) { timerText(named: $0, at: date) }
+    }
+
+    /// A timer's value at `date`, found by name ignoring case, as "4:05". Nil if there's no such timer.
+    public func timerText(named name: String, at date: Date) -> String? {
+        project.timers.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+            .flatMap { timerSeconds($0.id, at: date) }
+            .map { TimerDefinition.format($0) }
+    }
+
+    /// Slide text with its live values (`{timer:Name}`, `{clock}`) filled in at `date`.
+    public func liveText(_ text: String, at date: Date) -> String {
+        LiveText.resolve(text, at: date) { timerText(named: $0, at: date) }
     }
 
     /// True when the live slide (or the background it inherits) has been edited since it was taken live,

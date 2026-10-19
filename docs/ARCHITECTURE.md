@@ -41,6 +41,7 @@ The coordinator is split by area into extensions in `Packages/PresenterCore/Sour
 | `+Live.swift` | Select, cue, Take Live, next/previous, Clear, Blackout, Restore |
 | `+Layers.swift` | Media cues on the background layer, live video mute, messages, props on screen |
 | `+ShowControls.swift` | Timers, the stage message, and the message, prop, timer and stage-settings libraries |
+| `+StageLayouts.swift` | Stage layouts: add, copy, edit, delete, and choosing the one in use |
 | `+Library.swift` | Presentations, playlist, songs, Reflow, arrangements |
 | `+Folders.swift` | Library folders: add, rename, delete (contents move to the top), move presentations |
 | `+Shows.swift` | Shows: open, add, duplicate, delete (opening one clears undo, like `replaceProject`) |
@@ -88,13 +89,21 @@ Blackout covers all four.
 - **Audience window:** `AudienceOutputView` cross-fades the background and slide layers separately, so a
   background that stays never fades.
 - **Stage display:** `StageOutputView` shows the live words, the next slide, a clock, a timer, notes and the
-  stage message. The audience never sees it.
+  stage message, or the chosen `StageLayout` through `StageLayoutView`, which the layout editor's preview also
+  uses. The audience never sees it.
+- **Live text:** `{timer:Name}` and `{clock}` in slide text are filled in by `LiveText` (core) through the
+  `liveText` environment value, which only the audience output, its preview and the stage display set; only text
+  with a live value redraws.
 
 ### Placing the output windows
 
 `OutputPlanner` (core) decides where each output goes:
 - It never puts an output on the operator's display, or on the display the other output fills.
 - When a display disconnects, it hides that output, and brings it back when the display reconnects.
+
+Each display carries a `DisplayIdentity` (vendor, model, serial and name), so the planner can save each output as a
+`SavedOutput` and find its display again at the next launch or after it reconnects with a new ID. `OutputManager`
+keeps them in UserDefaults, per Mac.
 
 `OutputManager` (app) reports the displays and the operator's commands to the planner, then places one
 `OutputWindowController` per output as `placement(_:)` says. The windows belong to `OutputManager`, not to any

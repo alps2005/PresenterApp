@@ -3,6 +3,30 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.1.0 (2026-10-19)
+
+This release saves projects in file format 6. Once it opens a project, Presenter 1.0 can't open that project.
+
+### Stage display
+- **Stage layouts:** design what the stage display shows. A layout places regions on the screen: the live or next
+  words, the live or next slide, the clock, a timer, the notes, the stage message, or fixed text. Projects start
+  with **Lyrics**, **Speaker** and **Slides**; **Standard** keeps the look the stage display had before.
+- **The layout editor** (Stage tab › **Edit…**): make, copy, rename and delete layouts, drag and resize regions on
+  a live preview with snapping, and set each region's text size, colour, alignment and label. Every change can be
+  undone, and the stage display follows as you edit.
+
+### Slides
+- **Live timers and the clock in slide text:** `{timer:Sermon}`, `{clock}` and `{clock:seconds}` show the running
+  value on the audience output, its preview and the stage display. The slide editor's **Live Values › Insert**
+  adds them, and warns about a timer name that doesn't exist. Other braces stay as typed.
+
+### Outputs
+- **Remembered screens:** the audience output and stage display open at launch where they were, on this Mac,
+  even when a display comes back with a new ID; a display that isn't connected yet is waited for.
+
+### Fixes
+- Message blanks typed with spaces inside the braces (`{ Number }`) are filled in.
+
 ## v1.0.0 (2026-10-19)
 
 The first stable release. It saves projects in file format 5: once 1.0 opens a project, the betas can't open that

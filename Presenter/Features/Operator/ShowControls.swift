@@ -241,6 +241,7 @@ private struct StageTab: View {
     let outputManager: OutputManager
     @State private var isComposing = false
     @State private var draftMessage = ""
+    @State private var isEditingLayouts = false
 
     var body: some View {
         let settings = coordinator.project.stage
@@ -286,6 +287,20 @@ private struct StageTab: View {
                 }
             }
 
+            HStack {
+                Picker("Layout", selection: Binding(
+                    get: { settings.layoutID },
+                    set: { coordinator.setStageLayout($0) }
+                )) {
+                    Text("Standard").tag(UUID?.none)
+                    ForEach(coordinator.project.stageLayouts) { Text($0.name.isEmpty ? "Untitled" : $0.name).tag(Optional($0.id)) }
+                }
+                Button("Edit…") { isEditingLayouts = true }
+                    .help("Make and change stage layouts")
+                    .accessibilityLabel("Edit Stage Layouts")
+            }
+            .sheet(isPresented: $isEditingLayouts) { StageLayoutEditor(coordinator: coordinator) }
+
             Picker("Timer", selection: Binding(
                 get: { settings.timerID },
                 set: { id in
@@ -297,23 +312,27 @@ private struct StageTab: View {
                 Text("None").tag(UUID?.none)
                 ForEach(coordinator.project.timers) { Text($0.name).tag(Optional($0.id)) }
             }
-            Toggle("Clock", isOn: Binding(
-                get: { settings.showsClock },
-                set: { value in
-                    var updated = settings
-                    updated.showsClock = value
-                    coordinator.setStageSettings(updated)
-                }
-            ))
-            Toggle("Slide notes", isOn: Binding(
-                get: { settings.showsNotes },
-                set: { value in
-                    var updated = settings
-                    updated.showsNotes = value
-                    coordinator.setStageSettings(updated)
-                }
-            ))
-            Text("The stage display shows the live slide's words, the next slide, and these. The audience never sees them.")
+            if settings.layoutID == nil {
+                Toggle("Clock", isOn: Binding(
+                    get: { settings.showsClock },
+                    set: { value in
+                        var updated = settings
+                        updated.showsClock = value
+                        coordinator.setStageSettings(updated)
+                    }
+                ))
+                Toggle("Slide notes", isOn: Binding(
+                    get: { settings.showsNotes },
+                    set: { value in
+                        var updated = settings
+                        updated.showsNotes = value
+                        coordinator.setStageSettings(updated)
+                    }
+                ))
+            }
+            Text(settings.layoutID == nil
+                 ? "The stage display shows the live slide's words, the next slide, and these. The audience never sees them."
+                 : "The layout decides what the stage display shows; its timer regions use this timer unless set to another. The audience never sees it.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

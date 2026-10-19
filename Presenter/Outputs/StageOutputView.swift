@@ -3,6 +3,7 @@ import PresenterCore
 
 /// What the people on stage see: the live slide's words, what's next, the clock, a timer, the operator's notes
 /// and stage messages. High contrast and no backgrounds, so it reads from a distance. Never shown to the audience.
+/// A stage layout, when one is chosen, replaces this standard look.
 struct StageOutputView: View {
     let coordinator: PresentationCoordinator
 
@@ -11,7 +12,11 @@ struct StageOutputView: View {
             // Sizes are designed for a 1080-point-tall screen and scale with the window.
             let scale = max(geometry.size.height / 1080, 0.2)
             TimelineView(.periodic(from: .now, by: 0.5)) { context in
-                content(scale: scale, now: context.date)
+                if let layout = coordinator.stageLayout {
+                    StageLayoutView(coordinator: coordinator, layout: layout, now: context.date)
+                } else {
+                    content(scale: scale, now: context.date)
+                }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
@@ -54,7 +59,7 @@ struct StageOutputView: View {
                     .background(Color.yellow, in: RoundedRectangle(cornerRadius: 12 * scale))
             }
 
-            Text(live.map(words) ?? "")
+            Text(live.map { words($0, now: now) } ?? "")
                 .font(.system(size: 92 * scale, weight: .bold))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.3)
@@ -65,7 +70,7 @@ struct StageOutputView: View {
                     Text("NEXT" + (next.label.map { " · \($0.uppercased())" } ?? ""))
                         .font(.system(size: 26 * scale, weight: .bold))
                         .foregroundStyle(.gray)
-                    Text(words(next))
+                    Text(words(next, now: now))
                         .font(.system(size: 52 * scale, weight: .semibold))
                         .foregroundStyle(.yellow)
                         .lineLimit(3)
@@ -74,7 +79,7 @@ struct StageOutputView: View {
             }
 
             if settings.showsNotes, let notes = coordinator.liveNotes {
-                Text(notes)
+                Text(coordinator.liveText(notes, at: now))
                     .font(.system(size: 40 * scale, weight: .medium))
                     .foregroundStyle(.cyan)
                     .lineLimit(3)
@@ -84,9 +89,8 @@ struct StageOutputView: View {
         .padding(48 * scale)
     }
 
-    private func words(_ slide: SlideDocument) -> String {
-        let text = slide.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.isEmpty ? "—" : text
+    private func words(_ slide: SlideDocument, now: Date) -> String {
+        StageText.words(slide, coordinator: coordinator, at: now)
     }
 
     private func isElapsed(_ timer: TimerDefinition) -> Bool {

@@ -4,15 +4,24 @@ import Observation
 import PresenterCore
 import SwiftUI
 
-/// Tracks connected displays and places the audience and stage outputs as `OutputPlanner` decides.
+/// Tracks connected displays and places the audience and stage outputs as `OutputPlanner` decides. Remembers where
+/// each output was, on this Mac, and puts it back there at launch.
 @Observable
 final class OutputManager {
     private(set) var planner = OutputPlanner(displays: DisplayDiscovery.currentDisplays())
 
     @ObservationIgnored private var controllers: [OutputRole: OutputWindowController] = [:]
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
+    @ObservationIgnored private let defaults: UserDefaults
+    /// The saved outputs are put back once the operator window is on screen (see `operatorWindowMoved(to:)`).
+    @ObservationIgnored private var hasRestored = false
 
-    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, playback: MediaPlaybackController) {
+    /// Per Mac, not in the project: a project opened on another Mac shouldn't reach for this one's screens.
+    static let savedOutputsKey = "savedOutputs"
+
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, playback: MediaPlaybackController,
+         defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         controllers[.audience] = OutputWindowController(title: OutputRole.audience.title) {
             AnyView(
                 AudienceOutputView(coordinator: coordinator)
@@ -27,6 +36,7 @@ final class OutputManager {
         for role in OutputRole.allCases {
             controllers[role]?.onUserClosedWindow = { [weak self] in
                 self?.planner.hide(role)
+                self?.save()
             }
         }
         screenObserver = NotificationCenter.default.addObserver(
@@ -58,24 +68,55 @@ final class OutputManager {
     func show(_ target: OutputTarget, for role: OutputRole = .audience) {
         planner.show(target, for: role)
         apply(role)
+        save()
     }
 
     func hide(_ role: OutputRole = .audience) {
         planner.hide(role)
         apply(role)
+        save()
     }
 
+    /// Closes the output windows when the app quits, leaving what's remembered for the next launch.
     func hideAll() {
-        for role in OutputRole.allCases { hide(role) }
+        for role in OutputRole.allCases {
+            planner.hide(role)
+            apply(role)
+        }
     }
 
     func toggle(_ role: OutputRole = .audience) {
         planner.toggle(role)
         apply(role)
+        save()
     }
 
     func operatorWindowMoved(to screen: NSScreen?) {
         planner.operatorDisplayID = screen.flatMap(DisplayDiscovery.displayID(of:))
+        // Not before: SwiftUI opens the operator window at launch only if no other window is open, and the planner
+        // needs to know the operator's screen so an output never covers it.
+        if !hasRestored {
+            hasRestored = true
+            restore()
+        }
+    }
+
+    // MARK: Remembering
+
+    private func restore() {
+        guard let data = defaults.data(forKey: Self.savedOutputsKey),
+              let saved = try? JSONDecoder().decode([String: SavedOutput].self, from: data) else { return }
+        for role in OutputRole.allCases {
+            guard let output = saved[role.storageKey] else { continue }
+            planner.restore(output, for: role)
+            apply(role)
+            Log.output.info("Restored \(role.title, privacy: .public): \(String(describing: self.planner.status(role)), privacy: .public)")
+        }
+    }
+
+    private func save() {
+        let saved = Dictionary(uniqueKeysWithValues: OutputRole.allCases.map { ($0.storageKey, planner.saved($0)) })
+        if let data = try? JSONEncoder().encode(saved) { defaults.set(data, forKey: Self.savedOutputsKey) }
     }
 
     private func screensChanged() {
@@ -101,6 +142,15 @@ final class OutputManager {
                 controller.hide()
                 Log.output.error("\(role.title, privacy: .public) display \(id, privacy: .public) has no screen")
             }
+        }
+    }
+}
+
+private extension OutputRole {
+    var storageKey: String {
+        switch self {
+        case .audience: "audience"
+        case .stage: "stage"
         }
     }
 }
