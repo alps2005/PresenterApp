@@ -87,7 +87,7 @@ swift test
 | Stop the audio (fading it out) | **Stop** under the Audience preview, or Live › Stop Audio |
 | Bring back the operator window after closing it | ⌘0 (Window › Show Operator Window) |
 
-**Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects.
+**Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects. Presenter remembers each output's screen on this Mac: at the next launch the audience output and stage display open where they were, found by the display's serial number (or make, model and name) even if macOS gives it a new ID. If that display isn't connected yet, the output waits for it.
 
 **Undo.** ⌘Z undoes the last change to your slides and playlist, and ⇧⌘Z redoes it. Typing and dragging a slider undo in one step. While you're typing in a text field, ⌘Z undoes the typing first. Taking slides live, Clear and Blackout are never undone, so Undo can't change what the audience sees.
 
@@ -118,7 +118,9 @@ swift test
 - **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
 - **Show Controls** at the bottom of the Live panel:
   - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
-  - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
+  - **Stage:** send a message to the stage (e.g. "5 minutes left"), choose the stage layout, and the timer shown on stage (with the standard look, also the clock and notes).
+- **Stage layouts:** besides the standard look, a project starts with three layouts: **Lyrics** (big words and what's next, for singers and the band), **Speaker** (clock, timer and notes) and **Slides** (the live and next slides as pictures). Choose one in the Stage tab; **Edit…** opens the layout editor, where you make, copy and delete layouts and drag and resize their regions on a live preview (snapping to edges and centres; hold ⌘ to place freely). A region shows the live or next words, the live or next slide, the clock, a timer, the notes, the stage message, or fixed text, with its own text size, colour and alignment.
+- **Live timers in slides:** type `{timer:Sermon}`, `{clock}` or `{clock:seconds}` in a slide's words (or use **Live Values › Insert** in the slide editor) and the audience output, its preview and the stage display show the running value. Other words in braces stay as typed, so lyrics are safe. Thumbnails and the editor show what you typed.
 - **Notes:** the live slide's notes also appear under the Audience preview.
 
 **Shows and the library.** A project holds one library of presentations and any number of shows. A show is a playlist: a Sunday service, a midweek meeting, Easter. All shows use the same library, so editing a song changes it in every show that has it.
@@ -161,7 +163,7 @@ swift test
 - **Backups:** each time Presenter opens your project, it copies it to `Presenter/Backups/` (unless nothing changed since the last copy), keeping the newest 10.
 - **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images and videos the project uses, so it opens complete on the other Mac.
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
-- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost. Presenter 1.0 saves in file format 5, which the betas can't open.
+- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost. Release notes say when a version changes the file format; after that, older versions can't open the project.
 - If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and an empty project opens instead.
 
 **Appearance.** The operator window is dark, with solid panels, so it stays readable in a dark booth. LIVE is always red, CUED always blue and warnings amber, and every state badge has an icon and a word. To use the system's light or dark setting instead, turn on **View › Follow System Appearance**.
