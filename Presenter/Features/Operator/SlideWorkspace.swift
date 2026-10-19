@@ -582,6 +582,7 @@ struct SlideThumbnail: View {
                 if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
                 if slide.slide.hasElementTransitions { ElementTransitionsMark() }
+                if let cue = slide.slide.audioCue { AudioCueMark(cue: cue) }
                 if let advanceSeconds { AdvanceBadge(seconds: advanceSeconds, advance: advance) }
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }

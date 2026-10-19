@@ -58,6 +58,26 @@ struct AudioTransport: View {
     }
 }
 
+/// A thumbnail's mark for a slide that starts or stops the audio when it's taken live.
+struct AudioCueMark: View {
+    let cue: AudioCue
+
+    var body: some View {
+        switch cue {
+        case .play:
+            Image(systemName: "music.note")
+                .foregroundStyle(.secondary)
+                .help("Plays a track when this slide is taken live")
+                .accessibilityLabel("Plays audio")
+        case .stop:
+            Image(systemName: "speaker.slash")
+                .foregroundStyle(.secondary)
+                .help("Stops the audio when this slide is taken live")
+                .accessibilityLabel("Stops audio")
+        }
+    }
+}
+
 /// Loop and fade-in settings for a track.
 struct AudioTrackOptions: View {
     @Binding var track: AudioTrack
@@ -98,7 +118,7 @@ struct AudioAssetPicker: View {
             }
         }
         .labelsHidden()
-        .frame(minWidth: 0, maxWidth: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -120,7 +140,7 @@ struct AudioCueControls: View {
                 Text("Stop the audio").tag(Choice.stop)
             }
             .labelsHidden()
-            .frame(minWidth: 0, maxWidth: .infinity)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             switch cue {
             case .play(let track):
                 AudioAssetPicker(coordinator: coordinator, assetID: Binding(
