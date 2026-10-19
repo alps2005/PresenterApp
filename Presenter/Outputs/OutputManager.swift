@@ -13,6 +13,8 @@ final class OutputManager {
     @ObservationIgnored private var controllers: [OutputRole: OutputWindowController] = [:]
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
     @ObservationIgnored private let defaults: UserDefaults
+    /// The saved outputs are put back once the operator window is on screen (see `operatorWindowMoved(to:)`).
+    @ObservationIgnored private var hasRestored = false
 
     /// Per Mac, not in the project: a project opened on another Mac shouldn't reach for this one's screens.
     static let savedOutputsKey = "savedOutputs"
@@ -44,7 +46,6 @@ final class OutputManager {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.screensChanged() }
         }
-        restore()
     }
 
     var displays: [DisplayInfo] { planner.displays }
@@ -92,6 +93,12 @@ final class OutputManager {
 
     func operatorWindowMoved(to screen: NSScreen?) {
         planner.operatorDisplayID = screen.flatMap(DisplayDiscovery.displayID(of:))
+        // Not before: SwiftUI opens the operator window at launch only if no other window is open, and the planner
+        // needs to know the operator's screen so an output never covers it.
+        if !hasRestored {
+            hasRestored = true
+            restore()
+        }
     }
 
     // MARK: Remembering
