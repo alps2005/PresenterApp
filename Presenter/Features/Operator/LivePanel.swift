@@ -95,7 +95,7 @@ struct LivePanel: View {
     private var upNextPlaceholder: String {
         guard let live = coordinator.state.live else { return "Nothing live" }
         // The live slide (or its playlist item) was deleted, so there is no sequence to follow.
-        if coordinator.project.slide(at: live.position) == nil { return "Live slide is no longer in the playlist" }
+        if coordinator.project.slide(at: live.position) == nil { return "The live slide isn't in this show" }
         return "End of playlist"
     }
 
