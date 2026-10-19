@@ -109,7 +109,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case nothingLive
     case atEndOfPlaylist
     case atStartOfPlaylist
-    /// The live slide was deleted from the playlist, so there is no sequence to move along.
+    /// The live slide was deleted from the playlist, or another show was opened, so there is no sequence to move along.
     case liveSlideMissing
     case nothingToRestore
     case nothingToClear
@@ -123,6 +123,9 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case unknownTheme
     case autoAdvanceOff
     case unknownFolder
+    case unknownShow
+    /// A project always has a show to open.
+    case lastShow
 
     public var message: String {
         switch self {
@@ -133,7 +136,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .nothingLive: "Nothing is live."
         case .atEndOfPlaylist: "Already at the last slide."
         case .atStartOfPlaylist: "Already at the first slide."
-        case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
+        case .liveSlideMissing: "The live slide isn't in the open show anymore. Take a slide live to continue."
         case .nothingToRestore: "Output is already showing normally."
         case .nothingToClear: "Only the default background is showing."
         case .unknownArrangement: "That arrangement no longer exists."
@@ -144,6 +147,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownElement: "That item is no longer on the slide."
         case .unknownTheme: "That theme no longer exists."
         case .unknownFolder: "That folder no longer exists."
+        case .unknownShow: "That show no longer exists."
+        case .lastShow: "This is the only show. Make another before deleting it."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }

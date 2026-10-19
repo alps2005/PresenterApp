@@ -159,7 +159,7 @@ extension PresentationCoordinator {
         }
     }
 
-    /// Deletes a presentation from the library and removes it from the playlist. If it's live, it stays on the
+    /// Deletes a presentation from the library and removes it from every show. If it's live, it stays on the
     /// audience output until something else is taken live.
     @discardableResult
     public func deletePresentation(_ presentationID: UUID) -> CommandResult {
@@ -168,7 +168,9 @@ extension PresentationCoordinator {
                 return reject(.unknownPresentation)
             }
             project.presentations.removeAll { $0.id == presentationID }
-            project.playlist.items.removeAll { $0.presentationID == presentationID }
+            for index in project.playlists.indices {
+                project.playlists[index].items.removeAll { $0.presentationID == presentationID }
+            }
             if let selected = state.selectedItemID, project.playlist.item(withID: selected) == nil {
                 state.selectedItemID = project.playlist.items.first?.id
             }
@@ -193,12 +195,14 @@ extension PresentationCoordinator {
         }
     }
 
-    /// Renames the show (the playlist). Empty text keeps the current name.
+    /// Renames a show (a playlist), or the open one when `playlistID` is nil. Empty text keeps the current name.
     @discardableResult
-    public func renamePlaylist(to title: String) -> CommandResult {
-        recordingUndo("Rename Show", coalescing: "rename-playlist") {
+    public func renamePlaylist(_ playlistID: UUID? = nil, to title: String) -> CommandResult {
+        let id = playlistID ?? project.activePlaylistID
+        return recordingUndo("Rename Show", coalescing: "rename-playlist-\(id)") {
+            guard let index = project.playlists.firstIndex(where: { $0.id == id }) else { return reject(.unknownShow) }
             let trimmed = title.trimmingCharacters(in: .whitespaces)
-            if !trimmed.isEmpty { project.playlist.title = trimmed }
+            if !trimmed.isEmpty { project.playlists[index].title = trimmed }
             return applied()
         }
     }
