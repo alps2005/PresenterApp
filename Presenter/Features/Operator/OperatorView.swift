@@ -22,6 +22,7 @@ struct OperatorView: View {
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    @AppStorage("audioBinVisible") private var isAudioBinVisible = false
     /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
     @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
@@ -156,12 +157,15 @@ struct OperatorView: View {
                 .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { mediaBinToggle }
                 .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { audioBinToggle }
+                .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItemGroup(placement: .primaryAction) {
                 quickEditToggle
                 mediaBinToggle
+                audioBinToggle
                 OutputMenu(outputManager: outputManager)
             }
         }
@@ -183,5 +187,14 @@ struct OperatorView: View {
         .toggleStyle(.button)
         .help("Show or hide the media bin (⌥⌘I)")
         .accessibilityLabel("Media Bin")
+    }
+
+    private var audioBinToggle: some View {
+        Toggle(isOn: $isAudioBinVisible) {
+            Label("Audio", systemImage: "music.note.list")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide the audio bin (⌥⌘U)")
+        .accessibilityLabel("Audio Bin")
     }
 }

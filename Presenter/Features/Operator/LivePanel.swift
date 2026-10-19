@@ -31,6 +31,7 @@ struct LivePanel: View {
                     } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
                         TransportControls()
                     }
+                    AudioTransport(coordinator: coordinator)
                     AutoAdvanceStatus(coordinator: coordinator)
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
                         Label("Background cleared for now. Slides with their own background bring one back. To remove it for good, use the slide's Background button.",
