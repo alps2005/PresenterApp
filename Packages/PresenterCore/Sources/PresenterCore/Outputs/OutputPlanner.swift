@@ -1,20 +1,54 @@
 import CoreGraphics
 import Foundation
 
+/// What identifies a display across launches and reconnections, unlike its CoreGraphics ID. Zero means the display
+/// didn't report that number.
+public struct DisplayIdentity: Codable, Hashable, Sendable {
+    public var vendor: UInt32
+    public var model: UInt32
+    public var serial: UInt32
+    public var name: String
+
+    public init(vendor: UInt32 = 0, model: UInt32 = 0, serial: UInt32 = 0, name: String) {
+        self.vendor = vendor
+        self.model = model
+        self.serial = serial
+        self.name = name
+    }
+
+    /// The connected display this one is, if it can tell: the same serial number, else the only display of the same
+    /// make, model and name, else the only display with the same name.
+    public func match(in displays: [DisplayInfo]) -> DisplayInfo? {
+        if serial != 0, let same = displays.first(where: {
+            $0.identity.vendor == vendor && $0.identity.model == model && $0.identity.serial == serial
+        }) {
+            return same
+        }
+        if vendor != 0 || model != 0 {
+            let sameModel = displays.filter { $0.identity.vendor == vendor && $0.identity.model == model && $0.name == name }
+            if sameModel.count == 1 { return sameModel[0] }
+        }
+        let sameName = displays.filter { $0.name == name }
+        return sameName.count == 1 ? sameName[0] : nil
+    }
+}
+
 /// A connected display. `id` is the CoreGraphics display ID: stable while the display stays connected, but not
-/// guaranteed across launches; persisting the selected display needs a durable identity.
+/// guaranteed across launches or reconnections, so remembered displays are found by `identity`.
 public struct DisplayInfo: Identifiable, Hashable, Sendable {
     public let id: UInt32
     public let name: String
     public let frame: CGRect
     /// The display with the menu bar.
     public let isPrimary: Bool
+    public let identity: DisplayIdentity
 
-    public init(id: UInt32, name: String, frame: CGRect, isPrimary: Bool) {
+    public init(id: UInt32, name: String, frame: CGRect, isPrimary: Bool, identity: DisplayIdentity? = nil) {
         self.id = id
         self.name = name
         self.frame = frame
         self.isPrimary = isPrimary
+        self.identity = identity ?? DisplayIdentity(name: name)
     }
 
     public var resolutionDescription: String {
@@ -49,6 +83,18 @@ public enum OutputRole: CaseIterable, Hashable, Sendable {
     }
 }
 
+/// Where an output went last time, kept on this Mac so the outputs come back on the same screens at launch.
+public struct SavedOutput: Codable, Equatable, Sendable {
+    public var isEnabled: Bool
+    /// The full-screen display. Nil means in a window.
+    public var display: DisplayIdentity?
+
+    public init(isEnabled: Bool, display: DisplayIdentity? = nil) {
+        self.isEnabled = isEnabled
+        self.display = display
+    }
+}
+
 /// Where an output's window should be right now.
 public enum OutputPlacement: Equatable, Sendable {
     case hidden
@@ -64,9 +110,16 @@ public struct OutputPlanner: Equatable, Sendable {
         /// The operator's intent. The window may still be hidden if the chosen display is missing.
         var isEnabled = false
         var targetDisplayName = ""
+        /// The full-screen display, to find it again when it reconnects with a different ID.
+        var targetIdentity: DisplayIdentity?
     }
 
-    public var displays: [DisplayInfo]
+    /// CoreGraphics ID for a remembered display that isn't connected: kCGNullDirectDisplay, never a real one.
+    private static let notConnected: UInt32 = 0
+
+    public var displays: [DisplayInfo] {
+        didSet { findRememberedDisplays() }
+    }
     /// The display showing the operator window. Full-screen output is never offered there.
     public var operatorDisplayID: UInt32?
     private var channels: [OutputRole: Channel] = [.audience: Channel(), .stage: Channel()]
@@ -74,6 +127,28 @@ public struct OutputPlanner: Equatable, Sendable {
     public init(displays: [DisplayInfo] = [], operatorDisplayID: UInt32? = nil) {
         self.displays = displays
         self.operatorDisplayID = operatorDisplayID
+    }
+
+    /// What to remember about the output: whether it's on, and its full-screen display.
+    public func saved(_ role: OutputRole) -> SavedOutput {
+        let channel = channels[role] ?? Channel()
+        guard case .display = channel.target else { return SavedOutput(isEnabled: channel.isEnabled) }
+        return SavedOutput(isEnabled: channel.isEnabled, display: channel.targetIdentity)
+    }
+
+    /// Puts the output back where it was. A remembered display that isn't connected (or that the operator window or
+    /// the other output is on) leaves the output waiting for it, hidden, as when a display is unplugged mid-service.
+    public mutating func restore(_ saved: SavedOutput, for role: OutputRole) {
+        var channel = Channel()
+        if let identity = saved.display {
+            let display = identity.match(in: displays)
+            let usable = display.map { candidate in fullScreenCandidates(role).contains { $0.id == candidate.id } } ?? false
+            channel.target = .display(usable ? display!.id : Self.notConnected)
+            channel.targetDisplayName = display?.name ?? identity.name
+            channel.targetIdentity = identity
+        }
+        channel.isEnabled = saved.isEnabled
+        channels[role] = channel
     }
 
     public func isEnabled(_ role: OutputRole) -> Bool { channels[role]?.isEnabled ?? false }
@@ -122,6 +197,7 @@ public struct OutputPlanner: Equatable, Sendable {
         var channel = channels[role] ?? Channel()
         if case .display(let id) = target, let display = displays.first(where: { $0.id == id }) {
             channel.targetDisplayName = display.name
+            channel.targetIdentity = display.identity
         }
         channel.target = target
         channel.isEnabled = true
@@ -141,6 +217,23 @@ public struct OutputPlanner: Equatable, Sendable {
             return true
         }
         return show(target(role), for: role)
+    }
+
+    /// Points each output's remembered display at its current ID, after a display connects, comes back with a new ID,
+    /// or leaves its ID to another display.
+    private mutating func findRememberedDisplays() {
+        for role in OutputRole.allCases {
+            guard var channel = channels[role], case .display(let id) = channel.target, let identity = channel.targetIdentity else {
+                continue
+            }
+            if let current = displays.first(where: { $0.id == id }), identity.match(in: [current]) != nil { continue }
+            channel.target = .display(Self.notConnected)
+            if let display = identity.match(in: displays), fullScreenCandidates(role).contains(where: { $0.id == display.id }) {
+                channel.target = .display(display.id)
+                channel.targetDisplayName = display.name
+            }
+            channels[role] = channel
+        }
     }
 
     private func takenDisplays(otherThan role: OutputRole) -> [UInt32] {

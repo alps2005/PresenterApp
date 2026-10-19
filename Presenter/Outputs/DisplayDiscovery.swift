@@ -5,7 +5,9 @@ enum DisplayDiscovery {
     static func currentDisplays() -> [DisplayInfo] {
         NSScreen.screens.enumerated().compactMap { index, screen in
             guard let id = displayID(of: screen) else { return nil }
-            return DisplayInfo(id: id, name: screen.localizedName, frame: screen.frame, isPrimary: index == 0)
+            let identity = DisplayIdentity(vendor: CGDisplayVendorNumber(id), model: CGDisplayModelNumber(id),
+                                           serial: CGDisplaySerialNumber(id), name: screen.localizedName)
+            return DisplayInfo(id: id, name: screen.localizedName, frame: screen.frame, isPrimary: index == 0, identity: identity)
         }
     }
 
