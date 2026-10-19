@@ -68,23 +68,22 @@ public enum LiveText {
 
     /// `text` with its live values filled in at `date`. A timer that doesn't exist shows nothing.
     public static func resolve(_ text: String, at date: Date, timerText: (String) -> String?,
-                               calendar: Calendar = .current) -> String {
+                               calendar: Calendar = .current, locale: Locale = .autoupdatingCurrent) -> String {
         guard text.contains("{") else { return text }
         return TextTokens.replacing(in: text) { raw in
             switch token(raw) {
             case .timer(let name): timerText(name) ?? ""
-            case .clock(let seconds): clockText(date, seconds: seconds, calendar: calendar)
+            case .clock(let seconds): clockText(date, seconds: seconds, calendar: calendar, locale: locale)
             case nil: nil
             }
         }
     }
 
-    /// "9:41" or "9:41:07", in the Mac's 12- or 24-hour style.
-    public static func clockText(_ date: Date, seconds: Bool, calendar: Calendar = .current) -> String {
-        var style = Date.FormatStyle.dateTime.hour().minute()
+    /// "9:41 AM" or "09:41:07", in the locale's 12- or 24-hour style (the Mac's, by default).
+    public static func clockText(_ date: Date, seconds: Bool, calendar: Calendar = .current,
+                                 locale: Locale = .autoupdatingCurrent) -> String {
+        var style = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: calendar.timeZone).hour().minute()
         if seconds { style = style.second() }
-        style.calendar = calendar
-        style.timeZone = calendar.timeZone
         return date.formatted(style)
     }
 }

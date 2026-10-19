@@ -35,8 +35,12 @@ final class LiveTextTests: XCTestCase {
     func testResolvingFillsInTimersAndTheClockAndKeepsLyricBraces() {
         let date = Date(timeIntervalSince1970: 9 * 3600 + 41 * 60 + 7)
         let text = "{Chorus} {timer:Sermon} at {clock} ({clock:seconds}) {timer:Gone}."
-        let resolved = LiveText.resolve(text, at: date, timerText: { $0 == "Sermon" ? "4:05" : nil }, calendar: utc)
+        let resolved = LiveText.resolve(text, at: date, timerText: { $0 == "Sermon" ? "4:05" : nil }, calendar: utc,
+                                        locale: Locale(identifier: "en_GB"))
         XCTAssertEqual(resolved, "{Chorus} 4:05 at 09:41 (09:41:07) .")
+        // A 12-hour locale gets its own style.
+        let american = LiveText.clockText(date, seconds: false, calendar: utc, locale: Locale(identifier: "en_US"))
+        XCTAssertTrue(american.hasPrefix("9:41") && american.contains("AM"), american)
         XCTAssertEqual(LiveText.resolve("Plain", at: date, timerText: { _ in "x" }), "Plain")
     }
 
