@@ -60,9 +60,9 @@ struct SlideWorkspace: View {
     var body: some View {
         if coordinator.project.playlist.items.isEmpty {
             ContentUnavailableView(
-                "Empty Playlist",
+                "Empty Show",
                 systemImage: "rectangle.on.rectangle",
-                description: Text("Create a new presentation to get started.")
+                description: Text("Add a presentation from the library, or create a new one.")
             )
         } else {
             VStack(spacing: 0) {

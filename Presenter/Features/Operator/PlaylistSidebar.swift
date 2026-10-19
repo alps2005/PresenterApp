@@ -40,7 +40,7 @@ struct PlaylistSidebar: View {
                     row(for: item)
                         .tag(SidebarSelection.item(item.id))
                         .contextMenu {
-                            Button("Remove from Playlist…", role: .destructive) {
+                            Button("Remove from Show…", role: .destructive) {
                                 itemPendingRemoval = item
                             }
                         }
@@ -186,7 +186,7 @@ struct PlaylistSidebar: View {
             coordinator.deleteTheme(theme.id)
         }
         .confirmationDialog(
-            "Remove this item from the playlist?",
+            "Remove this item from the show?",
             isPresented: Binding(
                 get: { itemPendingRemoval != nil },
                 set: { if !$0 { itemPendingRemoval = nil } }
@@ -341,8 +341,8 @@ struct PlaylistSidebar: View {
             if inPlaylist {
                 Image(systemName: "checkmark.circle")
                     .foregroundStyle(.secondary)
-                    .help("In the playlist")
-                    .accessibilityLabel("In the playlist")
+                    .help("In the show")
+                    .accessibilityLabel("In the show")
             }
             Button {
                 addToPlaylist(presentation)
@@ -350,17 +350,17 @@ struct PlaylistSidebar: View {
                 Image(systemName: "plus.circle")
             }
             .buttonStyle(.borderless)
-            .help("Add to Playlist")
-            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Playlist")
+            .help("Add to Show")
+            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Show")
         }
         .contentShape(Rectangle())
         .contextMenu {
-            Button("Add to Playlist") { addToPlaylist(presentation) }
+            Button("Add to Show") { addToPlaylist(presentation) }
             moveMenu(for: presentation)
             Divider()
             Button("Delete Presentation…", role: .destructive) { presentationPendingDeletion = presentation }
         }
-        .help(inPlaylist ? "In the playlist. Double-click to add it again." : "Not in the playlist. Double-click to add it.")
+        .help(inPlaylist ? "In the show. Double-click to add it again." : "Not in the show. Double-click to add it.")
     }
 
     private func themeRow(_ theme: Theme) -> some View {
