@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v1.1.0 (2026-10-19)
 
 This release saves projects in file format 6. Once it opens a project, Presenter 1.0 can't open that project.
 
