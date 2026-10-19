@@ -57,6 +57,15 @@ final class MediaLibrary {
         return asset
     }
 
+    /// Copies an audio file the operator picked into the media folder, after checking it plays.
+    func importAudio(at url: URL) async throws -> MediaAsset {
+        let isScoped = url.startAccessingSecurityScopedResource()
+        defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+        let asset = try await store.importAudio(at: url)
+        logger.info("Imported audio \(asset.originalFilename, privacy: .public) as \(asset.id, privacy: .public)")
+        return asset
+    }
+
     /// Copies a video the operator picked into the media folder, after checking it plays, and makes its still.
     func importVideo(at url: URL) async throws -> MediaAsset {
         let isScoped = url.startAccessingSecurityScopedResource()
@@ -68,9 +77,9 @@ final class MediaLibrary {
     }
 
     /// Decodes any of these assets not already loaded or loading. A video's image is its first frame, used for
-    /// thumbnails and previews.
+    /// thumbnails and previews. Audio has no image and is skipped.
     func preload(_ assets: [MediaAsset]) {
-        for asset in assets where !requested.contains(asset.id) {
+        for asset in assets where asset.kind != .audio && !requested.contains(asset.id) {
             requested.insert(asset.id)
             let url = store.url(for: asset)
             let kind = asset.kind
@@ -78,6 +87,8 @@ final class MediaLibrary {
                 let image: CGImage? = switch kind {
                 case .image: await Task.detached { Self.decode(url) }.value
                 case .video: await Self.firstFrame(of: url)
+                // Nothing to draw; the audio bin checks the file when the track plays.
+                case .audio: nil
                 }
                 if let image {
                     images[asset.id] = image

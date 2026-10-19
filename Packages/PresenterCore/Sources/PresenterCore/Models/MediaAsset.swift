@@ -6,6 +6,8 @@ public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
     public enum Kind: String, Codable, Hashable, Sendable {
         case image
         case video
+        /// Music and sound for audio cues and soundtracks, never a background.
+        case audio
     }
 
     public let id: UUID
@@ -14,10 +16,11 @@ public struct MediaAsset: Identifiable, Codable, Hashable, Sendable {
     public var originalFilename: String
     /// The name of the copy inside the media library folder.
     public var storedFilename: String
+    /// 0 for audio.
     public var pixelWidth: Int
     public var pixelHeight: Int
     public var importedAt: Date
-    /// Seconds, for videos.
+    /// Seconds, for videos and audio.
     public var duration: Double?
 
     public init(

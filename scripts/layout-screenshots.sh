@@ -39,7 +39,8 @@ SWIFT
 start=$(date '+%Y-%m-%d %H:%M:%S')
 for tab in format animate document; do
     open -n $APP --args -PresenterDebugDataDirectory $DATA -PresenterDebugOpenEditor YES \
-        -PresenterDebugEditorTab $tab -PresenterDebugInspectorWidth 270 -ApplePersistenceIgnoreState YES
+        -PresenterDebugEditorTab $tab -PresenterDebugInspectorWidth 270 -ApplePersistenceIgnoreState YES \
+        -showShowsAtLaunch NO
     sleep 5
     pid=$(pgrep -f "$APP/Contents/MacOS/Presenter")
     osascript -e "tell application \"System Events\" to tell (first process whose unix id is $pid)

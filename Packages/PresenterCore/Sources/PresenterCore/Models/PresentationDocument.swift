@@ -16,6 +16,11 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
     /// Slideshow: every slide without its own Go To Next timer moves on after this many seconds, and the last slide
     /// loops back to the first. Nil is off.
     public var slideshowInterval: Double?
+    /// The library folder it's in (see `LibraryFolder`). Nil is the top of the library.
+    public var folderID: UUID?
+    /// Plays when the operator moves into the presentation from another item, unless it's already playing or the
+    /// slide taken live has an audio cue of its own. Nil plays nothing.
+    public var soundtrack: AudioTrack?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -28,6 +33,8 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         activeArrangementID: UUID? = nil,
         themeID: UUID? = nil,
         slideshowInterval: Double? = nil,
+        folderID: UUID? = nil,
+        soundtrack: AudioTrack? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -39,15 +46,17 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         self.activeArrangementID = activeArrangementID
         self.themeID = themeID
         self.slideshowInterval = slideshowInterval
+        self.folderID = folderID
+        self.soundtrack = soundtrack
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, createdAt, updatedAt
+        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, soundtrack, createdAt, updatedAt
     }
 
-    /// Files saved before arrangements, themes or slideshows existed load with none.
+    /// Files saved before arrangements, themes, slideshows, folders or soundtracks existed load with none.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -58,6 +67,8 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         activeArrangementID = try container.decodeIfPresent(UUID.self, forKey: .activeArrangementID)
         themeID = try container.decodeIfPresent(UUID.self, forKey: .themeID)
         slideshowInterval = try container.decodeIfPresent(Double.self, forKey: .slideshowInterval)
+        folderID = try container.decodeIfPresent(UUID.self, forKey: .folderID)
+        soundtrack = try container.decodeIfPresent(AudioTrack.self, forKey: .soundtrack)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
@@ -80,18 +91,23 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
 }
 
 extension PresentationDocument {
-    /// True when the presentation's background, or any slide's background or image, uses the asset.
+    /// True when the presentation's background or soundtrack, or any slide's background, image or audio cue, uses
+    /// the asset.
     public func uses(_ assetID: UUID) -> Bool {
-        background?.assetID == assetID || slides.contains { slide in
-            slide.background?.assetID == assetID || slide.elements.contains { $0.assetID == assetID }
+        background?.assetID == assetID || soundtrack?.assetID == assetID || slides.contains { slide in
+            slide.background?.assetID == assetID || slide.audioCue?.assetID == assetID
+                || slide.elements.contains { $0.assetID == assetID }
         }
     }
 
-    /// Clears backgrounds that use the asset and removes images of it, for deleting it from the project.
+    /// Clears backgrounds, soundtracks and audio cues that use the asset and removes images of it, for deleting it
+    /// from the project.
     mutating func removeMedia(_ assetID: UUID) {
         if background?.assetID == assetID { background = nil }
+        if soundtrack?.assetID == assetID { soundtrack = nil }
         for index in slides.indices {
             if slides[index].background?.assetID == assetID { slides[index].background = nil }
+            if slides[index].audioCue?.assetID == assetID { slides[index].audioCue = nil }
             slides[index].elements.removeAll { $0.assetID == assetID }
         }
     }

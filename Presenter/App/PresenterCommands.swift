@@ -11,6 +11,7 @@ struct PresenterCommands: Commands {
     let ui: OperatorUIState
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    @AppStorage("audioBinVisible") private var isAudioBinVisible = false
     @AppStorage(Self.followSystemAppearanceKey) private var followsSystemAppearance = false
     @Environment(\.openWindow) private var openWindow
     @FocusedValue(\.editorElementActions) private var editorElementActions
@@ -42,6 +43,9 @@ struct PresenterCommands: Commands {
 
             Divider()
 
+            Button("Shows…") { ui.isShowingShows = true }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+
             Button("Open Project…") { persistence.openProject() }
                 .keyboardShortcut("o")
         }
@@ -59,6 +63,8 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("e", modifiers: [.command, .option])
             Toggle("Media Bin", isOn: $isMediaBinVisible)
                 .keyboardShortcut("i", modifiers: [.command, .option])
+            Toggle("Audio Bin", isOn: $isAudioBinVisible)
+                .keyboardShortcut("u", modifiers: [.command, .option])
             Divider()
             // The console is dark by default, for dark booths.
             Toggle("Follow System Appearance", isOn: $followsSystemAppearance)
@@ -106,6 +112,9 @@ struct PresenterCommands: Commands {
                 .keyboardShortcut("p", modifiers: [.command, .option])
             Button("Clear All") { coordinator.clearAll() }
                 .keyboardShortcut("a", modifiers: [.command, .option])
+            // Always enabled, like Stop Auto-Advance: the audio's state would rebuild the menus as it changes.
+            Button("Pause or Play Audio") { coordinator.toggleAudioPause() }
+            Button("Stop Audio") { coordinator.stopAudio() }
             Button("Blackout") { coordinator.blackout() }
                 .keyboardShortcut("b", modifiers: [.command, .option])
             Button("Restore Output") { coordinator.restoreOutput() }

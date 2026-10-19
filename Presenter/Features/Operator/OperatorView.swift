@@ -22,6 +22,7 @@ struct OperatorView: View {
     @State private var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    @AppStorage("audioBinVisible") private var isAudioBinVisible = false
     /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
     @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
@@ -38,6 +39,13 @@ struct OperatorView: View {
         #if DEBUG
         .onAppear { openEditorIfAsked() }
         #endif
+        .onAppear { offerShowsAtLaunch() }
+        .sheet(isPresented: $ui.isShowingShows) {
+            ShowsSheet(coordinator: coordinator) {
+                browsedPresentationID = nil
+                editSession = nil
+            }
+        }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -62,6 +70,15 @@ struct OperatorView: View {
         }
     }
 
+    private func offerShowsAtLaunch() {
+        guard !ui.hasOfferedShowsAtLaunch else { return }
+        ui.hasOfferedShowsAtLaunch = true
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: ShowsSheet.showAtLaunchKey) == nil || defaults.bool(forKey: ShowsSheet.showAtLaunchKey) {
+            ui.isShowingShows = true
+        }
+    }
+
     #if DEBUG
     /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
     /// scripts/layout-screenshots.sh.
@@ -80,7 +97,8 @@ struct OperatorView: View {
                 scrollRequest: $scrollRequest,
                 browsedPresentationID: $browsedPresentationID,
                 onNewSong: { ui.isAddingSong = true },
-                onAddScripture: { ui.isAddingScripture = true }
+                onAddScripture: { ui.isAddingScripture = true },
+                onShowShows: { ui.isShowingShows = true }
             )
                 .navigationSplitViewColumnWidth(min: Widths.operatorSidebar.min, ideal: Widths.operatorSidebar.ideal, max: Widths.operatorSidebar.max)
         } detail: {
@@ -139,12 +157,15 @@ struct OperatorView: View {
                 .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { mediaBinToggle }
                 .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .primaryAction) { audioBinToggle }
+                .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItemGroup(placement: .primaryAction) {
                 quickEditToggle
                 mediaBinToggle
+                audioBinToggle
                 OutputMenu(outputManager: outputManager)
             }
         }
@@ -166,5 +187,14 @@ struct OperatorView: View {
         .toggleStyle(.button)
         .help("Show or hide the media bin (⌥⌘I)")
         .accessibilityLabel("Media Bin")
+    }
+
+    private var audioBinToggle: some View {
+        Toggle(isOn: $isAudioBinVisible) {
+            Label("Audio", systemImage: "music.note.list")
+        }
+        .toggleStyle(.button)
+        .help("Show or hide the audio bin (⌥⌘U)")
+        .accessibilityLabel("Audio Bin")
     }
 }

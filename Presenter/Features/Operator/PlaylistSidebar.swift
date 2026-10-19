@@ -15,6 +15,7 @@ struct PlaylistSidebar: View {
     @Binding var browsedPresentationID: UUID?
     let onNewSong: () -> Void
     let onAddScripture: () -> Void
+    let onShowShows: () -> Void
     @State private var itemPendingRemoval: PresentationItem?
     @State private var presentationPendingDeletion: PresentationDocument?
     @State private var searchText = ""
@@ -22,6 +23,11 @@ struct PlaylistSidebar: View {
     @State private var themePendingDeletion: Theme?
     @State private var isRenamingShow = false
     @State private var showTitleDraft = ""
+    /// Folders shown open in the library. Closed by default, so a long library starts short.
+    @State private var expandedFolders: Set<UUID> = []
+    @State private var folderPendingDeletion: LibraryFolder?
+    @State private var folderNaming: FolderNaming?
+    @State private var folderNameDraft = ""
     @AppStorage("libraryExpanded") private var isLibraryExpanded = true
     @AppStorage("themesExpanded") private var isThemesExpanded = true
 
@@ -34,7 +40,7 @@ struct PlaylistSidebar: View {
                     row(for: item)
                         .tag(SidebarSelection.item(item.id))
                         .contextMenu {
-                            Button("Remove from Playlist…", role: .destructive) {
+                            Button("Remove from Show…", role: .destructive) {
                                 itemPendingRemoval = item
                             }
                         }
@@ -45,20 +51,45 @@ struct PlaylistSidebar: View {
                 Text(coordinator.project.playlist.title)
                     .contextMenu {
                         Button("Rename Show…") { startRenamingShow() }
+                        Button("Shows…") { onShowShows() }
                     }
-                    .help("Right-click to rename the show")
+                    .help("Right-click to rename the show or open another (⇧⌘O)")
             }
 
             // Every presentation, including ones taken off the playlist, like ProPresenter's library.
-            Section("Library", isExpanded: Binding(get: { isLibraryExpanded || isSearching }, set: { isLibraryExpanded = $0 })) {
-                ForEach(libraryPresentations) { presentation in
-                    libraryRow(presentation)
-                        .tag(SidebarSelection.presentation(presentation.id))
+            // Search lists every match, folder or not.
+            Section(isExpanded: Binding(get: { isLibraryExpanded || isSearching }, set: { isLibraryExpanded = $0 })) {
+                if isSearching {
+                    libraryRows(libraryPresentations)
+                } else {
+                    ForEach(sortedFolders) { folder in
+                        DisclosureGroup(isExpanded: folderExpansion(folder.id)) {
+                            libraryRows(presentations(inFolder: folder.id))
+                        } label: {
+                            folderRow(folder)
+                        }
+                    }
+                    libraryRows(presentations(inFolder: nil))
                 }
                 if libraryPresentations.isEmpty {
                     Text(isSearching ? "No matches" : "No presentations yet")
                         .foregroundStyle(.secondary)
                 }
+                if !isSearching {
+                    Button {
+                        startNamingFolder(.new(moving: nil))
+                    } label: {
+                        Label("New Folder…", systemImage: "folder.badge.plus")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            } header: {
+                Text("Library")
+                    // Dropping a presentation on the header takes it out of its folder.
+                    .dropDestination(for: String.self) { ids, _ in
+                        movePresentations(ids, toFolder: nil)
+                    }
+                    .help("Drag a presentation here to take it out of its folder")
             }
 
             if !isSearching {
@@ -113,6 +144,21 @@ struct PlaylistSidebar: View {
             Button("Rename") { coordinator.renamePlaylist(to: showTitleDraft) }
             Button("Cancel", role: .cancel) {}
         }
+        .alert(folderNaming?.title ?? "", isPresented: Binding(
+            get: { folderNaming != nil },
+            set: { if !$0 { folderNaming = nil } }
+        ), presenting: folderNaming) { naming in
+            TextField("Name", text: $folderNameDraft)
+            Button(naming.confirmTitle) { finishNamingFolder(naming) }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmDeletion(
+            "Delete this folder?",
+            message: "Its presentations aren't deleted: they move to the top of the library. You can undo this with ⌘Z.",
+            of: $folderPendingDeletion
+        ) { folder in
+            coordinator.deleteFolder(folder.id)
+        }
         .confirmationDialog(
             "Delete this presentation?",
             isPresented: Binding(
@@ -125,7 +171,7 @@ struct PlaylistSidebar: View {
                 coordinator.deletePresentation(presentation.id)
             }
         } message: { presentation in
-            Text("“\(presentation.title)” is removed from the library and the playlist. You can undo this with ⌘Z. If it's live, it stays on the audience output until you take something else live.")
+            Text("“\(presentation.title)” is removed from the library and from every show. You can undo this with ⌘Z. If it's live, it stays on the audience output until you take something else live.")
         }
         .sheet(isPresented: Binding(get: { editingThemeID != nil }, set: { if !$0 { editingThemeID = nil } })) {
             if let editingThemeID {
@@ -140,7 +186,7 @@ struct PlaylistSidebar: View {
             coordinator.deleteTheme(theme.id)
         }
         .confirmationDialog(
-            "Remove this item from the playlist?",
+            "Remove this item from the show?",
             isPresented: Binding(
                 get: { itemPendingRemoval != nil },
                 set: { if !$0 { itemPendingRemoval = nil } }
@@ -194,6 +240,97 @@ struct PlaylistSidebar: View {
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
+    private var sortedFolders: [LibraryFolder] {
+        coordinator.project.libraryFolders
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// The library presentations in a folder, or at the top of the library when nil. A presentation whose folder
+    /// was deleted (by an older undo, say) shows at the top rather than vanishing.
+    private func presentations(inFolder folderID: UUID?) -> [PresentationDocument] {
+        libraryPresentations.filter { presentation in
+            guard let id = presentation.folderID, coordinator.project.folder(withID: id) != nil else { return folderID == nil }
+            return id == folderID
+        }
+    }
+
+    private func libraryRows(_ presentations: [PresentationDocument]) -> some View {
+        ForEach(presentations) { presentation in
+            libraryRow(presentation)
+                .tag(SidebarSelection.presentation(presentation.id))
+                .draggable(presentation.id.uuidString)
+        }
+    }
+
+    private func folderExpansion(_ folderID: UUID) -> Binding<Bool> {
+        Binding(
+            get: { expandedFolders.contains(folderID) },
+            set: { isExpanded in
+                if isExpanded { expandedFolders.insert(folderID) } else { expandedFolders.remove(folderID) }
+            }
+        )
+    }
+
+    private func folderRow(_ folder: LibraryFolder) -> some View {
+        HStack {
+            Label(folder.name, systemImage: "folder")
+            Spacer()
+            Text("\(presentations(inFolder: folder.id).count)")
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+        .contentShape(Rectangle())
+        .dropDestination(for: String.self) { ids, _ in
+            movePresentations(ids, toFolder: folder.id)
+        }
+        .contextMenu {
+            Button("Rename Folder…") { startNamingFolder(.rename(folder.id), name: folder.name) }
+            Divider()
+            Button("Delete Folder…", role: .destructive) { folderPendingDeletion = folder }
+        }
+        .help("Drag presentations here to file them. Right-click to rename or delete the folder.")
+    }
+
+    /// Moves dragged presentations (their IDs as text) into a folder, and opens the folder to show them there.
+    private func movePresentations(_ ids: [String], toFolder folderID: UUID?) -> Bool {
+        let presentationIDs = ids.compactMap { UUID(uuidString: $0) }
+        guard coordinator.movePresentations(presentationIDs, toFolder: folderID).isApplied else { return false }
+        if let folderID { expandedFolders.insert(folderID) }
+        return true
+    }
+
+    private func startNamingFolder(_ naming: FolderNaming, name: String = "") {
+        folderNameDraft = name
+        folderNaming = naming
+    }
+
+    private func finishNamingFolder(_ naming: FolderNaming) {
+        switch naming {
+        case .new(let presentationID):
+            let folder = coordinator.addFolder(named: folderNameDraft)
+            if let presentationID { coordinator.movePresentations([presentationID], toFolder: folder.id) }
+            expandedFolders.insert(folder.id)
+        case .rename(let folderID):
+            coordinator.renameFolder(folderID, to: folderNameDraft)
+        }
+    }
+
+    /// The Move To menu of a library row.
+    @ViewBuilder
+    private func moveMenu(for presentation: PresentationDocument) -> some View {
+        Menu("Move To") {
+            Button("Top of Library") { coordinator.movePresentations([presentation.id], toFolder: nil) }
+                .disabled(presentation.folderID == nil)
+            if !sortedFolders.isEmpty { Divider() }
+            ForEach(sortedFolders) { folder in
+                Button(folder.name) { _ = movePresentations([presentation.id.uuidString], toFolder: folder.id) }
+                    .disabled(presentation.folderID == folder.id)
+            }
+            Divider()
+            Button("New Folder…") { startNamingFolder(.new(moving: presentation.id)) }
+        }
+    }
+
     private func libraryRow(_ presentation: PresentationDocument) -> some View {
         let inPlaylist = coordinator.project.playlist.items.contains { $0.presentationID == presentation.id }
         return HStack {
@@ -204,8 +341,8 @@ struct PlaylistSidebar: View {
             if inPlaylist {
                 Image(systemName: "checkmark.circle")
                     .foregroundStyle(.secondary)
-                    .help("In the playlist")
-                    .accessibilityLabel("In the playlist")
+                    .help("In the show")
+                    .accessibilityLabel("In the show")
             }
             Button {
                 addToPlaylist(presentation)
@@ -213,16 +350,17 @@ struct PlaylistSidebar: View {
                 Image(systemName: "plus.circle")
             }
             .buttonStyle(.borderless)
-            .help("Add to Playlist")
-            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Playlist")
+            .help("Add to Show")
+            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Show")
         }
         .contentShape(Rectangle())
         .contextMenu {
-            Button("Add to Playlist") { addToPlaylist(presentation) }
+            Button("Add to Show") { addToPlaylist(presentation) }
+            moveMenu(for: presentation)
             Divider()
             Button("Delete Presentation…", role: .destructive) { presentationPendingDeletion = presentation }
         }
-        .help(inPlaylist ? "In the playlist. Double-click to add it again." : "Not in the playlist. Double-click to add it.")
+        .help(inPlaylist ? "In the show. Double-click to add it again." : "Not in the show. Double-click to add it.")
     }
 
     private func themeRow(_ theme: Theme) -> some View {
@@ -282,6 +420,26 @@ struct PlaylistSidebar: View {
             }
         } else {
             WarningLabel("Missing presentation")
+        }
+    }
+}
+
+/// Naming a library folder: a new one (filing a presentation in it, if one is given), or renaming one.
+private enum FolderNaming {
+    case new(moving: UUID?)
+    case rename(UUID)
+
+    var title: String {
+        switch self {
+        case .new: "New Folder"
+        case .rename: "Rename Folder"
+        }
+    }
+
+    var confirmTitle: String {
+        switch self {
+        case .new: "Create"
+        case .rename: "Rename"
         }
     }
 }

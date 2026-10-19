@@ -7,6 +7,8 @@ public enum MediaImportError: Error, Equatable, Sendable {
     case unreadableImage
     /// The file isn't a video this Mac can play.
     case unplayableVideo
+    /// The file isn't audio this Mac can play.
+    case unplayableAudio
     case copyFailed(String)
 }
 
@@ -78,6 +80,35 @@ public struct MediaStore: Sendable {
             storedFilename: storedFilename,
             pixelWidth: Int(abs(shown.width).rounded()),
             pixelHeight: Int(abs(shown.height).rounded()),
+            duration: duration.seconds
+        )
+    }
+
+    /// Checks that `source` is playable audio, copies it into the store and describes the copy.
+    public func importAudio(at source: URL) async throws -> MediaAsset {
+        let asset = AVURLAsset(url: source)
+        let isPlayable = (try? await asset.load(.isPlayable)) ?? false
+        guard isPlayable,
+              let tracks = try? await asset.loadTracks(withMediaType: .audio), !tracks.isEmpty,
+              let duration = try? await asset.load(.duration), duration.seconds > 0 else {
+            throw MediaImportError.unplayableAudio
+        }
+        let id = UUID()
+        let fileExtension = source.pathExtension.isEmpty ? "m4a" : source.pathExtension.lowercased()
+        let storedFilename = "\(id.uuidString).\(fileExtension)"
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
+        } catch {
+            throw MediaImportError.copyFailed(error.localizedDescription)
+        }
+        return MediaAsset(
+            id: id,
+            kind: .audio,
+            originalFilename: source.lastPathComponent,
+            storedFilename: storedFilename,
+            pixelWidth: 0,
+            pixelHeight: 0,
             duration: duration.seconds
         )
     }

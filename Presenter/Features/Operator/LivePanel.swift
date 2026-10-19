@@ -31,6 +31,7 @@ struct LivePanel: View {
                     } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
                         TransportControls()
                     }
+                    AudioTransport(coordinator: coordinator)
                     AutoAdvanceStatus(coordinator: coordinator)
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
                         Label("Background cleared for now. Slides with their own background bring one back. To remove it for good, use the slide's Background button.",
@@ -94,8 +95,8 @@ struct LivePanel: View {
     private var upNextPlaceholder: String {
         guard let live = coordinator.state.live else { return "Nothing live" }
         // The live slide (or its playlist item) was deleted, so there is no sequence to follow.
-        if coordinator.project.slide(at: live.position) == nil { return "Live slide is no longer in the playlist" }
-        return "End of playlist"
+        if coordinator.project.slide(at: live.position) == nil { return "The live slide isn't in this show" }
+        return "End of show"
     }
 
     @ViewBuilder

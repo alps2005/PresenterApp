@@ -63,7 +63,7 @@ struct ControlBar: View {
             } else {
                 Text("→ or Space next · ← previous")
                     .foregroundStyle(.secondary)
-                    .help("Move through every presentation in the playlist. ⌥⌘→ / ⌥⌘← work from anywhere.")
+                    .help("Move through every presentation in the show. ⌥⌘→ / ⌥⌘← work from anywhere.")
             }
         }
         .controlSize(.large)

@@ -286,6 +286,15 @@ struct EditorInspector: View {
                 set: { coordinator.setGoToNext($0, forSlides: [slide.id], inPresentation: presentation.id) }
             ))
         }
+        // Props are overlays shown on their own, never taken live as slides, so they have no audio.
+        if presentation.id != coordinator.project.props.id {
+            section("Audio") {
+                AudioCueControls(coordinator: coordinator, cue: Binding(
+                    get: { slide.audioCue },
+                    set: { coordinator.setAudioCue($0, slideID: slide.id, inPresentation: presentation.id) }
+                ))
+            }
+        }
         section("Presenter Notes") {
             TextEditor(text: Binding(
                 get: { slide.notes ?? "" },
@@ -535,8 +544,13 @@ struct EditorInspector: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        section("Audio") {
-            comingSoon("A soundtrack and audio cues for this presentation are coming in the next phase.")
+        if presentation.id != coordinator.project.props.id {
+            section("Soundtrack") {
+                SoundtrackControls(coordinator: coordinator, track: Binding(
+                    get: { presentation.soundtrack },
+                    set: { coordinator.setSoundtrack($0, presentationID: presentation.id) }
+                ))
+            }
         }
     }
 
@@ -602,11 +616,6 @@ struct EditorInspector: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.top, Spacing.xl)
-    }
-
-    private func comingSoon(_ text: String) -> some View {
-        Label(text, systemImage: "clock")
-            .foregroundStyle(.secondary)
     }
 
     private func labeledSlider(

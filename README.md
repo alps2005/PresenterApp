@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** beta. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.0, the first stable release. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
@@ -21,8 +21,8 @@ On older macOS versions you can instead right-click Presenter in Applications an
 Push a version tag and GitHub Actions builds, tests and uploads the zip:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 Every push and pull request to `develop` or `main` also runs the tests and a build (`.github/workflows/ci.yml`).
@@ -82,6 +82,9 @@ swift test
 | Open a project file / export a copy | ⌘O / ⇧⌘S |
 | Edit a presentation in the slide editor | **Edit** next to its title; **Done** or Esc to return |
 | Show/hide Quick Edit for the cued slide | ⌥⌘E, or the **Quick Edit** toolbar button |
+| Open another show, or make one | ⇧⌘O (File › Shows…) |
+| Show/hide the audio bin | ⌥⌘U, or the **Audio** toolbar button |
+| Stop the audio (fading it out) | **Stop** under the Audience preview, or Live › Stop Audio |
 | Bring back the operator window after closing it | ⌘0 (Window › Show Operator Window) |
 
 **Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects.
@@ -110,7 +113,6 @@ swift test
 - **Go To Next Timer:** right-click a slide and choose **Go To Next Timer…** (or use **Go To Next** in the slide editor) to give that slide its own time; it comes before the Slideshow's. **Loop to the first slide** goes back to the presentation's first slide; without it, the last slide moves on to the next item in the show, as → does, and stops at the end of the show.
 - **Videos:** a slide whose video background plays once (Loop off) waits for the video to end before its countdown starts, so 0 seconds moves on the moment it finishes. A looping video doesn't hold the slide up.
 - **Seeing it:** slides that move on by themselves show their time under the thumbnail; the live one fills a small red circle as it counts down, and the Live panel shows **Next slide in…** with a **Stop** button (Live › Stop Auto-Advance, ⌥⌘.). Pressing → or ←, or taking another slide live, starts that slide's own countdown. Clear and Blackout stop it; Restore starts it again.
-- From beta 9, projects are saved in file format 4, which earlier versions of Presenter can't open.
 
 **Stage display and timers.** A second output for the people on stage, which the audience never sees. It shows the live slide's words in large type, the next slide in yellow (with its group label), a clock, a timer, the slide's notes, and a message banner.
 - **Turning it on:** Output menu › **Stage Display** (window or full screen on any display not already used), or ⌥⌘S. The audience output and stage display can't use the same screen, and both recover by themselves if their display is unplugged.
@@ -118,6 +120,19 @@ swift test
   - **Timers:** start, pause and reset timers, or create new ones: a countdown (e.g. a 30-minute sermon), counting down to a time of day (e.g. service at 10:00), or counting up. A countdown past zero turns red. The ⋯ menu shows a timer on the stage display.
   - **Stage:** send a message to the stage (e.g. "5 minutes left"), and choose the timer, clock and notes shown on stage.
 - **Notes:** the live slide's notes also appear under the Audience preview.
+
+**Shows and the library.** A project holds one library of presentations and any number of shows. A show is a playlist: a Sunday service, a midweek meeting, Easter. All shows use the same library, so editing a song changes it in every show that has it.
+- **Shows window:** it opens at launch and from **File › Shows…** (⇧⌘O). It lists the shows with the open one first, then the most recently opened. Double-click one to open it, or use **New Show…**. Right-click to rename, duplicate or delete a show. Untick **Show this window when Presenter opens** to skip it at launch.
+- **Opening a show** never changes the audience output. What's live stays on screen until you take a slide live, and Undo starts afresh.
+- **Folders:** **New Folder…** in the Library makes a folder. Drag presentations onto it, or right-click one and choose **Move To**. Dragging one onto the **Library** header takes it out of its folder. Deleting a folder keeps its presentations: they move to the top of the library.
+- **Deleting a presentation** removes it from the library and from every show.
+
+**Audio.**
+- **Audio bin:** the **Audio** toolbar button (⌥⌘U) opens it under the workspace. **Import…** adds music and sounds (MP3, M4A, WAV, AIFF…); files that don't play are rejected. Click a track to play it for the audience. Right-click to loop it, to play it when the cued slide goes live, or to make it the soundtrack of the cued slide's presentation.
+- **Slide audio:** in the slide editor's Format tab, with nothing selected, **Audio** sets what happens when the slide is taken live: leave the audio alone, play a track (with a fade-in and looping), or fade out whatever is playing. Taking the same slide live again never restarts the music, and a cue for the track that's already playing lets it play on.
+- **Soundtracks:** in the Document tab, **Soundtrack** plays a track when you move into the presentation from another item, unless it's already playing. A slide's own audio comes first.
+- **In the Live panel:** the playing track shows under the Audience preview, with pause, a position slider, the time left and **Stop**, which fades it out over 2 seconds. A new track crossfades with the old one.
+- **Clear and Blackout:** **Clear All** fades the audio out; **Blackout** leaves it playing.
 
 **Video backgrounds and the media bin.**
 - **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.
@@ -146,7 +161,7 @@ swift test
 - **Backups:** each time Presenter opens your project, it copies it to `Presenter/Backups/` (unless nothing changed since the last copy), keeping the newest 10.
 - **Export Project…** writes a copy anywhere, e.g. to keep a backup or move it to another Mac. The copy includes the images and videos the project uses, so it opens complete on the other Mac.
 - **Open Project…** replaces the current project with a file you pick. The current project is backed up to `Presenter/Backups/` first, and the audience output doesn't change.
-- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost.
+- A project saved by a newer version of Presenter isn't opened by an older one; it's moved aside instead, so nothing in it is lost. Presenter 1.0 saves in file format 5, which the betas can't open.
 - If the project file can't be read at launch, it's renamed to `Project.unreadable-<number>.json` so it's never overwritten, and an empty project opens instead.
 
 **Appearance.** The operator window is dark, with solid panels, so it stays readable in a dark booth. LIVE is always red, CUED always blue and warnings amber, and every state badge has an icon and a word. To use the system's light or dark setting instead, turn on **View › Follow System Appearance**.

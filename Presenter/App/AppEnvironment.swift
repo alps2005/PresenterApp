@@ -7,6 +7,9 @@ import PresenterCore
 final class OperatorUIState {
     var isAddingSong = false
     var isAddingScripture = false
+    var isShowingShows = false
+    /// The Shows window opens once at launch, not every time the operator window is reopened.
+    var hasOfferedShowsAtLaunch = false
 }
 
 /// The app's long-lived services.
@@ -18,6 +21,8 @@ final class AppEnvironment {
     let outputManager: OutputManager
     /// Plays video backgrounds on the audience output, independent of any window.
     let playback: MediaPlaybackController
+    /// Plays audio cues, soundtracks and tracks from the audio bin.
+    let audio: AudioPlaybackController
     /// Moves the live slide on when its Slideshow or Go To Next countdown ends.
     let autoAdvance: AutoAdvanceDriver
     let persistence: ProjectPersistence
@@ -34,6 +39,7 @@ final class AppEnvironment {
             coordinator: coordinator, store: store, mediaDirectory: mediaLibrary.store.directory, loadProblem: initial.problem
         )
         playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
+        audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
         preloadProjectMedia()
@@ -63,7 +69,7 @@ final class AppEnvironment {
     /// Keeps every image the project uses decoded and ready, re-checking whenever the project changes.
     private func preloadProjectMedia() {
         let assets = withObservationTracking {
-            coordinator.project.mediaAssets
+            coordinator.project.mediaAssets.filter { $0.kind != .audio }
         } onChange: { [weak self] in
             Task { @MainActor in self?.preloadProjectMedia() }
         }

@@ -3,6 +3,45 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.0.0 (2026-10-19)
+
+The first stable release. It saves projects in file format 5: once 1.0 opens a project, the betas can't open that
+project.
+
+### Shows
+- **More than one show:** a project can hold several shows (a Sunday service, a midweek meeting, Easter…). Each is
+  its own playlist, and they all share one library, so editing a song changes it in every show that has it.
+- **The Shows window** opens at launch and from **File › Shows…** (⇧⌘O). It lists the shows, most recently opened
+  first; it can open, make, rename, duplicate or delete one. Untick **Show this window when Presenter opens** to skip
+  it at launch.
+- **Opening a show leaves the audience output alone:** what's live stays on screen until you take a slide live.
+  Undo starts afresh in the show you open.
+- **Deleting a presentation** removes it from every show.
+
+### Library folders
+- **Folders** group the library's presentations, one level deep. Make one with **New Folder…** in the Library, then
+  drag presentations onto it or use **Move To** in a presentation's right-click menu. Drag one onto the **Library**
+  header to take it out of its folder.
+- **Deleting a folder** keeps its presentations: they move back to the top of the library. Folders can be renamed,
+  and every change can be undone.
+
+### Audio
+- **Audio bin** (the **Audio** toolbar button, ⌥⌘U): import music and sounds (MP3, M4A, WAV, AIFF…), then click one
+  to play it for the audience. Right-click to play it looping, to play it when the cued slide goes live, or to make
+  it the soundtrack of the cued slide's presentation.
+- **Slide audio:** in the slide editor's Format tab (with nothing selected), a slide can play a track, with a fade-in
+  and looping, or fade out whatever is playing. Taking the same slide live again never restarts the music, and a
+  track that's already playing plays on. Slides that play or stop audio show a note or a muted speaker under their
+  thumbnail.
+- **Soundtracks:** in the Document tab, a presentation can have a soundtrack that starts when you move into it from
+  another item, unless it's already playing.
+- **In the Live panel,** the playing track shows with pause, a position slider, the time left and Stop, which fades
+  it out. Changing tracks crossfades. **Clear All** fades the audio out; **Blackout** leaves it playing. Live ›
+  **Stop Audio** and **Pause or Play Audio** work from anywhere.
+
+### Fixes
+- The sidebar, workspace and Live panel say **show** instead of playlist (**Add to Show**, **Remove from Show…**).
+
 ## v0.1.0-beta.10 (2026-10-18)
 
 ### Scripture

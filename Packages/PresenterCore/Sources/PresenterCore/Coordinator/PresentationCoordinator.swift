@@ -149,6 +149,7 @@ public final class PresentationCoordinator {
 
     func goLive(at position: SlidePosition) -> CommandResult {
         guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
+        let previous = state.live?.position
         state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
         // An opaque slide replaces the background layer; a transparent one leaves what's on screen.
@@ -164,6 +165,7 @@ public final class PresentationCoordinator {
             state.clearedBackground = nil
         }
         startAutoAdvance(for: LiveSlide(position: position, rendered: rendered))
+        cueAudio(for: position, after: previous)
         Log.coordinator.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }

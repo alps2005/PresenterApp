@@ -13,6 +13,7 @@ struct SlideWorkspace: View {
     @Binding var editSession: EditSession?
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
+    @AppStorage("audioBinVisible") private var isAudioBinVisible = false
     /// Thumbnail width, from the size slider at the bottom right of the workspace.
     @AppStorage("thumbnailWidth") private var thumbnailWidth = 180.0
     @State private var reflowPresentationID: UUID?
@@ -59,9 +60,9 @@ struct SlideWorkspace: View {
     var body: some View {
         if coordinator.project.playlist.items.isEmpty {
             ContentUnavailableView(
-                "Empty Playlist",
+                "Empty Show",
                 systemImage: "rectangle.on.rectangle",
-                description: Text("Create a new presentation to get started.")
+                description: Text("Add a presentation from the library, or create a new one.")
             )
         } else {
             VStack(spacing: 0) {
@@ -73,6 +74,10 @@ struct SlideWorkspace: View {
                 if isMediaBinVisible {
                     Divider()
                     MediaBin(coordinator: coordinator)
+                }
+                if isAudioBinVisible {
+                    Divider()
+                    AudioBin(coordinator: coordinator)
                 }
             }
             // AppKit otherwise gives first focus to the first title field, so Space/arrows meant for
@@ -577,6 +582,7 @@ struct SlideThumbnail: View {
                 if let label = slide.slide.label { GroupLabelTag(label: label) }
                 Spacer()
                 if slide.slide.hasElementTransitions { ElementTransitionsMark() }
+                if let cue = slide.slide.audioCue { AudioCueMark(cue: cue) }
                 if let advanceSeconds { AdvanceBadge(seconds: advanceSeconds, advance: advance) }
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }

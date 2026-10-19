@@ -1,6 +1,6 @@
 import Foundation
 
-/// Top-level container for a show: the presentation library and the playlist that runs it.
+/// Top-level container: the presentation library, and the shows (playlists) that run its presentations.
 public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// The file format version written to disk. Bump it whenever a release adds or changes a saved field:
     /// an older build then refuses the newer file (and moves it aside) instead of loading it, silently dropping
@@ -12,13 +12,21 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 3: themes, text that follows them, text outlines and text background boxes (v0.1.0-beta.5).
     /// - 4: automatic advancing (slide Go To Next timers, presentation Slideshow intervals); Fade Through Black, Push,
     ///   Wipe and Zoom slide transitions; and element transitions (v0.1.0-beta.9).
-    public static let currentSchemaVersion = 4
+    /// - 5: library folders; more than one show (`playlists`), each with the date it was last opened; and audio
+    ///   (audio media, slide audio cues and presentation soundtracks) (v0.1.0-beta.11).
+    public static let currentSchemaVersion = 5
 
     public let id: UUID
     public var name: String
     public var schemaVersion: Int
     public var presentations: [PresentationDocument]
-    public var playlist: PlaylistDocument
+    /// Folders that group the library's presentations (see `PresentationDocument.folderID`).
+    public var libraryFolders: [LibraryFolder]
+    /// The shows, in the order they were made. Never empty. Each is a playlist of library presentations, so a
+    /// presentation can be in several shows and editing it changes it in all of them.
+    public internal(set) var playlists: [PlaylistDocument]
+    /// The show that's open. The commands and the operator's view work on it (see `playlist`).
+    public internal(set) var activePlaylistID: UUID
     /// Media files the project's slides reference. The files live in the media library folder.
     public var mediaAssets: [MediaAsset]
     /// Timers for the stage display and messages.
@@ -37,7 +45,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         name: String,
         schemaVersion: Int = ProjectDocument.currentSchemaVersion,
         presentations: [PresentationDocument] = [],
+        libraryFolders: [LibraryFolder] = [],
         playlist: PlaylistDocument = PlaylistDocument(title: "Service"),
+        otherPlaylists: [PlaylistDocument] = [],
         mediaAssets: [MediaAsset] = [],
         timers: [TimerDefinition] = TimerDefinition.defaults(),
         stage: StageSettings = StageSettings(),
@@ -50,7 +60,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.name = name
         self.schemaVersion = schemaVersion
         self.presentations = presentations
-        self.playlist = playlist
+        self.libraryFolders = libraryFolders
+        playlists = [playlist] + otherPlaylists
+        activePlaylistID = playlist.id
         self.mediaAssets = mediaAssets
         self.timers = timers
         self.stage = stage
@@ -61,7 +73,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, schemaVersion, presentations, playlist, mediaAssets, timers, stage, messages, props, themes, defaultThemeID
+        case id, name, schemaVersion, presentations, libraryFolders, playlists, activePlaylistID, mediaAssets, timers, stage, messages, props, themes, defaultThemeID
+    }
+
+    /// Files saved before there could be more than one show have just `playlist`.
+    private enum LegacyCodingKeys: String, CodingKey {
+        case playlist
     }
 
     public init(from decoder: any Decoder) throws {
@@ -70,7 +87,14 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         name = try container.decode(String.self, forKey: .name)
         schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
         presentations = try container.decode([PresentationDocument].self, forKey: .presentations)
-        playlist = try container.decode(PlaylistDocument.self, forKey: .playlist)
+        libraryFolders = try container.decodeIfPresent([LibraryFolder].self, forKey: .libraryFolders) ?? []
+        if let playlists = try container.decodeIfPresent([PlaylistDocument].self, forKey: .playlists), !playlists.isEmpty {
+            self.playlists = playlists
+        } else {
+            playlists = [try decoder.container(keyedBy: LegacyCodingKeys.self).decode(PlaylistDocument.self, forKey: .playlist)]
+        }
+        let activeID = try container.decodeIfPresent(UUID.self, forKey: .activePlaylistID)
+        activePlaylistID = playlists.first { $0.id == activeID }?.id ?? playlists[0].id
         mediaAssets = try container.decodeIfPresent([MediaAsset].self, forKey: .mediaAssets) ?? []
         // Projects saved before timers existed get the default ones.
         timers = try container.decodeIfPresent([TimerDefinition].self, forKey: .timers) ?? TimerDefinition.defaults()
@@ -80,6 +104,20 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         // Projects saved before themes existed get the starting ones; their presentations follow none.
         themes = try container.decodeIfPresent([Theme].self, forKey: .themes) ?? Theme.presets()
         defaultThemeID = try container.decodeIfPresent(UUID.self, forKey: .defaultThemeID)
+    }
+
+    /// The open show. Setting it replaces the open show.
+    public var playlist: PlaylistDocument {
+        get { playlists[activePlaylistIndex] }
+        set { playlists[activePlaylistIndex] = newValue }
+    }
+
+    var activePlaylistIndex: Int {
+        playlists.firstIndex { $0.id == activePlaylistID } ?? 0
+    }
+
+    public func playlist(withID playlistID: UUID) -> PlaylistDocument? {
+        playlists.first { $0.id == playlistID }
     }
 
     public func asset(withID assetID: UUID) -> MediaAsset? {
@@ -100,6 +138,10 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public func presentation(withID presentationID: UUID) -> PresentationDocument? {
         if presentationID == props.id { return props }
         return presentations.first { $0.id == presentationID }
+    }
+
+    public func folder(withID folderID: UUID) -> LibraryFolder? {
+        libraryFolders.first { $0.id == folderID }
     }
 
     public func prop(withID propID: UUID) -> SlideDocument? {

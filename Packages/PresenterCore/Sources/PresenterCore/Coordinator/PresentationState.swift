@@ -37,6 +37,10 @@ public final class PresentationState {
     public internal(set) var propSnapshots: [UUID: SlideDocument] = [:]
     /// The live slide's countdown to moving on by itself, if it has one.
     public internal(set) var autoAdvance: AutoAdvance?
+    /// The track playing for the audience. Blackout leaves it playing; Clear All and Stop Audio fade it out.
+    public internal(set) var audio: LiveAudio?
+    /// How the last stop asked the playing track to fade out, in seconds.
+    public internal(set) var audioStopFade: Double = 0
 
     public init(
         selectedItemID: UUID? = nil,
@@ -109,7 +113,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case nothingLive
     case atEndOfPlaylist
     case atStartOfPlaylist
-    /// The live slide was deleted from the playlist, so there is no sequence to move along.
+    /// The live slide was deleted from the playlist, or another show was opened, so there is no sequence to move along.
     case liveSlideMissing
     case nothingToRestore
     case nothingToClear
@@ -122,6 +126,11 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case unknownElement
     case unknownTheme
     case autoAdvanceOff
+    case unknownFolder
+    case unknownShow
+    /// A project always has a show to open.
+    case lastShow
+    case noAudio
 
     public var message: String {
         switch self {
@@ -132,7 +141,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .nothingLive: "Nothing is live."
         case .atEndOfPlaylist: "Already at the last slide."
         case .atStartOfPlaylist: "Already at the first slide."
-        case .liveSlideMissing: "The live slide was removed. Take a slide live to continue."
+        case .liveSlideMissing: "The live slide isn't in the open show anymore. Take a slide live to continue."
         case .nothingToRestore: "Output is already showing normally."
         case .nothingToClear: "Only the default background is showing."
         case .unknownArrangement: "That arrangement no longer exists."
@@ -142,6 +151,10 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         case .unknownTheme: "That theme no longer exists."
+        case .unknownFolder: "That folder no longer exists."
+        case .unknownShow: "That show no longer exists."
+        case .lastShow: "This is the only show. Make another before deleting it."
+        case .noAudio: "No audio is playing."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }
