@@ -16,6 +16,8 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
     /// Slideshow: every slide without its own Go To Next timer moves on after this many seconds, and the last slide
     /// loops back to the first. Nil is off.
     public var slideshowInterval: Double?
+    /// The library folder it's in (see `LibraryFolder`). Nil is the top of the library.
+    public var folderID: UUID?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -28,6 +30,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         activeArrangementID: UUID? = nil,
         themeID: UUID? = nil,
         slideshowInterval: Double? = nil,
+        folderID: UUID? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -39,15 +42,16 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         self.activeArrangementID = activeArrangementID
         self.themeID = themeID
         self.slideshowInterval = slideshowInterval
+        self.folderID = folderID
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, createdAt, updatedAt
+        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, createdAt, updatedAt
     }
 
-    /// Files saved before arrangements, themes or slideshows existed load with none.
+    /// Files saved before arrangements, themes, slideshows or folders existed load with none.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -58,6 +62,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         activeArrangementID = try container.decodeIfPresent(UUID.self, forKey: .activeArrangementID)
         themeID = try container.decodeIfPresent(UUID.self, forKey: .themeID)
         slideshowInterval = try container.decodeIfPresent(Double.self, forKey: .slideshowInterval)
+        folderID = try container.decodeIfPresent(UUID.self, forKey: .folderID)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }

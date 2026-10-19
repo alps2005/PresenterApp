@@ -122,6 +122,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case unknownElement
     case unknownTheme
     case autoAdvanceOff
+    case unknownFolder
 
     public var message: String {
         switch self {
@@ -142,6 +143,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownMediaAsset: "That image isn't in the project's media library."
         case .unknownElement: "That item is no longer on the slide."
         case .unknownTheme: "That theme no longer exists."
+        case .unknownFolder: "That folder no longer exists."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }
