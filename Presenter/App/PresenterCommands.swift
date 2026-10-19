@@ -42,6 +42,9 @@ struct PresenterCommands: Commands {
 
             Divider()
 
+            Button("Shows…") { ui.isShowingShows = true }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+
             Button("Open Project…") { persistence.openProject() }
                 .keyboardShortcut("o")
         }

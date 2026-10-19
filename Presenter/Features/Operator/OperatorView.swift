@@ -38,6 +38,13 @@ struct OperatorView: View {
         #if DEBUG
         .onAppear { openEditorIfAsked() }
         #endif
+        .onAppear { offerShowsAtLaunch() }
+        .sheet(isPresented: $ui.isShowingShows) {
+            ShowsSheet(coordinator: coordinator) {
+                browsedPresentationID = nil
+                editSession = nil
+            }
+        }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -62,6 +69,15 @@ struct OperatorView: View {
         }
     }
 
+    private func offerShowsAtLaunch() {
+        guard !ui.hasOfferedShowsAtLaunch else { return }
+        ui.hasOfferedShowsAtLaunch = true
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: ShowsSheet.showAtLaunchKey) == nil || defaults.bool(forKey: ShowsSheet.showAtLaunchKey) {
+            ui.isShowingShows = true
+        }
+    }
+
     #if DEBUG
     /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
     /// scripts/layout-screenshots.sh.
@@ -80,7 +96,8 @@ struct OperatorView: View {
                 scrollRequest: $scrollRequest,
                 browsedPresentationID: $browsedPresentationID,
                 onNewSong: { ui.isAddingSong = true },
-                onAddScripture: { ui.isAddingScripture = true }
+                onAddScripture: { ui.isAddingScripture = true },
+                onShowShows: { ui.isShowingShows = true }
             )
                 .navigationSplitViewColumnWidth(min: Widths.operatorSidebar.min, ideal: Widths.operatorSidebar.ideal, max: Widths.operatorSidebar.max)
         } detail: {

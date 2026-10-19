@@ -15,6 +15,7 @@ struct PlaylistSidebar: View {
     @Binding var browsedPresentationID: UUID?
     let onNewSong: () -> Void
     let onAddScripture: () -> Void
+    let onShowShows: () -> Void
     @State private var itemPendingRemoval: PresentationItem?
     @State private var presentationPendingDeletion: PresentationDocument?
     @State private var searchText = ""
@@ -50,8 +51,9 @@ struct PlaylistSidebar: View {
                 Text(coordinator.project.playlist.title)
                     .contextMenu {
                         Button("Rename Show…") { startRenamingShow() }
+                        Button("Shows…") { onShowShows() }
                     }
-                    .help("Right-click to rename the show")
+                    .help("Right-click to rename the show or open another (⇧⌘O)")
             }
 
             // Every presentation, including ones taken off the playlist, like ProPresenter's library.
@@ -169,7 +171,7 @@ struct PlaylistSidebar: View {
                 coordinator.deletePresentation(presentation.id)
             }
         } message: { presentation in
-            Text("“\(presentation.title)” is removed from the library and the playlist. You can undo this with ⌘Z. If it's live, it stays on the audience output until you take something else live.")
+            Text("“\(presentation.title)” is removed from the library and from every show. You can undo this with ⌘Z. If it's live, it stays on the audience output until you take something else live.")
         }
         .sheet(isPresented: Binding(get: { editingThemeID != nil }, set: { if !$0 { editingThemeID = nil } })) {
             if let editingThemeID {

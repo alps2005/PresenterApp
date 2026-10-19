@@ -7,6 +7,9 @@ import PresenterCore
 final class OperatorUIState {
     var isAddingSong = false
     var isAddingScripture = false
+    var isShowingShows = false
+    /// The Shows window opens once at launch, not every time the operator window is reopened.
+    var hasOfferedShowsAtLaunch = false
 }
 
 /// The app's long-lived services.
