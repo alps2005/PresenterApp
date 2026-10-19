@@ -131,6 +131,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     /// A project always has a show to open.
     case lastShow
     case noAudio
+    case unknownStageLayout
 
     public var message: String {
         switch self {
@@ -155,6 +156,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownShow: "That show no longer exists."
         case .lastShow: "This is the only show. Make another before deleting it."
         case .noAudio: "No audio is playing."
+        case .unknownStageLayout: "That stage layout no longer exists."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }

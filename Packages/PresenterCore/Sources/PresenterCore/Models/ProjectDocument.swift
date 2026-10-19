@@ -13,8 +13,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 4: automatic advancing (slide Go To Next timers, presentation Slideshow intervals); Fade Through Black, Push,
     ///   Wipe and Zoom slide transitions; and element transitions (v0.1.0-beta.9).
     /// - 5: library folders; more than one show (`playlists`), each with the date it was last opened; and audio
-    ///   (audio media, slide audio cues and presentation soundtracks) (v0.1.0-beta.11).
-    public static let currentSchemaVersion = 5
+    ///   (audio media, slide audio cues and presentation soundtracks) (v1.0.0).
+    /// - 6: stage layouts (`stageLayouts`, `StageSettings.layoutID`).
+    public static let currentSchemaVersion = 6
 
     public let id: UUID
     public var name: String
@@ -32,6 +33,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// Timers for the stage display and messages.
     public var timers: [TimerDefinition]
     public var stage: StageSettings
+    /// Designs for the stage display (see `StageSettings.layoutID`).
+    public var stageLayouts: [StageLayout]
     public var messages: [MessageDefinition]
     /// Props are the slides of this presentation (see `PresentationDocument.propsLibrary`).
     public var props: PresentationDocument
@@ -51,6 +54,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         mediaAssets: [MediaAsset] = [],
         timers: [TimerDefinition] = TimerDefinition.defaults(),
         stage: StageSettings = StageSettings(),
+        stageLayouts: [StageLayout] = StageLayout.presets(),
         messages: [MessageDefinition] = MessageDefinition.defaults(),
         props: PresentationDocument = .propsLibrary(),
         themes: [Theme] = Theme.presets(),
@@ -66,6 +70,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.mediaAssets = mediaAssets
         self.timers = timers
         self.stage = stage
+        self.stageLayouts = stageLayouts
         self.messages = messages
         self.props = props
         self.themes = themes
@@ -73,7 +78,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, schemaVersion, presentations, libraryFolders, playlists, activePlaylistID, mediaAssets, timers, stage, messages, props, themes, defaultThemeID
+        case id, name, schemaVersion, presentations, libraryFolders, playlists, activePlaylistID, mediaAssets, timers, stage, stageLayouts, messages, props, themes, defaultThemeID
     }
 
     /// Files saved before there could be more than one show have just `playlist`.
@@ -99,6 +104,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         // Projects saved before timers existed get the default ones.
         timers = try container.decodeIfPresent([TimerDefinition].self, forKey: .timers) ?? TimerDefinition.defaults()
         stage = try container.decodeIfPresent(StageSettings.self, forKey: .stage) ?? StageSettings()
+        // Projects saved before stage layouts existed get the starting ones and keep the standard look.
+        stageLayouts = try container.decodeIfPresent([StageLayout].self, forKey: .stageLayouts) ?? StageLayout.presets()
         messages = try container.decodeIfPresent([MessageDefinition].self, forKey: .messages) ?? MessageDefinition.defaults()
         props = try container.decodeIfPresent(PresentationDocument.self, forKey: .props) ?? .propsLibrary()
         // Projects saved before themes existed get the starting ones; their presentations follow none.
@@ -146,6 +153,10 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
 
     public func prop(withID propID: UUID) -> SlideDocument? {
         props.slide(withID: propID)
+    }
+
+    public func stageLayout(withID layoutID: UUID) -> StageLayout? {
+        stageLayouts.first { $0.id == layoutID }
     }
 
     public func theme(withID themeID: UUID) -> Theme? {

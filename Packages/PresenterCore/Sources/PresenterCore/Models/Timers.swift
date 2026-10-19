@@ -90,10 +90,14 @@ public struct StageSettings: Codable, Hashable, Sendable {
     public var timerID: UUID?
     public var showsClock: Bool
     public var showsNotes: Bool
+    /// The stage layout in use (see `ProjectDocument.stageLayouts`). Nil uses the standard look, which the clock,
+    /// timer and notes settings above shape.
+    public var layoutID: UUID?
 
-    public init(timerID: UUID? = nil, showsClock: Bool = true, showsNotes: Bool = true) {
+    public init(timerID: UUID? = nil, showsClock: Bool = true, showsNotes: Bool = true, layoutID: UUID? = nil) {
         self.timerID = timerID
         self.showsClock = showsClock
         self.showsNotes = showsNotes
+        self.layoutID = layoutID
     }
 }

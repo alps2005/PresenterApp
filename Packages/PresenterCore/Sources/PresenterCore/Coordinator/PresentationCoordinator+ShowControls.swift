@@ -163,6 +163,13 @@ extension PresentationCoordinator {
             guard project.timers.contains(where: { $0.id == timerID }) else { return reject(.unknownTimer) }
             project.timers.removeAll { $0.id == timerID }
             if project.stage.timerID == timerID { project.stage.timerID = nil }
+            // Regions that showed it fall back to the stage's timer.
+            for layout in project.stageLayouts.indices {
+                for region in project.stageLayouts[layout].regions.indices
+                where project.stageLayouts[layout].regions[region].kind == .timer(timerID) {
+                    project.stageLayouts[layout].regions[region].kind = .timer(nil)
+                }
+            }
             timerRuns[timerID] = nil
             return applied()
         }
@@ -172,6 +179,7 @@ extension PresentationCoordinator {
     public func setStageSettings(_ settings: StageSettings) -> CommandResult {
         recordingUndo("Stage Settings") {
             if let timerID = settings.timerID, timer(withID: timerID) == nil { return reject(.unknownTimer) }
+            if let layoutID = settings.layoutID, project.stageLayout(withID: layoutID) == nil { return reject(.unknownStageLayout) }
             project.stage = settings
             return applied()
         }

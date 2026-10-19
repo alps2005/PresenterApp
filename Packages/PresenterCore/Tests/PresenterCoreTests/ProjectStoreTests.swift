@@ -81,10 +81,10 @@ final class ProjectStoreTests: XCTestCase {
     }
 
     func testSavedProjectsUseTheCurrentSchemaVersion() throws {
-        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 5)
+        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 6)
         let data = try ProjectStore.encode(.sample())
         struct Probe: Decodable { let schemaVersion: Int }
-        XCTAssertEqual(try JSONDecoder().decode(Probe.self, from: data).schemaVersion, 5)
+        XCTAssertEqual(try JSONDecoder().decode(Probe.self, from: data).schemaVersion, 6)
     }
 
     /// A version 1 file (beta 1) loads, gets today's defaults, and is saved back as the current version.
