@@ -14,6 +14,10 @@ This release saves projects in file format 7. Once it opens a project, Presenter
 - **Song details:** writers, copyright and CCLI song number, kept from imported files and editable in the slide
   editor under **Document › Song**.
 
+### Scripture
+- **USFX and USX Bibles:** Import Bible… also reads USFX files and USX Bibles, from their folder or book files. A
+  Digital Bible Library bundle's `metadata.xml` names the translation. Notes, headings and introductions are left out.
+
 ### Fixes
 - **Take Live** is grey while nothing is cued; it used to stay bright red.
 - The show that's open at launch now shows when it was opened, so deleting another open show goes back to it.

@@ -134,7 +134,8 @@ A track that doesn't loop reports its end with `audioDidFinish(startID:)`.
 ### Scripture
 
 Core, in `Bible/`: `BibleBook` and `BibleBookLookup` (66 books, English and Spanish names and abbreviations),
-`ScriptureReference` (parse and format), `BibleFileParser` (Zefania and OSIS XML, external entities off),
+`ScriptureReference` (parse and format), `BibleFileParser` (Zefania, OSIS, USFX and USX, several files merged into one
+translation, DBL `metadata.xml` for its name; external entities off),
 `BibleTranslation.passage(for:)` (bounds-checked lookup), `BibleSearch`, `ScriptureSlides` and `BibleStore`
 (`Application Support/Presenter/Bibles`, one JSON per translation plus an index). `addScripture` (`+Scripture.swift`)
 adds a passage like `addSong`. App: `BibleLibrary` reads and parses off the main actor and keeps one translation

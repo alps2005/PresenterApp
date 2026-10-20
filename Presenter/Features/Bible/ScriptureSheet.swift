@@ -120,7 +120,7 @@ struct ScriptureSheet: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             if let importError { WarningLabel(importError) }
-            Text("Import a Bible to start. Presenter reads Zefania and OSIS XML files, the free formats public-domain translations are shared in, such as the King James Version, the World English Bible or the Reina-Valera 1909. The README says where to find them.")
+            Text("Import a Bible to start. Presenter reads Zefania, OSIS, USFX and USX files, the free formats public-domain and open translations are shared in, such as the King James Version, the World English Bible or the Reina-Valera 1909. For USX, choose the Bible's folder or all its book files. The README says where to find them.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -128,11 +128,14 @@ struct ScriptureSheet: View {
     }
 
     private func importBible() {
-        guard let url = MediaPanel.choose([.xml], message: "Choose a Zefania or OSIS Bible file (.xml).").first else { return }
+        let types = [UTType.xml] + ["usx", "usfx"].compactMap { UTType(filenameExtension: $0) }
+        let urls = MediaPanel.choose(types, multiple: true, folders: true,
+                                     message: "Choose a Bible file (Zefania, OSIS, USFX), or a USX Bible's folder or book files.")
+        guard !urls.isEmpty else { return }
         importError = nil
         Task {
             do {
-                translationID = try await library.importFile(at: url).uuidString
+                translationID = try await library.importFiles(at: urls).uuidString
             } catch let failure as BibleLibrary.ImportFailure {
                 importError = failure.message
             } catch {

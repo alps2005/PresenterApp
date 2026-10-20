@@ -75,8 +75,27 @@ public struct BibleStore: Sendable {
     /// Reads a Zefania or OSIS file and saves it as a new translation.
     @discardableResult
     public func importFile(at url: URL) throws -> Entry {
-        let data = try Data(contentsOf: url)
-        return try save(BibleFileParser.parse(data))
+        try importFiles(at: [url])
+    }
+
+    /// Reads files, or folders of them, as one new translation: a single Bible file, or a USX Bible's books (a
+    /// Digital Bible Library bundle, with its `metadata.xml`).
+    @discardableResult
+    public func importFiles(at urls: [URL]) throws -> Entry {
+        let files = urls.flatMap(Self.bibleFiles(in:))
+        let documents = try files.map { try Data(contentsOf: $0) }
+        return try save(BibleFileParser.parse(documents))
+    }
+
+    /// The file itself, or the XML, USX and USFX files anywhere in a folder, in name order (so books keep their order).
+    static func bibleFiles(in url: URL) -> [URL] {
+        guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { return [url] }
+        let extensions: Set = ["xml", "usx", "usfx"]
+        let found = FileManager.default.enumerator(at: url, includingPropertiesForKeys: nil,
+                                                   options: [.skipsHiddenFiles, .skipsPackageDescendants])
+        return (found?.compactMap { $0 as? URL } ?? [])
+            .filter { extensions.contains($0.pathExtension.lowercased()) }
+            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
     }
 
     public func delete(_ id: UUID) throws(StoreError) {

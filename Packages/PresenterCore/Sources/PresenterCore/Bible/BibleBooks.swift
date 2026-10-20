@@ -105,6 +105,20 @@ extension BibleBook {
     public static func osis(_ code: String) -> BibleBook? {
         all.first { $0.osis.caseInsensitiveCompare(code) == .orderedSame }
     }
+
+    /// The Paratext (USFM) book codes USFX and USX files use, in canonical order.
+    static let usfmCodes = [
+        "GEN", "EXO", "LEV", "NUM", "DEU", "JOS", "JDG", "RUT", "1SA", "2SA", "1KI", "2KI", "1CH", "2CH", "EZR", "NEH",
+        "EST", "JOB", "PSA", "PRO", "ECC", "SNG", "ISA", "JER", "LAM", "EZK", "DAN", "HOS", "JOL", "AMO", "OBA", "JON",
+        "MIC", "NAM", "HAB", "ZEP", "HAG", "ZEC", "MAL", "MAT", "MRK", "LUK", "JHN", "ACT", "ROM", "1CO", "2CO", "GAL",
+        "EPH", "PHP", "COL", "1TH", "2TH", "1TI", "2TI", "TIT", "PHM", "HEB", "JAS", "1PE", "2PE", "1JN", "2JN", "3JN",
+        "JUD", "REV",
+    ]
+
+    /// The book with this Paratext code ("JHN"). Nil for books outside the 66, such as the deuterocanon ("TOB").
+    public static func usfm(_ code: String) -> BibleBook? {
+        usfmCodes.firstIndex(of: code.uppercased()).flatMap { number($0 + 1) }
+    }
 }
 
 /// Finds a book from what someone typed, in English or Spanish, ignoring accents, case, dots and spaces.
