@@ -69,6 +69,7 @@ extension PresentationCoordinator {
     /// Selection and cue move to the new project's first item.
     public func replaceProject(_ newProject: ProjectDocument) {
         project = newProject
+        markOpenShowOpened()
         // Undo can't reach back into a different project.
         undoStack.removeAll()
         redoStack.removeAll()

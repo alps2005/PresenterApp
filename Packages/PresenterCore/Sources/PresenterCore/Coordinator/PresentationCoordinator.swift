@@ -35,6 +35,7 @@ public final class PresentationCoordinator {
     public init(project: ProjectDocument) {
         self.project = project
         state.selectedItemID = project.playlist.items.first?.id
+        markOpenShowOpened()
     }
 
     // MARK: - Derived state
