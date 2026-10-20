@@ -82,9 +82,21 @@ public struct BibleStore: Sendable {
     /// Digital Bible Library bundle, with its `metadata.xml`).
     @discardableResult
     public func importFiles(at urls: [URL]) throws -> Entry {
-        let files = urls.flatMap(Self.bibleFiles(in:))
+        var files: [URL] = []
+        for url in urls.flatMap(Self.bibleFiles(in:)) + urls.flatMap(Self.metadataBeside) where !files.contains(url) {
+            files.append(url)
+        }
         let documents = try files.map { try Data(contentsOf: $0) }
         return try save(BibleFileParser.parse(documents))
+    }
+
+    /// A DBL metadata file next to a chosen file ("engwebpmetadata.xml" beside "engwebp_usfx.xml", as eBible.org
+    /// ships them), so a single file still gets its translation's name.
+    static func metadataBeside(_ url: URL) -> [URL] {
+        guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true else { return [] }
+        let siblings = (try? FileManager.default.contentsOfDirectory(at: url.deletingLastPathComponent(),
+                                                                     includingPropertiesForKeys: nil)) ?? []
+        return siblings.filter { $0.lastPathComponent.lowercased().hasSuffix("metadata.xml") && $0 != url }
     }
 
     /// The file itself, or the XML, USX and USFX files anywhere in a folder, in name order (so books keep their order).

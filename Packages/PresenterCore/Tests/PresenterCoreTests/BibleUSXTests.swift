@@ -121,6 +121,21 @@ final class BibleUSXTests: XCTestCase {
         }
     }
 
+    func testASingleFileTakesItsNameFromTheMetadataBesideIt() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("usfx-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = folder.appendingPathComponent("engweb_usfx.xml")
+        try data(usfx).write(to: file)
+        try data(metadata).write(to: folder.appendingPathComponent("engwebmetadata.xml"))
+
+        let store = BibleStore(directory: folder.appendingPathComponent("Bibles", isDirectory: true))
+        let entry = try store.importFiles(at: [file])
+        XCTAssertEqual(entry.name, "World English Bible")
+        XCTAssertEqual(entry.abbreviation, "WEB")
+        XCTAssertEqual(entry.verseCount, 3)
+    }
+
     func testStoreImportsAFolderOfBooks() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("usx-\(UUID())", isDirectory: true)
         let books = folder.appendingPathComponent("release/USX_1", isDirectory: true)

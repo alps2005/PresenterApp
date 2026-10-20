@@ -22,7 +22,9 @@ This release saves projects in file format 7. Once it opens a project, Presenter
 
 ### Scripture
 - **USFX and USX Bibles:** Import Bible… also reads USFX files and USX Bibles, from their folder or book files. A
-  Digital Bible Library bundle's `metadata.xml` names the translation. Notes, headings and introductions are left out.
+  Digital Bible Library `metadata.xml` (in the folder, or beside a single file) names the translation. Notes, headings
+  and introductions are left out.
+- **Rename…** in the Scripture sheet changes a Bible's name and the abbreviation slides show.
 
 ### Fixes
 - **Take Live** is grey while nothing is cued; it used to stay bright red.

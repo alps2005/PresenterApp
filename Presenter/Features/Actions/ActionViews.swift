@@ -99,15 +99,20 @@ struct ActionListEditor: View {
         switch action {
         case .showMessage(let messageID, let values):
             ForEach(project.message(withID: messageID)?.fields ?? [], id: \.self) { field in
-                TextField(field, text: Binding(
+                // Named beside the field: its prompt goes once it's filled in.
+                LabeledContent(field) {
+                    TextField(field, text: Binding(
                     get: { values[field] ?? "" },
                     set: { value in
                         var updated = values
                         updated[field] = value
                         replace(index, with: .showMessage(messageID: messageID, values: updated))
                     }
-                ), prompt: Text(field))
-                .textFieldStyle(.roundedBorder)
+                    ), prompt: Text(field))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                }
+                .foregroundStyle(.secondary)
             }
         case .showStageMessage(let text):
             TextField("Stage message", text: Binding(
