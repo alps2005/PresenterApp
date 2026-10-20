@@ -6,6 +6,7 @@ import PresenterCore
 @Observable
 final class OperatorUIState {
     var isAddingSong = false
+    var isImportingSongs = false
     var isAddingScripture = false
     var isShowingShows = false
     /// The Shows window opens once at launch, not every time the operator window is reopened.

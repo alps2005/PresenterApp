@@ -37,6 +37,9 @@ struct PresenterCommands: Commands {
             Button("New Song…") { ui.isAddingSong = true }
                 .keyboardShortcut("n", modifiers: [.command, .option])
 
+            Button("Import Songs…") { ui.isImportingSongs = true }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+
             // ⌥⌘V, for verse: ⌥⌘B is Blackout.
             Button("Add Scripture…") { ui.isAddingScripture = true }
                 .keyboardShortcut("v", modifiers: [.command, .option])

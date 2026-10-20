@@ -15,7 +15,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 5: library folders; more than one show (`playlists`), each with the date it was last opened; and audio
     ///   (audio media, slide audio cues and presentation soundtracks) (v1.0.0).
     /// - 6: stage layouts (`stageLayouts`, `StageSettings.layoutID`) (v1.1.0).
-    public static let currentSchemaVersion = 6
+    /// - 7: song details (`PresentationDocument.song`: authors, copyright, CCLI song number).
+    public static let currentSchemaVersion = 7
 
     public let id: UUID
     public var name: String

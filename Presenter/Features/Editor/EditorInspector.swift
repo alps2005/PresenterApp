@@ -580,6 +580,13 @@ struct EditorInspector: View {
                 .foregroundStyle(.secondary)
         }
         if presentation.id != coordinator.project.props.id {
+            section("Song") {
+                SongDetailsFields(coordinator: coordinator, presentation: presentation)
+                Text("Writers, copyright and CCLI number, for your licence reports. Filled in when a song is imported.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             section("Soundtrack") {
                 SoundtrackControls(coordinator: coordinator, track: Binding(
                     get: { presentation.soundtrack },

@@ -49,6 +49,9 @@ struct OperatorView: View {
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
+        .sheet(isPresented: $ui.isImportingSongs) {
+            ImportSongsSheet(coordinator: coordinator) { item in scrollRequest = item.id }
+        }
         .sheet(isPresented: $ui.isAddingScripture) {
             ScriptureSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -83,6 +86,9 @@ struct OperatorView: View {
     /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
     /// scripts/layout-screenshots.sh.
     private func openEditorIfAsked() {
+        if UserDefaults.standard.string(forKey: ImportSongsSheet.debugFolderKey)?.isEmpty == false {
+            ui.isImportingSongs = true
+        }
         guard UserDefaults.standard.bool(forKey: "PresenterDebugOpenEditor"),
               let item = coordinator.project.playlist.items.first else { return }
         editSession = EditSession(itemID: item.id, presentationID: item.presentationID, initialSlideID: nil)

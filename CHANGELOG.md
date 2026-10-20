@@ -5,6 +5,15 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 ## Unreleased
 
+This release saves projects in file format 7. Once it opens a project, Presenter 1.1 can't open that project.
+
+### Songs
+- **Import Songs** (File › Import Songs…, ⇧⌘I): OpenLyrics, ChordPro, SongSelect (lyrics .txt and SongPro .usr) and
+  plain-text lyrics, several files at once. Chords are left out; sections become labelled groups, and a file's
+  singing order becomes a **Song Order** arrangement.
+- **Song details:** writers, copyright and CCLI song number, kept from imported files and editable in the slide
+  editor under **Document › Song**.
+
 ### Fixes
 - **Take Live** is grey while nothing is cued; it used to stay bright red.
 - The show that's open at launch now shows when it was opened, so deleting another open show goes back to it.

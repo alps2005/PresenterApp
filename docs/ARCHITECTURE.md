@@ -140,6 +140,16 @@ Core, in `Bible/`: `BibleBook` and `BibleBookLookup` (66 books, English and Span
 adds a passage like `addSong`. App: `BibleLibrary` reads and parses off the main actor and keeps one translation
 open; `ScriptureSheet` is the UI.
 
+### Song import
+
+Core, in `Songs/`: `SongImporter.parse(_:fileName:)` tells the format from the content (and the extension for
+ChordPro) and returns an `ImportedSong`: labelled sections of slides, `SongInfo` credits and a singing order.
+`OpenLyricsParser` (XML, external entities off), `ChordProParser` and `SongSelectParser` (lyrics .txt and SongPro
+.usr) fill it; plain text goes through `LyricsParser`. `ImportedSong.slides(maxLinesPerSlide:)` and `.arrangement`
+turn it into a presentation, which `importSongs` (`+Songs.swift`) adds in one undo step. `PresentationDocument.song`
+keeps the credits (format 7). App: `ImportSongsSheet` reads files off the main actor; `SongDetailsFields` edits the
+credits, saving on Return or when a field loses focus.
+
 ### Transitions
 
 `TransitionMath` (core) gives every slide and element transition's geometry (opacity, offset, scale, wipe reveal) as a
