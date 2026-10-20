@@ -6,13 +6,9 @@ struct ControlBar: View {
 
     var body: some View {
         HStack(spacing: Spacing.md) {
-            Button { coordinator.takeLive() } label: {
-                Label("Take Live", systemImage: "play.fill")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Palette.live)
-            .disabled(coordinator.state.preview == nil)
-            .help("Send the cued slide to the audience (Return or ⌘Return)")
+            takeLiveButton
+                .disabled(coordinator.state.preview == nil)
+                .help("Send the cued slide to the audience (Return or ⌘Return)")
 
             Divider().frame(height: 22)
 
@@ -71,6 +67,20 @@ struct ControlBar: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.md)
         .solidPanel(Palette.panelRaised)
+    }
+
+    /// Red only with a slide cued. Disabled, a prominent button keeps its fill on macOS (red, or the accent colour
+    /// untinted) and looks ready, so it's drawn like Clear and Restore instead.
+    @ViewBuilder
+    private var takeLiveButton: some View {
+        let button = Button { coordinator.takeLive() } label: {
+            Label("Take Live", systemImage: "play.fill")
+        }
+        if coordinator.state.preview == nil {
+            button.buttonStyle(.bordered)
+        } else {
+            button.buttonStyle(.borderedProminent).tint(Palette.live)
+        }
     }
 
     private var hasAnythingToClear: Bool {
