@@ -14,11 +14,8 @@ struct LivePanel: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     PanelHeader(title: "Audience") { liveBadge }
                     // In words, here, because the toolbar's output menu shows only a warning icon.
-                    ForEach(disconnectedOutputs, id: \.role) { output in
-                        WarningLabel(
-                            "\(output.role.title): \(output.displayName) disconnected. It comes back full screen when you reconnect it.",
-                            font: .callout.bold()
-                        )
+                    ForEach(waitingOutputs, id: \.role) { output in
+                        WarningLabel("\(output.role.title): \(output.message)", font: .callout.bold())
                     }
                     // The output's own view, so slide and element transitions play here too.
                     AudienceOutputView(coordinator: coordinator)
@@ -68,10 +65,17 @@ struct LivePanel: View {
         .solidPanel()
     }
 
-    /// Outputs whose chosen display has gone. Each is hidden until its display comes back.
-    private var disconnectedOutputs: [(role: OutputRole, displayName: String)] {
+    /// Outputs hidden while they wait for their chosen display: gone, or showing the operator window.
+    private var waitingOutputs: [(role: OutputRole, message: String)] {
         OutputRole.allCases.compactMap { role in
-            if case .displayMissing(let name) = outputManager.status(role) { (role, name) } else { nil }
+            switch outputManager.status(role) {
+            case .displayMissing(let name):
+                (role, "\(name) disconnected. It comes back full screen when you reconnect it.")
+            case .displayHasOperatorWindow(let name):
+                (role, "\(name) has the operator window. Move this window to another screen and the output fills \(name).")
+            case .off, .windowed, .fullScreen:
+                nil
+            }
         }
     }
 

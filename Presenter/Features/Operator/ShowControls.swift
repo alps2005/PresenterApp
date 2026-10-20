@@ -345,6 +345,7 @@ private struct StageTab: View {
         case .windowed: "Stage display in a window"
         case .fullScreen(let name): "Stage display on \(name)"
         case .displayMissing(let name): "\(name) disconnected"
+        case .displayHasOperatorWindow(let name): "\(name) has the operator window"
         }
     }
 }

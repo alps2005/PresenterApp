@@ -52,21 +52,28 @@ struct OutputMenu: View {
         OutputRole.allCases.first { $0 != role } ?? role
     }
 
-    /// The audience output's state, unless an output has lost its display: that warning wins.
+    /// The audience output's state, unless an output is waiting for its display: that warning wins.
     private var status: (text: String, systemImage: String, isWarning: Bool) {
-        if case .displayMissing(let name) = outputManager.status(.stage), !isAudienceMissing {
-            return ("Stage display \(name) disconnected", "exclamationmark.triangle.fill", true)
+        if let waiting = waitingText(outputManager.status) {
+            return (waiting, "exclamationmark.triangle.fill", true)
+        }
+        if let waiting = waitingText(outputManager.status(.stage)) {
+            return ("Stage display: \(waiting)", "exclamationmark.triangle.fill", true)
         }
         switch outputManager.status {
         case .off: return ("Output Off", "display", false)
         case .windowed: return ("Output: Window", "macwindow", false)
         case .fullScreen(let name): return ("Output: \(name)", "display", false)
-        case .displayMissing(let name): return ("\(name) disconnected", "exclamationmark.triangle.fill", true)
+        case .displayMissing, .displayHasOperatorWindow: return ("Output Off", "display", false)
         }
     }
 
-    private var isAudienceMissing: Bool {
-        if case .displayMissing = outputManager.status { return true }
-        return false
+    /// Why an output is hidden although it's on: its display is gone or has the operator window.
+    private func waitingText(_ status: OutputStatus) -> String? {
+        switch status {
+        case .displayMissing(let name): "\(name) disconnected"
+        case .displayHasOperatorWindow(let name): "\(name) has the operator window"
+        case .off, .windowed, .fullScreen: nil
+        }
     }
 }

@@ -67,6 +67,9 @@ public enum OutputStatus: Equatable, Sendable {
     case fullScreen(displayName: String)
     /// The chosen display is gone. Output is hidden and comes back if the display reconnects.
     case displayMissing(displayName: String)
+    /// The chosen display is connected but has the operator window. Output is hidden and fills the display once the
+    /// operator window moves to another screen.
+    case displayHasOperatorWindow(displayName: String)
 }
 
 /// Which output a command is for. The stage display never shows audience content controls, and the audience
@@ -121,7 +124,9 @@ public struct OutputPlanner: Equatable, Sendable {
         didSet { findRememberedDisplays() }
     }
     /// The display showing the operator window. Full-screen output is never offered there.
-    public var operatorDisplayID: UInt32?
+    public var operatorDisplayID: UInt32? {
+        didSet { findRememberedDisplays() }
+    }
     private var channels: [OutputRole: Channel] = [.audience: Channel(), .stage: Channel()]
 
     public init(displays: [DisplayInfo] = [], operatorDisplayID: UInt32? = nil) {
@@ -160,16 +165,18 @@ public struct OutputPlanner: Equatable, Sendable {
         case .windowed:
             return .windowed
         case .display(let id):
-            return displays.contains { $0.id == id }
-                ? .fullScreen(displayName: channel.targetDisplayName)
-                : .displayMissing(displayName: channel.targetDisplayName)
+            if displays.contains(where: { $0.id == id }) { return .fullScreen(displayName: channel.targetDisplayName) }
+            if let display = channel.targetIdentity?.match(in: displays), display.id == operatorScreenID {
+                return .displayHasOperatorWindow(displayName: display.name)
+            }
+            return .displayMissing(displayName: channel.targetDisplayName)
         }
     }
 
     /// Where the output's window goes. A missing display hides it; it returns when the display reconnects.
     public func placement(_ role: OutputRole) -> OutputPlacement {
         switch status(role) {
-        case .off, .displayMissing: .hidden
+        case .off, .displayMissing, .displayHasOperatorWindow: .hidden
         case .windowed: .windowed
         case .fullScreen: if case .display(let id) = target(role) { .fullScreen(displayID: id) } else { .hidden }
         }
@@ -178,9 +185,13 @@ public struct OutputPlanner: Equatable, Sendable {
     /// Displays that can take this output full screen: not the operator's, and not one the other output
     /// already fills.
     public func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] {
-        let operatorID = operatorDisplayID ?? displays.first { $0.isPrimary }?.id
         let taken = takenDisplays(otherThan: role)
-        return displays.filter { $0.id != operatorID && !taken.contains($0.id) }
+        return displays.filter { $0.id != operatorScreenID && !taken.contains($0.id) }
+    }
+
+    /// The operator window's display, or the menu bar's until the window reports one.
+    private var operatorScreenID: UInt32? {
+        operatorDisplayID ?? displays.first { $0.isPrimary }?.id
     }
 
     /// Connected displays the other output fills, so the menu can say why they aren't offered for this one.
@@ -220,7 +231,7 @@ public struct OutputPlanner: Equatable, Sendable {
     }
 
     /// Points each output's remembered display at its current ID, after a display connects, comes back with a new ID,
-    /// or leaves its ID to another display.
+    /// leaves its ID to another display, or stops having the operator window.
     private mutating func findRememberedDisplays() {
         for role in OutputRole.allCases {
             guard var channel = channels[role], case .display(let id) = channel.target, let identity = channel.targetIdentity else {

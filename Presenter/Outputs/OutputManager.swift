@@ -92,12 +92,18 @@ final class OutputManager {
     }
 
     func operatorWindowMoved(to screen: NSScreen?) {
+        let placements = OutputRole.allCases.map(planner.placement)
         planner.operatorDisplayID = screen.flatMap(DisplayDiscovery.displayID(of:))
         // Not before: SwiftUI opens the operator window at launch only if no other window is open, and the planner
         // needs to know the operator's screen so an output never covers it.
-        if !hasRestored {
+        guard hasRestored else {
             hasRestored = true
             restore()
+            return
+        }
+        // An output waiting for the screen the operator window just left fills it now.
+        for (role, placement) in zip(OutputRole.allCases, placements) where planner.placement(role) != placement {
+            apply(role)
         }
     }
 
