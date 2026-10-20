@@ -2,9 +2,16 @@ import Foundation
 
 // Stage layouts: designs for the stage display. Undoable edits; the stage display changes as soon as they're made.
 extension PresentationCoordinator {
-    /// The layout the stage display uses, or nil for the standard look.
+    /// The layout the stage display uses, or nil for the standard look: one a slide action or macro switched to, else
+    /// the project's.
     public var stageLayout: StageLayout? {
-        project.stage.layoutID.flatMap { project.stageLayout(withID: $0) }
+        stageLayoutID.flatMap { project.stageLayout(withID: $0) }
+    }
+
+    /// The ID of `stageLayout`, nil for the standard look.
+    public var stageLayoutID: UUID? {
+        if let override = state.stageLayoutOverride { return override.layoutID }
+        return project.stage.layoutID
     }
 
     /// Adds a layout, copying `basedOn` if given (else one like the standard look), and returns it.
@@ -56,6 +63,7 @@ extension PresentationCoordinator {
             guard project.stageLayout(withID: layoutID) != nil else { return reject(.unknownStageLayout) }
             project.stageLayouts.removeAll { $0.id == layoutID }
             if project.stage.layoutID == layoutID { project.stage.layoutID = nil }
+            if state.stageLayoutOverride?.layoutID == layoutID { state.stageLayoutOverride = nil }
             return applied()
         }
     }
@@ -65,6 +73,9 @@ extension PresentationCoordinator {
     public func setStageLayout(_ layoutID: UUID?) -> CommandResult {
         var settings = project.stage
         settings.layoutID = layoutID
-        return setStageSettings(settings)
+        let result = setStageSettings(settings)
+        // The operator's choice replaces one a slide or macro made.
+        if result.isApplied { state.stageLayoutOverride = nil }
+        return result
     }
 }

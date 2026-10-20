@@ -151,6 +151,16 @@ turn it into a presentation, which `importSongs` (`+Songs.swift`) adds in one un
 keeps the credits (format 7). App: `ImportSongsSheet` reads files off the main actor; `SongDetailsFields` edits the
 credits, saving on Return or when a field loses focus.
 
+### Slide actions and macros
+
+`ShowAction` (core, `Models/Actions.swift`) is one thing to do at a cue; `SlideDocument.actions` run from `goLive`, after
+the audio cue and only when the position changes (`runSlideActions`), and `Macro` lists run from `runMacro`
+(`+Actions.swift`). `perform` calls the ordinary live commands and passes over any that can't apply, so a slide or
+macro never leaves a warning; macros may run macros, up to `macroNestingLimit` deep. Running is live state, never
+undone: a stage layout an action picks is `state.stageLayoutOverride`, not the saved `StageSettings`, so a later ⌘Z
+can't take it back; `setStageLayout` clears it. App: `ActionListEditor` and `AddActionMenu` (shared by the slide
+editor and `MacroEditorSheet`), `MacrosTab`.
+
 ### Transitions
 
 `TransitionMath` (core) gives every slide and element transition's geometry (opacity, offset, scale, wipe reveal) as a

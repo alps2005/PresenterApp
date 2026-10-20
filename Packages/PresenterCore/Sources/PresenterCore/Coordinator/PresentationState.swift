@@ -41,6 +41,9 @@ public final class PresentationState {
     public internal(set) var audio: LiveAudio?
     /// How the last stop asked the playing track to fade out, in seconds.
     public internal(set) var audioStopFade: Double = 0
+    /// The stage layout a slide action or macro switched to, over the project's choice until the operator picks one.
+    /// Live, like the rest of this state: never saved or undone.
+    public internal(set) var stageLayoutOverride: StageLayoutOverride?
 
     public init(
         selectedItemID: UUID? = nil,
@@ -105,6 +108,15 @@ public enum CommandResult: Equatable, Sendable {
     public var isApplied: Bool { self == .applied }
 }
 
+/// A stage layout chosen by an action for now. A nil `layoutID` is the standard look.
+public struct StageLayoutOverride: Equatable, Sendable {
+    public var layoutID: UUID?
+
+    public init(layoutID: UUID?) {
+        self.layoutID = layoutID
+    }
+}
+
 public enum CommandRejection: Error, Equatable, Sendable {
     case unknownItem
     case unknownSlide
@@ -132,6 +144,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case lastShow
     case noAudio
     case unknownStageLayout
+    case unknownMacro
 
     public var message: String {
         switch self {
@@ -157,6 +170,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .lastShow: "This is the only show. Make another before deleting it."
         case .noAudio: "No audio is playing."
         case .unknownStageLayout: "That stage layout no longer exists."
+        case .unknownMacro: "That macro no longer exists."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         }
     }

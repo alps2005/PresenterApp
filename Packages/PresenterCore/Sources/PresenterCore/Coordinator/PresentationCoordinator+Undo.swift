@@ -70,6 +70,7 @@ extension PresentationCoordinator {
     public func replaceProject(_ newProject: ProjectDocument) {
         project = newProject
         markOpenShowOpened()
+        state.stageLayoutOverride = nil
         // Undo can't reach back into a different project.
         undoStack.removeAll()
         redoStack.removeAll()

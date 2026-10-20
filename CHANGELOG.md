@@ -14,6 +14,12 @@ This release saves projects in file format 7. Once it opens a project, Presenter
 - **Song details:** writers, copyright and CCLI song number, kept from imported files and editable in the slide
   editor under **Document › Song**.
 
+### Show control
+- **Slide actions:** a slide can start, pause, reset or restart timers, show a message or prop, change the stage
+  message or layout, stop audio and run a macro when it's taken live (slide editor › Format › Actions).
+- **Macros:** buttons in the Live panel's new **Macros** tab that run a named list of actions, including clearing the
+  output, blackout and playing audio. With five tabs, a narrow Live panel shows them as icons.
+
 ### Scripture
 - **USFX and USX Bibles:** Import Bible… also reads USFX files and USX Bibles, from their folder or book files. A
   Digital Bible Library bundle's `metadata.xml` names the translation. Notes, headings and introductions are left out.

@@ -16,6 +16,8 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
     public var goToNext: GoToNextTimer?
     /// Starts or stops audio when the slide is taken live. Nil leaves the audio alone.
     public var audioCue: AudioCue?
+    /// What else happens when the slide is taken live, in order: timers, messages, props, the stage display, macros.
+    public var actions: [ShowAction]
 
     public init(
         id: UUID = UUID(),
@@ -25,7 +27,8 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         transition: SlideTransition? = nil,
         label: String? = nil,
         goToNext: GoToNextTimer? = nil,
-        audioCue: AudioCue? = nil
+        audioCue: AudioCue? = nil,
+        actions: [ShowAction] = []
     ) {
         self.id = id
         self.elements = elements
@@ -35,6 +38,39 @@ public struct SlideDocument: Identifiable, Codable, Hashable, Sendable {
         self.label = label
         self.goToNext = goToNext
         self.audioCue = audioCue
+        self.actions = actions
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, elements, notes, background, transition, label, goToNext, audioCue, actions
+    }
+
+    /// Slides saved before slide actions existed load with none.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        elements = try container.decode([SlideElement].self, forKey: .elements)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        background = try container.decodeIfPresent(SlideBackground.self, forKey: .background)
+        transition = try container.decodeIfPresent(SlideTransition.self, forKey: .transition)
+        label = try container.decodeIfPresent(String.self, forKey: .label)
+        goToNext = try container.decodeIfPresent(GoToNextTimer.self, forKey: .goToNext)
+        audioCue = try container.decodeIfPresent(AudioCue.self, forKey: .audioCue)
+        actions = try container.decodeIfPresent([ShowAction].self, forKey: .actions) ?? []
+    }
+
+    /// Without `actions` when there are none, as files were before them.
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(elements, forKey: .elements)
+        try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(background, forKey: .background)
+        try container.encodeIfPresent(transition, forKey: .transition)
+        try container.encodeIfPresent(label, forKey: .label)
+        try container.encodeIfPresent(goToNext, forKey: .goToNext)
+        try container.encodeIfPresent(audioCue, forKey: .audioCue)
+        if !actions.isEmpty { try container.encode(actions, forKey: .actions) }
     }
 
     public func element(withID elementID: UUID) -> SlideElement? {

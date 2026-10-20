@@ -583,6 +583,7 @@ struct SlideThumbnail: View {
                 Spacer()
                 if slide.slide.hasElementTransitions { ElementTransitionsMark() }
                 if let cue = slide.slide.audioCue { AudioCueMark(cue: cue) }
+                if !slide.slide.actions.isEmpty { ActionsMark(count: slide.slide.actions.count) }
                 if let advanceSeconds { AdvanceBadge(seconds: advanceSeconds, advance: advance) }
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }

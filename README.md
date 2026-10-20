@@ -156,6 +156,11 @@ swift test
 - **Props:** graphics that stay up across slides, such as a logo. Click a prop to show or hide it; several can be on at once. **New Prop** and **Edit Props…** open them in the slide editor, so they can hold text, shapes and images. Changes to a prop that is on screen wait until you hide it and show it again (its tile says EDITED).
 - **Clearing:** Clear Messages (⌥⌘G) and Clear Props (⌥⌘P) are in the Clear button's menu. Clear All (⌥⌘A) clears every layer and Restore brings them back. Blackout hides everything.
 
+**Slide actions and macros.** Like ProPresenter's, they do several things at a cue.
+- **Slide actions:** in the slide editor, **Format › Actions** lists what happens when the slide is taken live: start, pause, reset or restart a timer; show a message (with its blanks filled in) or clear messages; show or hide a prop; send or hide a stage message; switch the stage layout; stop the audio; run a macro. A ⚡ on the thumbnail marks slides with actions. Taking the same slide live again doesn't run them again.
+- **Macros:** the **Macros** tab in the Live panel holds buttons that run a named list of actions, such as *Pre-Service* (show the logo, start the countdown, play the walk-in music) or *End of Service* (clear everything). Macros can also clear the output, black out and play audio. Right-click a macro to edit, duplicate or delete it.
+- A stage layout switched by an action shows in the Stage tab; choosing one there takes over again. Actions that point at something deleted are marked and skipped.
+
 **Layers and transparent backgrounds.** The audience output has two layers, like ProPresenter: a background, and the slide's words on top.
 - **Opaque slides:** when a slide goes live, its background (colour or image) replaces the background on screen.
 - **Transparent slides:** a slide whose background is **None** (shown as a checkerboard on thumbnails) only changes the words. Whatever background is already on screen stays.
