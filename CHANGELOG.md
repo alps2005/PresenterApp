@@ -3,6 +3,16 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Fixes
+- **Take Live** is grey while nothing is cued; it used to stay bright red.
+- The show that's open at launch now shows when it was opened, so deleting another open show goes back to it.
+- An output whose remembered screen has the operator window says so, instead of "disconnected", and fills that
+  screen as soon as the operator window moves to another one. Before, it waited until a display changed.
+- In the stage layout editor, a region's name shows only while the pointer is over it, so names no longer cover
+  the words of overlapping regions.
+
 ## v1.1.0 (2026-10-19)
 
 This release saves projects in file format 6. Once it opens a project, Presenter 1.0 can't open that project.
