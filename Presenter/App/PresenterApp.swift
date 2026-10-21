@@ -10,6 +10,7 @@ struct PresenterApp: App {
         Window("Welcome to Presenter", id: WelcomeView.windowID) {
             WelcomeView(
                 coordinator: appDelegate.environment.coordinator,
+                outputManager: appDelegate.environment.outputManager,
                 persistence: appDelegate.environment.persistence,
                 ui: appDelegate.environment.operatorUI,
                 updater: appDelegate.environment.updater

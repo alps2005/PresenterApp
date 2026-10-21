@@ -127,7 +127,8 @@ in-window `ShowsSheet`. SwiftUI opens the first `Window` scene at launch, so the
 when macOS restores the last session's windows it brings back the operator window instead, so `AppDelegate` turns
 restoration off (`ApplePersistenceIgnoreState`) while the welcome window is enabled. (`defaultLaunchBehavior` would do
 this on macOS 15, but the app supports 14.) Closing the welcome window quits unless the operator window is open
-(`OperatorUIState.isOperatorWindowOpen`). Menu items that show a sheet in the operator window open that window first.
+(`OperatorUIState.isOperatorWindowOpen`) or Presenter is presenting (`isPresenting`; then the operator window comes
+back, e.g. after a Dock click mid-service). Menu items that show a sheet in the operator window open that window first.
 The audience outputs come back only once the operator window is on screen, so nothing reaches them before a show is
 picked.
 

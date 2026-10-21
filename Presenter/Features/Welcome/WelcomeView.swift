@@ -12,6 +12,7 @@ struct WelcomeView: View {
     static let size = CGSize(width: 480, height: 620)
 
     let coordinator: PresentationCoordinator
+    let outputManager: OutputManager
     let persistence: ProjectPersistence
     let ui: OperatorUIState
     let updater: UpdaterController
@@ -71,8 +72,15 @@ struct WelcomeView: View {
             if !showsAtLaunch && !ui.hasShownOperatorWindow { openOperatorWindow() }
         }
         .onDisappear {
-            // ✕ (or ⌘W) at launch quits, as the user asked; once the operator window is open it only closes.
-            if !isHandingOver && !ui.isOperatorWindowOpen { NSApp.terminate(nil) }
+            // ✕ (or ⌘W) at launch quits, as the user asked; once the operator window is open it only closes. Never
+            // quit mid-service (reopened from the Dock with the operator window closed): go back to the operator.
+            if !isHandingOver && !ui.isOperatorWindowOpen {
+                if coordinator.state.isPresenting(outputsShowing: outputManager.isAnyOutputOn) {
+                    openWindow(id: "operator")
+                } else {
+                    NSApp.terminate(nil)
+                }
+            }
             isHandingOver = false
         }
         .onExitCommand {
