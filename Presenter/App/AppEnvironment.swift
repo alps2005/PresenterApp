@@ -31,6 +31,8 @@ final class AppEnvironment {
     let persistence: ProjectPersistence
     /// Window-level UI requests that menu commands make, such as opening the New Song sheet.
     let operatorUI = OperatorUIState()
+    /// Checks for new versions; never interrupts a service.
+    let updater: UpdaterController
 
     init() {
         let store = ProjectStore(fileURL: ProjectPersistence.defaultFileURL)
@@ -45,6 +47,9 @@ final class AppEnvironment {
         audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
+        updater = UpdaterController { [coordinator, outputManager] in
+            coordinator.state.isPresenting(outputsShowing: outputManager.isAnyOutputOn)
+        }
         preloadProjectMedia()
         if initial.loadedFromDisk {
             removeDeletedMedia(keeping: initial.project, backups: ProjectBackups(projectFileURL: store.fileURL))

@@ -11,7 +11,8 @@ struct PresenterApp: App {
             WelcomeView(
                 coordinator: appDelegate.environment.coordinator,
                 persistence: appDelegate.environment.persistence,
-                ui: appDelegate.environment.operatorUI
+                ui: appDelegate.environment.operatorUI,
+                updater: appDelegate.environment.updater
             )
         }
         .windowStyle(.hiddenTitleBar)
@@ -45,6 +46,11 @@ struct PresenterApp: App {
                 persistence: appDelegate.environment.persistence,
                 ui: appDelegate.environment.operatorUI
             )
+            UpdateCommands(updater: appDelegate.environment.updater)
+        }
+
+        Settings {
+            UpdateSettingsView(updater: appDelegate.environment.updater)
         }
     }
 }

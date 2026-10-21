@@ -60,6 +60,8 @@ final class OutputManager {
     // MARK: Per output
 
     func isEnabled(_ role: OutputRole) -> Bool { planner.isEnabled(role) }
+    /// Whether the audience output or stage display is on (or waiting for its screen): a service is under way.
+    var isAnyOutputOn: Bool { OutputRole.allCases.contains { isEnabled($0) } }
     func target(_ role: OutputRole) -> OutputTarget { planner.target(role) }
     func status(_ role: OutputRole) -> OutputStatus { planner.status(role) }
     func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] { planner.fullScreenCandidates(role) }

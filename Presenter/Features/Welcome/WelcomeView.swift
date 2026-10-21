@@ -14,6 +14,7 @@ struct WelcomeView: View {
     let coordinator: PresentationCoordinator
     let persistence: ProjectPersistence
     let ui: OperatorUIState
+    let updater: UpdaterController
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
@@ -34,6 +35,15 @@ struct WelcomeView: View {
             .scrollContentBackground(.hidden)
             .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.hairline.opacity(0.5)))
+            if let version = updater.availableVersion {
+                Button {
+                    updater.checkForUpdates()
+                } label: {
+                    Label("Presenter \(version) is available", systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.link)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             HStack {
                 Toggle("Show this window when Presenter opens", isOn: $showsAtLaunch)
                     .toggleStyle(.checkbox)
