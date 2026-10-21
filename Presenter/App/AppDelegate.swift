@@ -5,6 +5,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Created once and kept for the app's lifetime, independent of any window or view.
     let environment = AppEnvironment()
 
+    override init() {
+        super.init()
+        // Presenter opens with the welcome window, which SwiftUI only does when macOS isn't bringing back last
+        // session's windows. With the welcome window turned off, the operator window comes back as before.
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: WelcomeView.showAtLaunchKey) == nil || defaults.bool(forKey: WelcomeView.showAtLaunchKey) {
+            defaults.register(defaults: ["ApplePersistenceIgnoreState": true])
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         Log.app.info("Launched")
     }

@@ -1,17 +1,15 @@
 import SwiftUI
 import PresenterCore
 
-/// Lists the project's shows, most recently opened first, to open one or make a new one. Shown at launch (unless
-/// turned off) and from File › Shows…, like Xcode's welcome window.
+/// Lists the project's shows, most recently opened first, to open one or make a new one, without leaving the
+/// operator window (File › Shows…, ⇧⌘O). Presenter opens with the welcome window, which lists them too.
 struct ShowsSheet: View {
-    static let showAtLaunchKey = "showShowsAtLaunch"
 
     let coordinator: PresentationCoordinator
     /// Called after a show is opened, so the operator window can leave a library presentation it was showing.
     let onOpened: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(Self.showAtLaunchKey) private var showsAtLaunch = true
     @State private var selectedID: UUID?
     @State private var isNamingNewShow = false
 
@@ -63,10 +61,6 @@ struct ShowsSheet: View {
                 Label("New Show…", systemImage: "plus")
             }
             Spacer()
-            Toggle("Show this window when Presenter opens", isOn: $showsAtLaunch)
-                .toggleStyle(.checkbox)
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(Spacing.xl)
         .frame(maxHeight: .infinity, alignment: .top)

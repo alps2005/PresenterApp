@@ -5,6 +5,20 @@ struct PresenterApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
+        // First, so it's the window Presenter opens with (AppDelegate keeps macOS from restoring the operator
+        // window over it).
+        Window("Welcome to Presenter", id: WelcomeView.windowID) {
+            WelcomeView(
+                coordinator: appDelegate.environment.coordinator,
+                persistence: appDelegate.environment.persistence,
+                ui: appDelegate.environment.operatorUI
+            )
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .keyboardShortcut("1", modifiers: [.command, .shift])
+
         Window("Presenter", id: "operator") {
             OperatorView(
                 coordinator: appDelegate.environment.coordinator,

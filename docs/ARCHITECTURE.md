@@ -122,6 +122,15 @@ show (a computed property), so the commands, Up Next and Next/Previous work on i
 undo, because an undo snapshot from another show would switch shows back. The live slide is a snapshot, so it stays
 on screen; Next waits until a slide of the open show is taken live.
 
+Presenter opens with `WelcomeView` (the `welcome` window), which lists the shows with `ShowList`, the same view as the
+in-window `ShowsSheet`. SwiftUI opens the first `Window` scene at launch, so the welcome window is declared first; but
+when macOS restores the last session's windows it brings back the operator window instead, so `AppDelegate` turns
+restoration off (`ApplePersistenceIgnoreState`) while the welcome window is enabled. (`defaultLaunchBehavior` would do
+this on macOS 15, but the app supports 14.) Closing the welcome window quits unless the operator window is open
+(`OperatorUIState.isOperatorWindowOpen`). Menu items that show a sheet in the operator window open that window first.
+The audience outputs come back only once the operator window is on screen, so nothing reaches them before a show is
+picked.
+
 ### Audio
 
 Audio files are `MediaAsset`s of kind `.audio`. The live track is `state.audio` (`LiveAudio`, not saved), changed by

@@ -87,6 +87,7 @@ swift test
 | Show/hide the audio bin | ⌥⌘U, or the **Audio** toolbar button |
 | Stop the audio (fading it out) | **Stop** under the Audience preview, or Live › Stop Audio |
 | Bring back the operator window after closing it | ⌘0 (Window › Show Operator Window) |
+| Open the welcome window again | ⇧⌘1 (Window › Welcome to Presenter) |
 
 **Audience output.** Choose **Show in Window** to rehearse on a single screen. With a second display connected, pick it under **Full Screen** to get a borderless output covering that display. Full-screen output is never offered on the display that shows the operator window. If the output display disconnects, the output hides and the toolbar shows a warning. It comes back automatically when that display reconnects. Presenter remembers each output's screen on this Mac: at the next launch the audience output and stage display open where they were, found by the display's serial number (or make, model and name) even if macOS gives it a new ID. If that display isn't connected yet, the output waits for it.
 
@@ -130,7 +131,8 @@ swift test
 - **Notes:** the live slide's notes also appear under the Audience preview.
 
 **Shows and the library.** A project holds one library of presentations and any number of shows. A show is a playlist: a Sunday service, a midweek meeting, Easter. All shows use the same library, so editing a song changes it in every show that has it.
-- **Shows window:** it opens at launch and from **File › Shows…** (⇧⌘O). It lists the shows with the open one first, then the most recently opened. Double-click one to open it, or use **New Show…**. Right-click to rename, duplicate or delete a show. Untick **Show this window when Presenter opens** to skip it at launch.
+- **Welcome window:** Presenter opens with it, before the operator window. It lists the shows with the open one first, then the most recently opened. Double-click one (or select it and press Return) to open it and start presenting. **New Show** makes one (its arrow also duplicates the selected show), **Import Songs…** and **Open Project…** go straight to those, and right-click renames, duplicates or deletes a show. Its close button quits Presenter. Untick **Show this window when Presenter opens** to start in the operator window instead. Window › **Welcome to Presenter** (⇧⌘1) opens it again; then closing it just closes it.
+- **Shows sheet:** **File › Shows…** (⇧⌘O) lists the same shows over the operator window, for switching quickly during a service.
 - **Opening a show** never changes the audience output. What's live stays on screen until you take a slide live, and Undo starts afresh.
 - **Folders:** **New Folder…** in the Library makes a folder. Drag presentations onto it, or right-click one and choose **Move To**. Dragging one onto the **Library** header takes it out of its folder. Deleting a folder keeps its presentations: they move to the top of the library.
 - **Deleting a presentation** removes it from the library and from every show.

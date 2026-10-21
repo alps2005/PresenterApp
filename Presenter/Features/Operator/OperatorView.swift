@@ -39,7 +39,16 @@ struct OperatorView: View {
         #if DEBUG
         .onAppear { openEditorIfAsked() }
         #endif
-        .onAppear { offerShowsAtLaunch() }
+        .onAppear {
+            ui.isOperatorWindowOpen = true
+            ui.hasShownOperatorWindow = true
+        }
+        .onDisappear { ui.isOperatorWindowOpen = false }
+        // Opened from the welcome window, or the open show deleted: leave whatever belonged to the old show.
+        .onChange(of: coordinator.project.activePlaylistID) {
+            browsedPresentationID = nil
+            editSession = nil
+        }
         .sheet(isPresented: $ui.isShowingShows) {
             ShowsSheet(coordinator: coordinator) {
                 browsedPresentationID = nil
@@ -70,15 +79,6 @@ struct OperatorView: View {
             Button("OK") {}
         } message: {
             Text(persistence.problem ?? "")
-        }
-    }
-
-    private func offerShowsAtLaunch() {
-        guard !ui.hasOfferedShowsAtLaunch else { return }
-        ui.hasOfferedShowsAtLaunch = true
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: ShowsSheet.showAtLaunchKey) == nil || defaults.bool(forKey: ShowsSheet.showAtLaunchKey) {
-            ui.isShowingShows = true
         }
     }
 

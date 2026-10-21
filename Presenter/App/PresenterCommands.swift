@@ -34,22 +34,22 @@ struct PresenterCommands: Commands {
             // Not the selection: it changes while scrolling the workspace, and each change would rebuild the menus.
             .disabled(coordinator.project.playlist.items.isEmpty)
 
-            Button("New Song…") { ui.isAddingSong = true }
+            Button("New Song…") { inOperatorWindow { ui.isAddingSong = true } }
                 .keyboardShortcut("n", modifiers: [.command, .option])
 
-            Button("Import Songs…") { ui.isImportingSongs = true }
+            Button("Import Songs…") { inOperatorWindow { ui.isImportingSongs = true } }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
 
             // ⌥⌘V, for verse: ⌥⌘B is Blackout.
-            Button("Add Scripture…") { ui.isAddingScripture = true }
+            Button("Add Scripture…") { inOperatorWindow { ui.isAddingScripture = true } }
                 .keyboardShortcut("v", modifiers: [.command, .option])
 
             Divider()
 
-            Button("Shows…") { ui.isShowingShows = true }
+            Button("Shows…") { inOperatorWindow { ui.isShowingShows = true } }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
 
-            Button("Open Project…") { persistence.openProject() }
+            Button("Open Project…") { inOperatorWindow { persistence.openProject() } }
                 .keyboardShortcut("o")
         }
 
@@ -169,4 +169,10 @@ struct PresenterCommands: Commands {
         }
     }
 
+    /// Menu items that show a sheet or panel in the operator window bring it up first, so they still work from the
+    /// welcome window (or with the operator window closed).
+    private func inOperatorWindow(_ request: () -> Void) {
+        openWindow(id: "operator")
+        request()
+    }
 }

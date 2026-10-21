@@ -7,6 +7,12 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 This release saves projects in file format 7. Once it opens a project, Presenter 1.1 can't open that project.
 
+### Shows
+- **Welcome window:** Presenter now opens with a window like Xcode's welcome window: the app's version, **Open
+  Project…**, **Import Songs…**, **New Show**, and the shows, most recently opened first. Opening a show brings up the
+  operator window; the close button quits. Window › Welcome to Presenter (⇧⌘1) opens it again. It replaces the
+  Shows window that opened over the operator window at launch; **File › Shows…** (⇧⌘O) still opens that one.
+
 ### Songs
 - **Import Songs** (File › Import Songs…, ⇧⌘I): OpenLyrics, ChordPro, SongSelect (lyrics .txt and SongPro .usr) and
   plain-text lyrics, several files at once. Chords are left out; sections become labelled groups, and a file's
