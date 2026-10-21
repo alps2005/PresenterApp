@@ -84,11 +84,16 @@ public struct Theme: Identifiable, Codable, Hashable, Sendable {
         )
         scripture.background = .color(RGBAColor(red: 0.12, green: 0.11, blue: 0.10))
 
-        // For a camera feed or stream: words in a dark band along the bottom, no background of its own.
+        // For a camera feed or stream: words in a dark band along the bottom, no background of its own. Titles too,
+        // so a slide's heading doesn't land mid-screen over the camera.
         var lowerThird = Theme(name: "Lower Third")
+        let band = TextBackgroundBox(color: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.7))
         lowerThird.body = ThemeText(
-            style: TextStyle(fontSize: 64, weight: .semibold, hasShadow: false,
-                             backgroundBox: TextBackgroundBox(color: RGBAColor(red: 0, green: 0, blue: 0, alpha: 0.7))),
+            style: TextStyle(fontSize: 64, weight: .semibold, hasShadow: false, backgroundBox: band),
+            box: .preset(.bottom, margin: 0.06)
+        )
+        lowerThird.title = ThemeText(
+            style: TextStyle(fontSize: 72, weight: .bold, hasShadow: false, backgroundBox: band),
             box: .preset(.bottom, margin: 0.06)
         )
         lowerThird.background = .transparent

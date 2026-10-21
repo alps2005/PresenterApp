@@ -3,6 +3,13 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.2.1 (2026-10-21)
+
+The first update delivered by Presenter's own updater.
+
+### Fixes
+- **Lower Third theme:** titles sit in the bottom band too, instead of mid-screen (new projects).
+
 ## v1.2.0 (2026-10-21)
 
 This release saves projects in file format 7. Once it opens a project, Presenter 1.1 can't open that project.
