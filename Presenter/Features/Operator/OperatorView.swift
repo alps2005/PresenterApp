@@ -94,6 +94,13 @@ struct OperatorView: View {
         if UserDefaults.standard.string(forKey: ImportSongsSheet.debugFolderKey)?.isEmpty == false {
             ui.isImportingSongs = true
         }
+        // `-PresenterDebugGoLive YES` puts the first slide live with a message and a prop, to check the outputs.
+        if UserDefaults.standard.bool(forKey: "PresenterDebugGoLive"), let item = coordinator.project.playlist.items.first,
+           let slide = coordinator.project.presentation(withID: item.presentationID)?.slides.first {
+            coordinator.takeLive(slideID: slide.id, inItem: item.id)
+            if let message = coordinator.project.messages.first { coordinator.showMessage(message.id) }
+            if let prop = coordinator.project.props.slides.first { coordinator.toggleProp(prop.id) }
+        }
         guard UserDefaults.standard.bool(forKey: "PresenterDebugOpenEditor"),
               let item = coordinator.project.playlist.items.first else { return }
         editSession = EditSession(itemID: item.id, presentationID: item.presentationID, initialSlideID: nil)
