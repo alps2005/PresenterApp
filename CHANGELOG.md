@@ -19,7 +19,9 @@ This release saves projects in file format 7. Once it opens a project, Presenter
   live or an output is on, it only shows a quiet "Update to…" item, and an accepted update waits until nothing is
   live. Updates are signed and checked. **Settings…** turns the daily check off. This is the last version you
   download by hand.
-- **Download as a DMG:** releases are now a disk image with an Applications shortcut, instead of a zip.
+- **Download as a DMG:** releases are now a disk image with an Applications shortcut, instead of a zip. Presenter
+  says so if it's opened from the disk image (or a copy macOS runs from a temporary place), where it can't update
+  itself.
 
 ### Songs
 - **Import Songs** (File › Import Songs…, ⇧⌘I): OpenLyrics, ChordPro, SongSelect (lyrics .txt and SongPro .usr) and

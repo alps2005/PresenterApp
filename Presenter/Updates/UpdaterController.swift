@@ -38,6 +38,21 @@ final class UpdaterController: NSObject {
 
     var updater: SPUUpdater? { controller?.updater }
 
+    /// Sparkle can't replace a copy running from the disk image, or one macOS moved to a hidden read-only place
+    /// because it wasn't dragged into a folder in Finder ("App Translocation"). Says so once per launch.
+    func warnIfThisCopyCantUpdate(at bundleURL: URL = Bundle.main.bundleURL) {
+        guard isAvailable else { return }
+        let isReadOnly = (try? bundleURL.resourceValues(forKeys: [.volumeIsReadOnlyKey]))?.volumeIsReadOnly == true
+        guard isReadOnly || bundleURL.path.contains("/AppTranslocation/") else { return }
+        Log.app.info("Running from a read-only place; updates can't install")
+        let alert = NSAlert()
+        alert.messageText = "Move Presenter to Applications to get updates"
+        alert.informativeText = isReadOnly && !bundleURL.path.contains("/AppTranslocation/")
+            ? "Presenter is running from the disk image, so it can't update itself. Quit, drag Presenter onto the Applications shortcut, eject the disk image and open Presenter from Applications."
+            : "macOS is running this copy from a temporary place, so it can't update itself. Quit, then in Finder drag Presenter into the Applications folder and open it from there."
+        alert.runModal()
+    }
+
     func checkForUpdates() {
         controller?.checkForUpdates(nil)
     }

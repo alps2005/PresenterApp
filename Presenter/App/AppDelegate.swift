@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Log.app.info("Launched")
+        environment.updater.warnIfThisCopyCantUpdate()
     }
 
     /// Closing the operator window must not take down the audience output mid-service.

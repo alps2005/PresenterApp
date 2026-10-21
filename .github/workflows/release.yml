@@ -57,14 +57,15 @@ jobs:
       # Ad-hoc signed: no Apple Developer account needed. macOS asks users to confirm on first launch.
       # A generic destination builds for Apple Silicon and Intel; 'platform=macOS' would build only for the
       # runner's own chip. The version comes from the tag: v0.1.0-beta.1 → 0.1.0, with the run number as build
-      # (Sparkle compares build numbers, so they must keep increasing).
+      # (Sparkle compares build numbers, so they must keep increasing). CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+      # leaves out get-task-allow, which Xcode adds for debugging and a released app doesn't need.
       - name: Build Release app
         env:
           version: ${{ steps.release.outputs.version }}
         run: |
           xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Release \
             -destination 'generic/platform=macOS' -derivedDataPath build \
-            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
             MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="${{ github.run_number }}" build
 
       - name: Check the app runs on both Mac chips
