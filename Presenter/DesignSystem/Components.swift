@@ -290,11 +290,11 @@ enum MediaPanel {
     /// Asks the operator for media files of these types. Returns nothing if they cancel. NSOpenPanel rather than
     /// `.fileImporter`: callers can live in a popover that closes when the panel takes focus, which would drop a
     /// SwiftUI importer's callback.
-    static func choose(_ types: [UTType], multiple: Bool = false, message: String) -> [URL] {
+    static func choose(_ types: [UTType], multiple: Bool = false, folders: Bool = false, message: String) -> [URL] {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = types
         panel.allowsMultipleSelection = multiple
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = folders
         panel.message = message
         guard panel.runModal() == .OK else { return [] }
         return panel.urls

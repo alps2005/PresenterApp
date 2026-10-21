@@ -1,0 +1,2 @@
+# Never put private keys or notes in the knowledge graph (graphify reads this even when told to skip .gitignore).
+.secrets/

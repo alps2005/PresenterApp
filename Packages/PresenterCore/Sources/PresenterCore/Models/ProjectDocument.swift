@@ -15,7 +15,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 5: library folders; more than one show (`playlists`), each with the date it was last opened; and audio
     ///   (audio media, slide audio cues and presentation soundtracks) (v1.0.0).
     /// - 6: stage layouts (`stageLayouts`, `StageSettings.layoutID`) (v1.1.0).
-    public static let currentSchemaVersion = 6
+    /// - 7: song details (`PresentationDocument.song`: authors, copyright, CCLI song number), slide actions
+    ///   (`SlideDocument.actions`) and macros (`macros`).
+    public static let currentSchemaVersion = 7
 
     public let id: UUID
     public var name: String
@@ -42,6 +44,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public var themes: [Theme]
     /// The theme new presentations and songs start with. Nil starts them without one.
     public var defaultThemeID: UUID?
+    /// Named lists of actions the operator runs with a click (see `Macro`).
+    public var macros: [Macro]
 
     public init(
         id: UUID = UUID(),
@@ -58,7 +62,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         messages: [MessageDefinition] = MessageDefinition.defaults(),
         props: PresentationDocument = .propsLibrary(),
         themes: [Theme] = Theme.presets(),
-        defaultThemeID: UUID? = nil
+        defaultThemeID: UUID? = nil,
+        macros: [Macro] = []
     ) {
         self.id = id
         self.name = name
@@ -75,10 +80,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.props = props
         self.themes = themes
         self.defaultThemeID = defaultThemeID
+        self.macros = macros
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, name, schemaVersion, presentations, libraryFolders, playlists, activePlaylistID, mediaAssets, timers, stage, stageLayouts, messages, props, themes, defaultThemeID
+        case macros
     }
 
     /// Files saved before there could be more than one show have just `playlist`.
@@ -111,6 +118,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         // Projects saved before themes existed get the starting ones; their presentations follow none.
         themes = try container.decodeIfPresent([Theme].self, forKey: .themes) ?? Theme.presets()
         defaultThemeID = try container.decodeIfPresent(UUID.self, forKey: .defaultThemeID)
+        macros = try container.decodeIfPresent([Macro].self, forKey: .macros) ?? []
     }
 
     /// The open show. Setting it replaces the open show.

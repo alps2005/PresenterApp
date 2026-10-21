@@ -21,6 +21,9 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
     /// Plays when the operator moves into the presentation from another item, unless it's already playing or the
     /// slide taken live has an audio cue of its own. Nil plays nothing.
     public var soundtrack: AudioTrack?
+    /// Who wrote the song and who holds its copyright, for licence reporting and credits. Nil for presentations that
+    /// aren't songs, or songs nobody has filled in.
+    public var song: SongInfo?
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -35,6 +38,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         slideshowInterval: Double? = nil,
         folderID: UUID? = nil,
         soundtrack: AudioTrack? = nil,
+        song: SongInfo? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -48,15 +52,17 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         self.slideshowInterval = slideshowInterval
         self.folderID = folderID
         self.soundtrack = soundtrack
+        self.song = song
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, soundtrack, createdAt, updatedAt
+        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, soundtrack, song
+        case createdAt, updatedAt
     }
 
-    /// Files saved before arrangements, themes, slideshows, folders or soundtracks existed load with none.
+    /// Files saved before arrangements, themes, slideshows, folders, soundtracks or song details existed load with none.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -69,6 +75,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         slideshowInterval = try container.decodeIfPresent(Double.self, forKey: .slideshowInterval)
         folderID = try container.decodeIfPresent(UUID.self, forKey: .folderID)
         soundtrack = try container.decodeIfPresent(AudioTrack.self, forKey: .soundtrack)
+        song = try container.decodeIfPresent(SongInfo.self, forKey: .song)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }

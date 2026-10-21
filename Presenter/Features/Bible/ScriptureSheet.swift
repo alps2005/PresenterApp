@@ -3,7 +3,8 @@ import UniformTypeIdentifiers
 import PresenterCore
 
 /// Type a reference ("Juan 3:16-18") or search for words, check the slides, and add the passage to the show.
-/// Translations are public-domain Zefania or OSIS files the operator imports; none are bundled.
+/// Translations are public-domain or openly licensed files (Zefania, OSIS, USFX, USX) the operator imports; none are
+/// bundled.
 struct ScriptureSheet: View {
     let coordinator: PresentationCoordinator
     /// Called with the new show item, so the workspace can scroll to it.
@@ -20,6 +21,9 @@ struct ScriptureSheet: View {
     @State private var themeID: UUID?
     @State private var importError: String?
     @State private var translationPendingRemoval: BibleStore.Entry?
+    @State private var isRenaming = false
+    @State private var draftName = ""
+    @State private var draftAbbreviation = ""
 
     private var translation: BibleTranslation? {
         library.open.flatMap { $0.id.uuidString == translationID ? $0 : nil }
@@ -109,6 +113,22 @@ struct ScriptureSheet: View {
             Button("Import Bible…") { importBible() }
                 .disabled(library.isWorking)
             if let entry = library.entries.first(where: { $0.id.uuidString == translationID }) {
+                Button("Rename…") {
+                    draftName = entry.name
+                    draftAbbreviation = entry.abbreviation
+                    isRenaming = true
+                }
+                .disabled(translation == nil)
+                .help("Change the name and the abbreviation that slides show, like “KJV”")
+                .popover(isPresented: $isRenaming) {
+                    PopoverForm("Rename Bible", primary: "Rename", width: 280, onCancel: { isRenaming = false }) {
+                        rename()
+                        isRenaming = false
+                    } fields: {
+                        TextField("Name", text: $draftName).textFieldStyle(.roundedBorder)
+                        TextField("Abbreviation, shown on slides", text: $draftAbbreviation).textFieldStyle(.roundedBorder)
+                    }
+                }
                 Button("Remove…") { translationPendingRemoval = entry }
                     .help("Remove \(entry.name) from Presenter")
             }
@@ -120,19 +140,32 @@ struct ScriptureSheet: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             if let importError { WarningLabel(importError) }
-            Text("Import a Bible to start. Presenter reads Zefania and OSIS XML files, the free formats public-domain translations are shared in, such as the King James Version, the World English Bible or the Reina-Valera 1909. The README says where to find them.")
+            Text("Import a Bible to start. Presenter reads Zefania, OSIS, USFX and USX files, the free formats public-domain and open translations are shared in, such as the King James Version, the World English Bible or the Reina-Valera 1909. For USX, choose the Bible's folder or all its book files. The README says where to find them.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
     }
 
+    /// Saves a new name and abbreviation for the open translation. Empty fields keep what it had.
+    private func rename() {
+        guard var updated = translation else { return }
+        let name = draftName.trimmingCharacters(in: .whitespaces)
+        let abbreviation = draftAbbreviation.trimmingCharacters(in: .whitespaces)
+        if !name.isEmpty { updated.name = name }
+        if !abbreviation.isEmpty { updated.abbreviation = abbreviation }
+        library.update(updated)
+    }
+
     private func importBible() {
-        guard let url = MediaPanel.choose([.xml], message: "Choose a Zefania or OSIS Bible file (.xml).").first else { return }
+        let types = [UTType.xml] + ["usx", "usfx"].compactMap { UTType(filenameExtension: $0) }
+        let urls = MediaPanel.choose(types, multiple: true, folders: true,
+                                     message: "Choose a Bible file (Zefania, OSIS, USFX), or a USX Bible's folder or book files.")
+        guard !urls.isEmpty else { return }
         importError = nil
         Task {
             do {
-                translationID = try await library.importFile(at: url).uuidString
+                translationID = try await library.importFiles(at: urls).uuidString
             } catch let failure as BibleLibrary.ImportFailure {
                 importError = failure.message
             } catch {

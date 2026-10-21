@@ -5,13 +5,17 @@ import PresenterCore
 /// Drawn on the audience output and in the operator's Audience preview, so both match.
 struct OverlayLayers: View {
     let coordinator: PresentationCoordinator
+    /// An output's look can leave out the props or the message.
+    var look = OutputLook.everything
 
     var body: some View {
         ZStack {
-            ForEach(coordinator.audienceProps) { prop in
-                SlideRenderView(scene: .slide(RenderedSlide(slide: prop, background: .transparent)), transparency: .clear)
+            if look.showsProps {
+                ForEach(coordinator.audienceProps) { prop in
+                    SlideRenderView(scene: .slide(RenderedSlide(slide: prop, background: .transparent)), transparency: .clear)
+                }
             }
-            if let (message, values) = coordinator.audienceMessage {
+            if look.showsMessages, let (message, values) = coordinator.audienceMessage {
                 MessageBar(coordinator: coordinator, message: message, values: values)
             }
         }

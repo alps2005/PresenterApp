@@ -25,7 +25,7 @@ struct StageLayoutEditor: View {
                         header(layout)
                         StageLayoutCanvas(coordinator: coordinator, layout: layout, selection: $regionID)
                             .aspectRatio(16 / 9, contentMode: .fit)
-                        Text("Drag a region to move it and its handles to resize it. Hold ⌘ to place it freely. The preview shows what's live now.")
+                        Text("Point at a region to see its name. Drag it to move it and its handles to resize it. Hold ⌘ to place it freely. The preview shows what's live now.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -170,6 +170,9 @@ private struct StageLayoutCanvas: View {
     @State private var draft: (regionID: UUID, frame: NormalizedRect)?
     @State private var dragOrigin: NormalizedRect?
     @State private var guides: Snapping.Result?
+    /// The region under the pointer, named with a tag. Only that one: regions may overlap, and an always-on tag
+    /// would cover what the region below shows.
+    @State private var hoveredRegionID: UUID?
 
     private static let snapDistance: CGFloat = 6
     private static let minimumSize = 0.03
@@ -199,10 +202,17 @@ private struct StageLayoutCanvas: View {
                                 .padding(.horizontal, 3)
                                 .background(Color.black.opacity(0.6))
                                 .foregroundStyle(.white)
-                                .opacity(region.id == selection ? 0 : 1)
+                                .opacity(region.id == hoveredRegionID && region.id != selection ? 1 : 0)
                         }
                         .frame(width: rect.width, height: rect.height)
                         .offset(x: rect.minX, y: rect.minY)
+                        .onHover { inside in
+                            if inside {
+                                hoveredRegionID = region.id
+                            } else if hoveredRegionID == region.id {
+                                hoveredRegionID = nil
+                            }
+                        }
                         .gesture(
                             DragGesture(minimumDistance: 2, coordinateSpace: .named(EditorCanvas.stageSpace))
                                 .onChanged { value in move(region, by: value.translation, in: size) }

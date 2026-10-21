@@ -6,10 +6,15 @@ import PresenterCore
 @Observable
 final class OperatorUIState {
     var isAddingSong = false
+    var isImportingSongs = false
     var isAddingScripture = false
     var isShowingShows = false
-    /// The Shows window opens once at launch, not every time the operator window is reopened.
-    var hasOfferedShowsAtLaunch = false
+    /// The audience output whose look is being edited.
+    var editingLookRole: OutputRole?
+    /// Whether the operator window is on screen; the welcome window quits Presenter when closed without it.
+    var isOperatorWindowOpen = false
+    /// Set once the operator window has appeared, so the welcome window only skips itself at launch.
+    var hasShownOperatorWindow = false
 }
 
 /// The app's long-lived services.
@@ -28,6 +33,8 @@ final class AppEnvironment {
     let persistence: ProjectPersistence
     /// Window-level UI requests that menu commands make, such as opening the New Song sheet.
     let operatorUI = OperatorUIState()
+    /// Checks for new versions; never interrupts a service.
+    let updater: UpdaterController
 
     init() {
         let store = ProjectStore(fileURL: ProjectPersistence.defaultFileURL)
@@ -42,6 +49,9 @@ final class AppEnvironment {
         audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
+        updater = UpdaterController { [coordinator, outputManager] in
+            coordinator.state.isPresenting(outputsShowing: outputManager.isAnyOutputOn)
+        }
         preloadProjectMedia()
         if initial.loadedFromDisk {
             removeDeletedMedia(keeping: initial.project, backups: ProjectBackups(projectFileURL: store.fileURL))

@@ -295,7 +295,10 @@ final class PresentationCoordinatorTests: XCTestCase {
 
         f.coordinator.replaceProject(opened)
 
-        XCTAssertEqual(f.coordinator.project, opened)
+        var expected = opened
+        expected.playlists[0].lastOpenedAt = f.coordinator.project.playlist.lastOpenedAt
+        XCTAssertNotNil(expected.playlists[0].lastOpenedAt, "Opening a project opens its show")
+        XCTAssertEqual(f.coordinator.project, expected)
         XCTAssertEqual(f.coordinator.audienceScene, liveBefore)
         XCTAssertEqual(f.coordinator.state.selectedItemID, opened.playlist.items.first?.id)
         XCTAssertNil(f.coordinator.state.preview)

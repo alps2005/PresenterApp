@@ -95,6 +95,15 @@ Blackout covers all four.
   `liveText` environment value, which only the audience output, its preview and the stage display set; only text
   with a live value redraws.
 
+### Second output and looks
+
+`OutputRole` has two audience outputs (`audience`, `secondAudience`) and the stage display. Each audience output has
+an `OutputLook` (core): which layers it shows, a key colour for a hidden background, and a theme for the words.
+`OutputLook.scene(from:theme:)` turns the coordinator's `audienceScene` into what that output shows (pure, tested), and
+`OverlayLayers` leaves out props or messages. `AudienceOutputView` reads the look through a closure in `body`, so
+changes show at once. Looks are saved per Mac by `OutputManager` (`outputLooks` in user defaults, beside
+`savedOutputs`); they hold a theme ID, and a deleted theme just isn't applied.
+
 ### Placing the output windows
 
 `OutputPlanner` (core) decides where each output goes:
@@ -122,6 +131,16 @@ show (a computed property), so the commands, Up Next and Next/Previous work on i
 undo, because an undo snapshot from another show would switch shows back. The live slide is a snapshot, so it stays
 on screen; Next waits until a slide of the open show is taken live.
 
+Presenter opens with `WelcomeView` (the `welcome` window), which lists the shows with `ShowList`, the same view as the
+in-window `ShowsSheet`. SwiftUI opens the first `Window` scene at launch, so the welcome window is declared first; but
+when macOS restores the last session's windows it brings back the operator window instead, so `AppDelegate` turns
+restoration off (`ApplePersistenceIgnoreState`) while the welcome window is enabled. (`defaultLaunchBehavior` would do
+this on macOS 15, but the app supports 14.) Closing the welcome window quits unless the operator window is open
+(`OperatorUIState.isOperatorWindowOpen`) or Presenter is presenting (`isPresenting`; then the operator window comes
+back, e.g. after a Dock click mid-service). Menu items that show a sheet in the operator window open that window first.
+The audience outputs come back only once the operator window is on screen, so nothing reaches them before a show is
+picked.
+
 ### Audio
 
 Audio files are `MediaAsset`s of kind `.audio`. The live track is `state.audio` (`LiveAudio`, not saved), changed by
@@ -134,11 +153,32 @@ A track that doesn't loop reports its end with `audioDidFinish(startID:)`.
 ### Scripture
 
 Core, in `Bible/`: `BibleBook` and `BibleBookLookup` (66 books, English and Spanish names and abbreviations),
-`ScriptureReference` (parse and format), `BibleFileParser` (Zefania and OSIS XML, external entities off),
+`ScriptureReference` (parse and format), `BibleFileParser` (Zefania, OSIS, USFX and USX, several files merged into one
+translation, DBL `metadata.xml` for its name; external entities off),
 `BibleTranslation.passage(for:)` (bounds-checked lookup), `BibleSearch`, `ScriptureSlides` and `BibleStore`
 (`Application Support/Presenter/Bibles`, one JSON per translation plus an index). `addScripture` (`+Scripture.swift`)
 adds a passage like `addSong`. App: `BibleLibrary` reads and parses off the main actor and keeps one translation
 open; `ScriptureSheet` is the UI.
+
+### Song import
+
+Core, in `Songs/`: `SongImporter.parse(_:fileName:)` tells the format from the content (and the extension for
+ChordPro) and returns an `ImportedSong`: labelled sections of slides, `SongInfo` credits and a singing order.
+`OpenLyricsParser` (XML, external entities off), `ChordProParser` and `SongSelectParser` (lyrics .txt and SongPro
+.usr) fill it; plain text goes through `LyricsParser`. `ImportedSong.slides(maxLinesPerSlide:)` and `.arrangement`
+turn it into a presentation, which `importSongs` (`+Songs.swift`) adds in one undo step. `PresentationDocument.song`
+keeps the credits (format 7). App: `ImportSongsSheet` reads files off the main actor; `SongDetailsFields` edits the
+credits, saving on Return or when a field loses focus.
+
+### Slide actions and macros
+
+`ShowAction` (core, `Models/Actions.swift`) is one thing to do at a cue; `SlideDocument.actions` run from `goLive`, after
+the audio cue and only when the position changes (`runSlideActions`), and `Macro` lists run from `runMacro`
+(`+Actions.swift`). `perform` calls the ordinary live commands and passes over any that can't apply, so a slide or
+macro never leaves a warning; macros may run macros, up to `macroNestingLimit` deep. Running is live state, never
+undone: a stage layout an action picks is `state.stageLayoutOverride`, not the saved `StageSettings`, so a later ⌘Z
+can't take it back; `setStageLayout` clears it. App: `ActionListEditor` and `AddActionMenu` (shared by the slide
+editor and `MacroEditorSheet`), `MacrosTab`.
 
 ### Transitions
 
@@ -155,6 +195,28 @@ interval (`state.autoAdvance`, never saved or undone). A slide that brings a vid
 `AutoAdvanceDriver` (app) runs one task that sleeps until the deadline and calls `advanceIfDue()`; while waiting on a
 video, it calls `videoDidFinish` once the player reports the end, the video is no longer live, or its file is missing.
 Tests drive the countdown with the coordinator's injectable `now`.
+
+## Updates
+
+`UpdaterController` wraps Sparkle 2's `SPUStandardUpdaterController`. Settings live in `Config/Presenter-Info.plist`
+(merged into the generated Info.plist): the feed URL and public key come from the build settings
+`PRESENTER_FEED_URL` (empty in Debug, so development builds never update) and `SPARKLE_PUBLIC_ED_KEY`; the updater
+doesn't start without both. Because the app is sandboxed, Sparkle installs through its Installer service
+(`SUEnableInstallerLauncherService`, plus the `-spks`/`-spki` mach-lookup exception in `Config/Presenter.entitlements`)
+and downloads through its Downloader service, so the app needs no network entitlement. Silent installs are off
+(`SUAllowsAutomaticUpdates` NO); the archive is checked before it's unpacked and the feed must be signed
+(`SUVerifyUpdateBeforeExtraction`, `SURequireSignedFeed`). Ad-hoc signing is enough: Sparkle accepts a change of
+code signature when the EdDSA key stays the same.
+
+Never during a service: `PresentationState.isPresenting(outputsShowing:)` (anything live, or an output on) decides.
+While it's true, a scheduled update isn't shown (`standardUserDriverShouldHandleShowingScheduledUpdate`); it becomes
+`availableVersion`, a quiet menu item and welcome-window line. An update accepted mid-service postpones its relaunch
+(`shouldPostponeRelaunchForUpdate`) until `isPresenting` turns false.
+
+The release workflow makes the DMG (APFS, lzfse, with an Applications shortcut), signs it with Sparkle's
+`sign_update` (key on standard input), checks the signature against the built app's key
+(`scripts/verify-update-signature.swift`), writes `appcast.xml` (`scripts/make-appcast.py`, Markdown notes) and
+signs that too. `SUFeedURL` is `releases/latest/download/appcast.xml`, which skips pre-releases.
 
 ## Persistence
 

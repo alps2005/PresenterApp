@@ -10,7 +10,18 @@ struct ShowControls: View {
         case messages = "Messages"
         case props = "Props"
         case stage = "Stage"
+        case macros = "Macros"
         var id: Self { self }
+
+        var systemImage: String {
+            switch self {
+            case .timers: "timer"
+            case .messages: "text.bubble"
+            case .props: "square.on.square"
+            case .stage: "rectangle.on.rectangle"
+            case .macros: "square.grid.2x2"
+            }
+        }
     }
 
     let coordinator: PresentationCoordinator
@@ -20,13 +31,16 @@ struct ShowControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // Four segments need about 290 pt; at the live panel's narrowest (300 pt less its padding), a menu
-            // (docs/adr/0002-spacing-and-panel-padding.md).
+            // Five named segments need about 350 pt; the live panel is often narrower (300 pt less its padding), so
+            // icons with tooltips, then a menu (docs/adr/0002-spacing-and-panel-padding.md).
             ViewThatFits(in: .horizontal) {
-                tabPicker
+                tabPicker(iconsOnly: false)
                     .pickerStyle(.segmented)
                     .fixedSize()
-                tabPicker
+                tabPicker(iconsOnly: true)
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                tabPicker(iconsOnly: false)
                     .pickerStyle(.menu)
                     .fixedSize()
             }
@@ -36,14 +50,24 @@ struct ShowControls: View {
             case .messages: MessagesTab(coordinator: coordinator)
             case .props: PropsTab(coordinator: coordinator, onEdit: onEditProps)
             case .stage: StageTab(coordinator: coordinator, outputManager: outputManager)
+            case .macros: MacrosTab(coordinator: coordinator)
             }
         }
         .controlSize(.small)
     }
 
-    private var tabPicker: some View {
+    private func tabPicker(iconsOnly: Bool) -> some View {
         Picker("Show Controls", selection: $tab) {
-            ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(Tab.allCases) { tab in
+                if iconsOnly {
+                    Image(systemName: tab.systemImage)
+                        .help(tab.rawValue)
+                        .accessibilityLabel(tab.rawValue)
+                        .tag(tab)
+                } else {
+                    Text(tab.rawValue).tag(tab)
+                }
+            }
         }
         .labelsHidden()
     }
@@ -289,7 +313,8 @@ private struct StageTab: View {
 
             HStack {
                 Picker("Layout", selection: Binding(
-                    get: { settings.layoutID },
+                    // A layout a slide or macro switched to shows here; picking one replaces it.
+                    get: { coordinator.stageLayoutID },
                     set: { coordinator.setStageLayout($0) }
                 )) {
                     Text("Standard").tag(UUID?.none)
@@ -312,7 +337,7 @@ private struct StageTab: View {
                 Text("None").tag(UUID?.none)
                 ForEach(coordinator.project.timers) { Text($0.name).tag(Optional($0.id)) }
             }
-            if settings.layoutID == nil {
+            if coordinator.stageLayoutID == nil {
                 Toggle("Clock", isOn: Binding(
                     get: { settings.showsClock },
                     set: { value in
@@ -330,7 +355,7 @@ private struct StageTab: View {
                     }
                 ))
             }
-            Text(settings.layoutID == nil
+            Text(coordinator.stageLayoutID == nil
                  ? "The stage display shows the live slide's words, the next slide, and these. The audience never sees them."
                  : "The layout decides what the stage display shows; its timer regions use this timer unless set to another. The audience never sees it.")
                 .font(.caption)
@@ -345,6 +370,7 @@ private struct StageTab: View {
         case .windowed: "Stage display in a window"
         case .fullScreen(let name): "Stage display on \(name)"
         case .displayMissing(let name): "\(name) disconnected"
+        case .displayHasOperatorWindow(let name): "\(name) has the operator window"
         }
     }
 }

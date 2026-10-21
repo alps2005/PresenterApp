@@ -1,14 +1,18 @@
 import PresenterCore
 import SwiftUI
 
-/// Toolbar control that shows output health and chooses where the audience output and the stage display go.
+/// Toolbar control that shows output health and chooses where the audience outputs and the stage display go, and
+/// what each audience output shows.
 struct OutputMenu: View {
     let outputManager: OutputManager
+    /// Opens the look editor for an audience output.
+    let onEditLook: (OutputRole) -> Void
 
     var body: some View {
         Menu {
             Section(OutputRole.audience.title) { section(.audience) }
             Divider()
+            Menu(OutputRole.secondAudience.title) { section(.secondAudience) }
             Menu(OutputRole.stage.title) { section(.stage) }
         } label: {
             if status.isWarning {
@@ -38,35 +42,52 @@ struct OutputMenu: View {
             }
             // Two outputs never share a screen; say which one has it rather than leaving it out.
             ForEach(inUse) { display in
-                Button("\(display.name) – used by the \(otherRole(than: role).title)") {}
+                Button("\(display.name) – used by the \(outputManager.role(otherThan: role, on: display)?.title ?? "another output")") {}
                     .disabled(true)
             }
         }
 
+        if role.isAudience {
+            Divider()
+            Button(outputManager.look(role).isEverything ? "Look…" : "Look… (customized)") { onEditLook(role) }
+        }
         Divider()
-        Button(role == .audience ? "Hide Output" : "Hide Stage Display") { outputManager.hide(role) }
+        Button(hideTitle(role)) { outputManager.hide(role) }
             .disabled(!outputManager.isEnabled(role))
     }
 
-    private func otherRole(than role: OutputRole) -> OutputRole {
-        OutputRole.allCases.first { $0 != role } ?? role
+    private func hideTitle(_ role: OutputRole) -> String {
+        switch role {
+        case .audience: "Hide Output"
+        case .secondAudience: "Hide Second Output"
+        case .stage: "Hide Stage Display"
+        }
     }
 
-    /// The audience output's state, unless an output has lost its display: that warning wins.
+    /// The audience output's state, unless an output is waiting for its display: that warning wins.
     private var status: (text: String, systemImage: String, isWarning: Bool) {
-        if case .displayMissing(let name) = outputManager.status(.stage), !isAudienceMissing {
-            return ("Stage display \(name) disconnected", "exclamationmark.triangle.fill", true)
+        if let waiting = waitingText(outputManager.status) {
+            return (waiting, "exclamationmark.triangle.fill", true)
+        }
+        for role in [OutputRole.secondAudience, .stage] {
+            if let waiting = waitingText(outputManager.status(role)) {
+                return ("\(role.title): \(waiting)", "exclamationmark.triangle.fill", true)
+            }
         }
         switch outputManager.status {
         case .off: return ("Output Off", "display", false)
         case .windowed: return ("Output: Window", "macwindow", false)
         case .fullScreen(let name): return ("Output: \(name)", "display", false)
-        case .displayMissing(let name): return ("\(name) disconnected", "exclamationmark.triangle.fill", true)
+        case .displayMissing, .displayHasOperatorWindow: return ("Output Off", "display", false)
         }
     }
 
-    private var isAudienceMissing: Bool {
-        if case .displayMissing = outputManager.status { return true }
-        return false
+    /// Why an output is hidden although it's on: its display is gone or has the operator window.
+    private func waitingText(_ status: OutputStatus) -> String? {
+        switch status {
+        case .displayMissing(let name): "\(name) disconnected"
+        case .displayHasOperatorWindow(let name): "\(name) has the operator window"
+        case .off, .windowed, .fullScreen: nil
+        }
     }
 }

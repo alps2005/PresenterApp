@@ -3,6 +3,59 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.2.0 (2026-10-21)
+
+This release saves projects in file format 7. Once it opens a project, Presenter 1.1 can't open that project.
+
+### Outputs
+- **Second output:** a second audience output for a livestream or a lobby screen (Output › Second Output).
+- **Looks:** each audience output can leave out the background, the slide, props or messages, show a key colour
+  instead of the background, and restyle the words with another theme (a lower third for a stream), with a live
+  preview (the toolbar's Output menu › Look…). Saved on this Mac.
+
+### Shows
+- **Welcome window:** Presenter now opens with a window like Xcode's welcome window: the app's version, **Open
+  Project…**, **Import Songs…**, **New Show**, and the shows, most recently opened first. Opening a show brings up the
+  operator window; the close button quits. Window › Welcome to Presenter (⇧⌘1) opens it again. It replaces the
+  Shows window that opened over the operator window at launch; **File › Shows…** (⇧⌘O) still opens that one.
+
+### Updates
+- **Presenter updates itself:** it checks GitHub once a day (asking the first time) or with **Presenter › Check for
+  Updates…**, shows what's new, and installs and restarts when you agree. Never during a service: while anything is
+  live or an output is on, it only shows a quiet "Update to…" item, and an accepted update waits until nothing is
+  live. Updates are signed and checked. **Settings…** turns the daily check off. This is the last version you
+  download by hand.
+- **Download as a DMG:** releases are now a disk image with an Applications shortcut, instead of a zip. Presenter
+  says so if it's opened from the disk image (or a copy macOS runs from a temporary place), where it can't update
+  itself.
+
+### Songs
+- **Import Songs** (File › Import Songs…, ⇧⌘I): OpenLyrics, ChordPro, SongSelect (lyrics .txt and SongPro .usr) and
+  plain-text lyrics, several files at once. Chords are left out; sections become labelled groups, and a file's
+  singing order becomes a **Song Order** arrangement.
+- **Song details:** writers, copyright and CCLI song number, kept from imported files and editable in the slide
+  editor under **Document › Song**.
+
+### Show control
+- **Slide actions:** a slide can start, pause, reset or restart timers, show a message or prop, change the stage
+  message or layout, stop audio and run a macro when it's taken live (slide editor › Format › Actions).
+- **Macros:** buttons in the Live panel's new **Macros** tab that run a named list of actions, including clearing the
+  output, blackout and playing audio. With five tabs, a narrow Live panel shows them as icons.
+
+### Scripture
+- **USFX and USX Bibles:** Import Bible… also reads USFX files and USX Bibles, from their folder or book files. A
+  Digital Bible Library `metadata.xml` (in the folder, or beside a single file) names the translation. Notes, headings
+  and introductions are left out.
+- **Rename…** in the Scripture sheet changes a Bible's name and the abbreviation slides show.
+
+### Fixes
+- **Take Live** is grey while nothing is cued; it used to stay bright red.
+- The show that's open at launch now shows when it was opened, so deleting another open show goes back to it.
+- An output whose remembered screen has the operator window says so, instead of "disconnected", and fills that
+  screen as soon as the operator window moves to another one. Before, it waited until a display changed.
+- In the stage layout editor, a region's name shows only while the pointer is over it, so names no longer cover
+  the words of overlapping regions.
+
 ## v1.1.0 (2026-10-19)
 
 This release saves projects in file format 6. Once it opens a project, Presenter 1.0 can't open that project.

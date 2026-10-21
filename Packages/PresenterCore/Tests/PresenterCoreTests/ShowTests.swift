@@ -24,6 +24,7 @@ final class ShowTests: XCTestCase {
             clock += 1
             return clock
         }
+        coordinator.markOpenShowOpened() // On the test clock, like the shows opened later.
         return Fixture(coordinator: coordinator, a: a, b: b, sunday: sunday)
     }
 
@@ -131,6 +132,27 @@ final class ShowTests: XCTestCase {
         XCTAssertEqual(c.project.activePlaylistID, easter.id)
         XCTAssertEqual(c.project.playlists.map(\.id), [f.sunday.id, easter.id])
         XCTAssertFalse(c.canUndo)
+    }
+
+    func testTheShowOpenAtLaunchCountsAsOpened() throws {
+        // Sunday is open at launch; Easter was opened in an earlier session.
+        let easter = PlaylistDocument(title: "Easter", lastOpenedAt: Date(timeIntervalSince1970: 500))
+        var project = ProjectDocument(name: "Test", presentations: [], playlist: PlaylistDocument(title: "Sunday"))
+        project.playlists.append(easter)
+        let c = PresentationCoordinator(project: project)
+        let sunday = c.project.playlist
+        XCTAssertNotNil(sunday.lastOpenedAt)
+
+        let wednesday = c.addPlaylist(title: "Wednesday")
+        XCTAssertEqual(c.deletePlaylist(wednesday.id), .applied)
+        XCTAssertEqual(c.project.activePlaylistID, sunday.id, "Back to the show open before, not Easter")
+
+        // So does the open show of a project opened from a file.
+        var opened = ProjectDocument(name: "Opened", presentations: [], playlist: PlaylistDocument(title: "Friday"))
+        opened.playlists.append(easter)
+        c.replaceProject(opened)
+        XCTAssertNotNil(c.project.playlist.lastOpenedAt)
+        XCTAssertEqual(c.project.playlist(withID: easter.id)?.lastOpenedAt, easter.lastOpenedAt)
     }
 
     func testTheLastShowCantBeDeleted() {

@@ -70,4 +70,11 @@ extension PresentationCoordinator {
         Log.coordinator.info("Deleted show \(playlistID, privacy: .public)")
         return applied()
     }
+
+    /// Dates the open show when a project is loaded, at launch or from a file, as opening a show does. Without
+    /// it, the show open at launch looks never opened, and deleting another open show could skip it.
+    func markOpenShowOpened() {
+        guard let index = project.playlists.firstIndex(where: { $0.id == project.activePlaylistID }) else { return }
+        project.playlists[index].lastOpenedAt = now()
+    }
 }

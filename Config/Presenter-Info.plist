@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Sparkle updates. Merged into the generated Info.plist. The feed and key come from build settings
+	     (PRESENTER_FEED_URL, SPARKLE_PUBLIC_ED_KEY), so a local test build can point at a test feed. -->
+	<key>SUFeedURL</key>
+	<string>$(PRESENTER_FEED_URL)</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SPARKLE_PUBLIC_ED_KEY)</string>
+	<!-- Required for sandboxed apps: Sparkle installs through its own service, outside the sandbox. -->
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<!-- Sparkle's downloader goes online, so Presenter itself needs no network access. -->
+	<key>SUEnableDownloaderService</key>
+	<true/>
+	<!-- Always ask before installing (the user's choice): no silent background installs, and no such option. -->
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
+	<!-- Check the archive's signature before unpacking it, and require the feed and its notes to be signed. -->
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
+</dict>
+</plist>

@@ -20,13 +20,14 @@ final class BibleLibrary {
         entries = store.entries()
     }
 
-    /// Imports a Zefania or OSIS file. Returns the new translation's ID, or throws a message for the operator.
-    func importFile(at url: URL) async throws -> UUID {
+    /// Imports a Bible: one Zefania, OSIS or USFX file, or a USX Bible's book files or folder. Returns the new
+    /// translation's ID, or throws a message for the operator.
+    func importFiles(at urls: [URL]) async throws -> UUID {
         isWorking = true
         defer { isWorking = false }
         let store = store
         do {
-            let entry = try await Task.detached(priority: .userInitiated) { try store.importFile(at: url) }.value
+            let entry = try await Task.detached(priority: .userInitiated) { try store.importFiles(at: urls) }.value
             entries = store.entries()
             logger.info("Imported \(entry.abbreviation, privacy: .public): \(entry.verseCount) verses")
             return entry.id
@@ -74,8 +75,8 @@ final class BibleLibrary {
 
     private static func message(for error: BibleFileParser.ParseError) -> String {
         switch error {
-        case .notABible: "That file isn't a Zefania or OSIS Bible (XML)."
-        case .malformed(let detail): "That Bible file is damaged: \(detail)"
+        case .notABible: "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file."
+        case .malformed: "That Bible file is damaged or incomplete."
         case .noVerses: "That Bible file has no verses Presenter can read."
         }
     }

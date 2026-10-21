@@ -329,6 +329,15 @@ struct EditorInspector: View {
                     set: { coordinator.setAudioCue($0, slideID: slide.id, inPresentation: presentation.id) }
                 ))
             }
+            section("Actions") {
+                ActionListEditor(project: coordinator.project, actions: slide.actions) { actions in
+                    coordinator.setSlideActions(actions, slideID: slide.id, inPresentation: presentation.id)
+                }
+                Text("Run when the slide is taken live: start a timer, show a message or prop, change the stage display, run a macro.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         section("Presenter Notes") {
             TextEditor(text: Binding(
@@ -580,6 +589,13 @@ struct EditorInspector: View {
                 .foregroundStyle(.secondary)
         }
         if presentation.id != coordinator.project.props.id {
+            section("Song") {
+                SongDetailsFields(coordinator: coordinator, presentation: presentation)
+                Text("Writers, copyright and CCLI number, for your licence reports. Filled in when a song is imported.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             section("Soundtrack") {
                 SoundtrackControls(coordinator: coordinator, track: Binding(
                     get: { presentation.soundtrack },

@@ -95,6 +95,9 @@ extension PresentationCoordinator {
             for index in project.themes.indices where project.themes[index].background?.assetID == assetID {
                 project.themes[index].background = nil
             }
+            for index in project.macros.indices {
+                project.macros[index].actions.removeAll { $0.audioAssetID == assetID }
+            }
             project.mediaAssets.removeAll { $0.id == assetID }
             Log.coordinator.info("Deleted media asset \(assetID, privacy: .public)")
             return applied()

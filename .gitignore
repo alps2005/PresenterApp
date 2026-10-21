@@ -15,3 +15,9 @@ build/
 
 # Generated code graph analysis output
 graphify-out/
+
+# Local to-do list for Claude Code sessions
+.claude/TODO*.md
+
+# Private keys and notes, never committed
+.secrets/

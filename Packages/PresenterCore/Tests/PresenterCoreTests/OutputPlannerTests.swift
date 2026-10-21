@@ -163,6 +163,23 @@ final class OutputPlannerTests: XCTestCase {
         XCTAssertEqual(planner.placement(.stage), .hidden)
     }
 
+    func testARememberedDisplayWithTheOperatorWindowWaitsForTheWindowToMove() {
+        let saved = SavedOutput(isEnabled: true, display: DisplayIdentity(name: "Projector"))
+        var planner = OutputPlanner(displays: [laptop, projector], operatorDisplayID: 2)
+        planner.restore(saved, for: .audience)
+        XCTAssertEqual(planner.status(.audience), .displayHasOperatorWindow(displayName: "Projector"))
+        XCTAssertEqual(planner.placement(.audience), .hidden)
+        XCTAssertEqual(planner.saved(.audience), saved)
+
+        planner.operatorDisplayID = 1
+        XCTAssertEqual(planner.placement(.audience), .fullScreen(displayID: 2))
+        XCTAssertEqual(planner.status(.audience), .fullScreen(displayName: "Projector"))
+
+        // Once it fills the projector, the operator window passing over it doesn't take it off.
+        planner.operatorDisplayID = 2
+        XCTAssertEqual(planner.placement(.audience), .fullScreen(displayID: 2))
+    }
+
     func testAnIDTakenByAnotherDisplayIsntFilled() {
         var planner = OutputPlanner(displays: [laptop, display(2, "Projector", serial: 42)], operatorDisplayID: 1)
         planner.show(.display(2), for: .audience)

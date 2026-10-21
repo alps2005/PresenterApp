@@ -35,6 +35,7 @@ public final class PresentationCoordinator {
     public init(project: ProjectDocument) {
         self.project = project
         state.selectedItemID = project.playlist.items.first?.id
+        markOpenShowOpened()
     }
 
     // MARK: - Derived state
@@ -174,6 +175,7 @@ public final class PresentationCoordinator {
         }
         startAutoAdvance(for: LiveSlide(position: position, rendered: rendered))
         cueAudio(for: position, after: previous)
+        runSlideActions(at: position, after: previous)
         Log.coordinator.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }

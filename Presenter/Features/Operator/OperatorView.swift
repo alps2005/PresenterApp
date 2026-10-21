@@ -39,15 +39,32 @@ struct OperatorView: View {
         #if DEBUG
         .onAppear { openEditorIfAsked() }
         #endif
-        .onAppear { offerShowsAtLaunch() }
+        .onAppear {
+            ui.isOperatorWindowOpen = true
+            ui.hasShownOperatorWindow = true
+        }
+        .onDisappear { ui.isOperatorWindowOpen = false }
+        // Opened from the welcome window, or the open show deleted: leave whatever belonged to the old show.
+        .onChange(of: coordinator.project.activePlaylistID) {
+            browsedPresentationID = nil
+            editSession = nil
+        }
         .sheet(isPresented: $ui.isShowingShows) {
             ShowsSheet(coordinator: coordinator) {
                 browsedPresentationID = nil
                 editSession = nil
             }
         }
+        .sheet(isPresented: Binding(get: { ui.editingLookRole != nil }, set: { if !$0 { ui.editingLookRole = nil } })) {
+            if let role = ui.editingLookRole {
+                OutputLookSheet(coordinator: coordinator, outputManager: outputManager, role: role)
+            }
+        }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
+        }
+        .sheet(isPresented: $ui.isImportingSongs) {
+            ImportSongsSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
         .sheet(isPresented: $ui.isAddingScripture) {
             ScriptureSheet(coordinator: coordinator) { item in scrollRequest = item.id }
@@ -70,19 +87,20 @@ struct OperatorView: View {
         }
     }
 
-    private func offerShowsAtLaunch() {
-        guard !ui.hasOfferedShowsAtLaunch else { return }
-        ui.hasOfferedShowsAtLaunch = true
-        let defaults = UserDefaults.standard
-        if defaults.object(forKey: ShowsSheet.showAtLaunchKey) == nil || defaults.bool(forKey: ShowsSheet.showAtLaunchKey) {
-            ui.isShowingShows = true
-        }
-    }
-
     #if DEBUG
     /// `-PresenterDebugOpenEditor YES` opens the first playlist presentation in the editor at launch, for
     /// scripts/layout-screenshots.sh.
     private func openEditorIfAsked() {
+        if UserDefaults.standard.string(forKey: ImportSongsSheet.debugFolderKey)?.isEmpty == false {
+            ui.isImportingSongs = true
+        }
+        // `-PresenterDebugGoLive YES` puts the first slide live with a message and a prop, to check the outputs.
+        if UserDefaults.standard.bool(forKey: "PresenterDebugGoLive"), let item = coordinator.project.playlist.items.first,
+           let slide = coordinator.project.presentation(withID: item.presentationID)?.slides.first {
+            coordinator.takeLive(slideID: slide.id, inItem: item.id)
+            if let message = coordinator.project.messages.first { coordinator.showMessage(message.id) }
+            if let prop = coordinator.project.props.slides.first { coordinator.toggleProp(prop.id) }
+        }
         guard UserDefaults.standard.bool(forKey: "PresenterDebugOpenEditor"),
               let item = coordinator.project.playlist.items.first else { return }
         editSession = EditSession(itemID: item.id, presentationID: item.presentationID, initialSlideID: nil)
@@ -159,14 +177,14 @@ struct OperatorView: View {
                 .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { audioBinToggle }
                 .sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
+            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) { ui.editingLookRole = $0 } }
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItemGroup(placement: .primaryAction) {
                 quickEditToggle
                 mediaBinToggle
                 audioBinToggle
-                OutputMenu(outputManager: outputManager)
+                OutputMenu(outputManager: outputManager) { ui.editingLookRole = $0 }
             }
         }
     }
