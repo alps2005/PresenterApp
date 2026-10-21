@@ -14,6 +14,8 @@ struct ShowList: View {
     @State private var renamingID: UUID?
     @State private var nameDraft = ""
     @State private var showPendingDeletion: PlaylistDocument?
+    /// Set when a new show is made, so `onOpened` runs once its alert has gone: a window can't close under an alert.
+    @State private var opensAfterNaming = false
 
     var body: some View {
         List(selection: $selectedID) {
@@ -40,13 +42,18 @@ struct ShowList: View {
             if let id = ids.first { open(id) }
         }
         .onChange(of: isNamingNewShow) { _, isNaming in
-            if isNaming { nameDraft = "" }
+            if isNaming {
+                nameDraft = ""
+            } else if opensAfterNaming {
+                opensAfterNaming = false
+                Task { onOpened() }
+            }
         }
         .alert("New Show", isPresented: $isNamingNewShow) {
             TextField("Name", text: $nameDraft)
             Button("Create") {
                 coordinator.addPlaylist(title: nameDraft)
-                onOpened()
+                opensAfterNaming = true
             }
             Button("Cancel", role: .cancel) {}
         }
