@@ -6,7 +6,7 @@ A free, open-source, macOS-native live presentation app for worship services, co
 
 ## Install
 
-Download `Presenter-<version>.zip` from the [Releases](https://github.com/alps2005/PresenterApp/releases) page, unzip it and drag **Presenter** into **Applications**.
+Download `Presenter-<version>.dmg` from the [Releases](https://github.com/alps2005/PresenterApp/releases) page, open it, drag **Presenter** onto the **Applications** shortcut, then eject the disk image. Run Presenter from Applications, not from the disk image: a copy run from there can't update itself.
 
 The app isn't notarized by Apple, so macOS blocks it the first time. To open it anyway:
 
@@ -16,9 +16,15 @@ The app isn't notarized by Apple, so macOS blocks it the first time. To open it 
 
 On older macOS versions you can instead right-click Presenter in Applications and choose **Open**.
 
+### Updating
+
+From 1.2 on, Presenter updates itself. It checks GitHub once a day (it asks the first time whether it may), and **Presenter › Check for Updates…** checks now. It shows what's new and asks before installing; then it restarts as the new version, with no new security prompt. It never interrupts a service: while anything is live or an output is on, it only shows a quiet "Update to…" item in the Presenter menu and the welcome window, and an update you accept waits until nothing is live. **Settings…** (⌘,) turns the daily check off.
+
+Updates are signed: Presenter only installs one signed with the project's private key, so a tampered download is refused.
+
 ### Publishing a release
 
-Push a version tag and GitHub Actions builds, tests and uploads the zip:
+Push a version tag and GitHub Actions builds, tests and uploads the DMG, with a signed update feed (`appcast.xml`) that installed copies check:
 
 ```sh
 git tag v1.0.0
@@ -26,6 +32,8 @@ git push origin v1.0.0
 ```
 
 Every push and pull request to `develop` or `main` also runs the tests and a build (`.github/workflows/ci.yml`).
+
+The release needs the repository secret `SPARKLE_ED_PRIVATE_KEY` (the update signing key; its public half is `SPARKLE_PUBLIC_ED_KEY` in the project). Write the release notes in `docs/release-notes/<tag>.md` first: they're shown in the update window, without their "Install" section. **Actions › Release › Run workflow** does a dry run that builds and signs everything and keeps the files, without publishing. Tags with a suffix (`v1.3.0-beta.1`) become pre-releases, which are never offered as updates.
 
 ## Requirements
 

@@ -16,9 +16,15 @@ week. Once a fix is released, the report can be made public with credit to you, 
 
 ## Scope
 
-Presenter is a local macOS app with no network features: no accounts, servers or telemetry. The most relevant
+Presenter is a local macOS app: no accounts, servers or telemetry. Its only network use is Sparkle checking
+GitHub for updates, through Sparkle's own downloader (the app itself has no network entitlement). The most relevant
 areas are:
 - **Project files:** opening a crafted project or exported archive (`ProjectArchive` only writes media into the
   app's media folder, by plain file name).
 - **Media files:** importing crafted images and videos.
 - **The app sandbox:** anything that reaches outside it.
+- **Updates:** the feed (`appcast.xml` on the latest GitHub release) and each DMG are signed with an EdDSA key.
+  The app holds the public key and refuses an unsigned or wrongly signed feed or update. The private key is the
+  maintainer's, kept in their keychain and a password manager, and in the repository secret
+  `SPARKLE_ED_PRIVATE_KEY` for the release workflow. Report anything that could get an update past these checks,
+  or a release that looks tampered with.

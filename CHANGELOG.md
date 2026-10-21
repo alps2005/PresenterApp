@@ -13,6 +13,14 @@ This release saves projects in file format 7. Once it opens a project, Presenter
   operator window; the close button quits. Window › Welcome to Presenter (⇧⌘1) opens it again. It replaces the
   Shows window that opened over the operator window at launch; **File › Shows…** (⇧⌘O) still opens that one.
 
+### Updates
+- **Presenter updates itself:** it checks GitHub once a day (asking the first time) or with **Presenter › Check for
+  Updates…**, shows what's new, and installs and restarts when you agree. Never during a service: while anything is
+  live or an output is on, it only shows a quiet "Update to…" item, and an accepted update waits until nothing is
+  live. Updates are signed and checked. **Settings…** turns the daily check off. This is the last version you
+  download by hand.
+- **Download as a DMG:** releases are now a disk image with an Applications shortcut, instead of a zip.
+
 ### Songs
 - **Import Songs** (File › Import Songs…, ⇧⌘I): OpenLyrics, ChordPro, SongSelect (lyrics .txt and SongPro .usr) and
   plain-text lyrics, several files at once. Chords are left out; sections become labelled groups, and a file's

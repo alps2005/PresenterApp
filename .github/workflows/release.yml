@@ -1,9 +1,21 @@
 name: Release
 
-# Push a tag like v0.1.0 to build the app and attach it to a GitHub Release.
+# Push a tag like v0.1.0 to build the app and attach it to a GitHub Release, as a DMG with a signed Sparkle
+# update feed (appcast.xml) beside it. Run it by hand (Actions › Release › Run workflow) for a dry run that
+# builds, packages and signs everything but publishes nothing.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build for the dry run, like 1.2.0'
+        required: true
+
+env:
+  # Sparkle's tools (sign_update), pinned to the version the app uses, checked against this SHA-256.
+  SPARKLE_VERSION: '2.10.0'
+  SPARKLE_SHA256: 'c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c'
 
 permissions:
   contents: write
@@ -23,17 +35,33 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      # The tag (v0.1.0-beta.1), its version (0.1.0), and whether it's a pre-release or a dry run.
+      - name: Read the version
+        id: release
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            tag="v${{ inputs.version }}"; dry_run=true
+          else
+            tag="$GITHUB_REF_NAME"; dry_run=false
+          fi
+          version="${tag#v}"
+          version="${version%%-*}"
+          prerelease=false
+          if [[ "$tag" == *-* ]]; then prerelease=true; fi
+          { echo "tag=$tag"; echo "version=$version"; echo "prerelease=$prerelease"; echo "dry_run=$dry_run"; } >> "$GITHUB_OUTPUT"
+
       - name: Test PresenterCore
         working-directory: Packages/PresenterCore
         run: swift test
 
       # Ad-hoc signed: no Apple Developer account needed. macOS asks users to confirm on first launch.
       # A generic destination builds for Apple Silicon and Intel; 'platform=macOS' would build only for the
-      # runner's own chip. The version comes from the tag: v0.1.0-beta.1 → 0.1.0, with the run number as build.
+      # runner's own chip. The version comes from the tag: v0.1.0-beta.1 → 0.1.0, with the run number as build
+      # (Sparkle compares build numbers, so they must keep increasing).
       - name: Build Release app
+        env:
+          version: ${{ steps.release.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          version="${version%%-*}"
           xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Release \
             -destination 'generic/platform=macOS' -derivedDataPath build \
             CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
@@ -45,18 +73,75 @@ jobs:
           echo "Architectures: $archs"
           [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "::error::Expected arm64 and x86_64"; exit 1; }
 
-      - name: Zip app
+      # The app and an Applications shortcut, so people drag it into Applications (an app run from the disk
+      # image or from Downloads can't update itself). APFS with lzfse, as Sparkle recommends.
+      - name: Make DMG
+        env:
+          tag: ${{ steps.release.outputs.tag }}
         run: |
-          ditto -c -k --keepParent build/Build/Products/Release/Presenter.app "Presenter-${GITHUB_REF_NAME}.zip"
+          stage="$RUNNER_TEMP/dmg"
+          mkdir -p "$stage"
+          ditto build/Build/Products/Release/Presenter.app "$stage/Presenter.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -volname Presenter -srcfolder "$stage" -fs APFS -format ULFO "Presenter-$tag.dmg"
+          hdiutil verify "Presenter-$tag.dmg"
+
+      # Installed copies only accept an update signed with the key whose public half is in the app
+      # (SPARKLE_PUBLIC_ED_KEY in the project). Pre-releases get no feed: "latest" never points at them.
+      - name: Sign the update and write the feed
+        if: steps.release.outputs.prerelease == 'false'
+        env:
+          tag: ${{ steps.release.outputs.tag }}
+          version: ${{ steps.release.outputs.version }}
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          app=build/Build/Products/Release/Presenter.app
+          dmg="Presenter-$tag.dmg"
+          if [[ -z "$SPARKLE_ED_PRIVATE_KEY" ]]; then
+            echo "::error::The SPARKLE_ED_PRIVATE_KEY secret isn't set, so this release couldn't be offered as an update."
+            exit 1
+          fi
+          if [[ -z "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$app/Contents/Info.plist")" ]]; then
+            echo "::error::The app has no SUPublicEDKey: set SPARKLE_PUBLIC_ED_KEY in the project."
+            exit 1
+          fi
+
+          curl -sSLf -o "$RUNNER_TEMP/sparkle.tar.xz" \
+            "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+          echo "$SPARKLE_SHA256  $RUNNER_TEMP/sparkle.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/sparkle"
+          tar -xf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle"
+          sign_update="$RUNNER_TEMP/sparkle/bin/sign_update"
+
+          # The key goes in on standard input, never to disk or the command line.
+          signature=$(printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | "$sign_update" --ed-key-file - -p "$dmg")
+          swift scripts/verify-update-signature.swift "$app" "$dmg" "$signature"
+          python3 scripts/make-appcast.py --tag "$tag" --version "$version" --build "${{ github.run_number }}" \
+            --dmg "$dmg" --signature "$signature" --notes "docs/release-notes/$tag.md" --out appcast.xml
+          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | "$sign_update" --ed-key-file - appcast.xml
+
+      - name: Keep the dry run's files
+        if: steps.release.outputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dry-run
+          path: |
+            Presenter-*.dmg
+            appcast.xml
+          if-no-files-found: error
 
       # Tags with a suffix (v0.1.0-beta.1) are published as pre-releases. Hand-written notes in
       # docs/release-notes/<tag>.md are used when present; otherwise GitHub lists the merged changes.
       - name: Publish GitHub Release
+        if: steps.release.outputs.dry_run == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
+          tag: ${{ steps.release.outputs.tag }}
         run: |
-          args=(--title "Presenter $GITHUB_REF_NAME")
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then args+=(--prerelease); fi
-          notes="docs/release-notes/${GITHUB_REF_NAME}.md"
+          args=(--title "Presenter $tag")
+          if [[ "$tag" == *-* ]]; then args+=(--prerelease); fi
+          notes="docs/release-notes/$tag.md"
           if [[ -f "$notes" ]]; then args+=(--notes-file "$notes"); else args+=(--generate-notes); fi
-          gh release create "$GITHUB_REF_NAME" "Presenter-${GITHUB_REF_NAME}.zip" "${args[@]}"
+          files=("Presenter-$tag.dmg")
+          if [[ -f appcast.xml ]]; then files+=(appcast.xml); fi
+          gh release create "$tag" "${files[@]}" "${args[@]}"

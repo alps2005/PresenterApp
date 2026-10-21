@@ -186,6 +186,28 @@ interval (`state.autoAdvance`, never saved or undone). A slide that brings a vid
 video, it calls `videoDidFinish` once the player reports the end, the video is no longer live, or its file is missing.
 Tests drive the countdown with the coordinator's injectable `now`.
 
+## Updates
+
+`UpdaterController` wraps Sparkle 2's `SPUStandardUpdaterController`. Settings live in `Config/Presenter-Info.plist`
+(merged into the generated Info.plist): the feed URL and public key come from the build settings
+`PRESENTER_FEED_URL` (empty in Debug, so development builds never update) and `SPARKLE_PUBLIC_ED_KEY`; the updater
+doesn't start without both. Because the app is sandboxed, Sparkle installs through its Installer service
+(`SUEnableInstallerLauncherService`, plus the `-spks`/`-spki` mach-lookup exception in `Config/Presenter.entitlements`)
+and downloads through its Downloader service, so the app needs no network entitlement. Silent installs are off
+(`SUAllowsAutomaticUpdates` NO); the archive is checked before it's unpacked and the feed must be signed
+(`SUVerifyUpdateBeforeExtraction`, `SURequireSignedFeed`). Ad-hoc signing is enough: Sparkle accepts a change of
+code signature when the EdDSA key stays the same.
+
+Never during a service: `PresentationState.isPresenting(outputsShowing:)` (anything live, or an output on) decides.
+While it's true, a scheduled update isn't shown (`standardUserDriverShouldHandleShowingScheduledUpdate`); it becomes
+`availableVersion`, a quiet menu item and welcome-window line. An update accepted mid-service postpones its relaunch
+(`shouldPostponeRelaunchForUpdate`) until `isPresenting` turns false.
+
+The release workflow makes the DMG (APFS, lzfse, with an Applications shortcut), signs it with Sparkle's
+`sign_update` (key on standard input), checks the signature against the built app's key
+(`scripts/verify-update-signature.swift`), writes `appcast.xml` (`scripts/make-appcast.py`, Markdown notes) and
+signs that too. `SUFeedURL` is `releases/latest/download/appcast.xml`, which skips pre-releases.
+
 ## Persistence
 
 | Type | Job |
