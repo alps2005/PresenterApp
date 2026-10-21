@@ -344,4 +344,10 @@ final class ThemeTests: XCTestCase {
         XCTAssertNil(element.style.backgroundBox)
         XCTAssertEqual(project.rendered(presentation.slides[0], in: presentation).slide, presentation.slides[0])
     }
+
+    func testTheLowerThirdPutsTitlesInTheBandToo() throws {
+        let theme = try XCTUnwrap(Theme.presets().first { $0.name == "Lower Third" })
+        XCTAssertEqual(theme.title.box, theme.body.box, "A title sits in the bottom band, not mid-screen")
+        XCTAssertNotNil(theme.title.style.backgroundBox)
+    }
 }
