@@ -95,6 +95,15 @@ Blackout covers all four.
   `liveText` environment value, which only the audience output, its preview and the stage display set; only text
   with a live value redraws.
 
+### Second output and looks
+
+`OutputRole` has two audience outputs (`audience`, `secondAudience`) and the stage display. Each audience output has
+an `OutputLook` (core): which layers it shows, a key colour for a hidden background, and a theme for the words.
+`OutputLook.scene(from:theme:)` turns the coordinator's `audienceScene` into what that output shows (pure, tested), and
+`OverlayLayers` leaves out props or messages. `AudienceOutputView` reads the look through a closure in `body`, so
+changes show at once. Looks are saved per Mac by `OutputManager` (`outputLooks` in user defaults, beside
+`savedOutputs`); they hold a theme ID, and a deleted theme just isn't applied.
+
 ### Placing the output windows
 
 `OutputPlanner` (core) decides where each output goes:

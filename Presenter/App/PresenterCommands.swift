@@ -141,6 +141,10 @@ struct PresenterCommands: Commands {
                 set: { _ in outputManager.toggle(.stage) }
             ))
             .keyboardShortcut("s", modifiers: [.command, .option])
+            Toggle("Second Output", isOn: Binding(
+                get: { outputManager.isEnabled(.secondAudience) },
+                set: { _ in outputManager.toggle(.secondAudience) }
+            ))
         }
     }
 

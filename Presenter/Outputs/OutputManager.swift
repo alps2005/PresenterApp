@@ -4,11 +4,13 @@ import Observation
 import PresenterCore
 import SwiftUI
 
-/// Tracks connected displays and places the audience and stage outputs as `OutputPlanner` decides. Remembers where
-/// each output was, on this Mac, and puts it back there at launch.
+/// Tracks connected displays and places the two audience outputs and the stage display as `OutputPlanner` decides.
+/// Remembers where each output was and each audience output's look, on this Mac, and puts them back at launch.
 @Observable
 final class OutputManager {
     private(set) var planner = OutputPlanner(displays: DisplayDiscovery.currentDisplays())
+    /// What each audience output shows. Missing means everything.
+    private(set) var looks: [OutputRole: OutputLook] = [:]
 
     @ObservationIgnored private var controllers: [OutputRole: OutputWindowController] = [:]
     @ObservationIgnored private var screenObserver: NSObjectProtocol?
@@ -18,17 +20,20 @@ final class OutputManager {
 
     /// Per Mac, not in the project: a project opened on another Mac shouldn't reach for this one's screens.
     static let savedOutputsKey = "savedOutputs"
+    static let looksKey = "outputLooks"
 
     init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, playback: MediaPlaybackController,
          defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        controllers[.audience] = OutputWindowController(title: OutputRole.audience.title) {
-            AnyView(
-                AudienceOutputView(coordinator: coordinator)
-                    .environment(mediaLibrary)
-                    .environment(playback)
-                    .environment(\.showsLiveVideo, true)
-            )
+        for role in OutputRole.allCases where role.isAudience {
+            controllers[role] = OutputWindowController(title: role.title) { [weak self] in
+                AnyView(
+                    AudienceOutputView(coordinator: coordinator) { self?.look(role) ?? .everything }
+                        .environment(mediaLibrary)
+                        .environment(playback)
+                        .environment(\.showsLiveVideo, true)
+                )
+            }
         }
         controllers[.stage] = OutputWindowController(title: OutputRole.stage.title) {
             AnyView(StageOutputView(coordinator: coordinator).environment(mediaLibrary))
@@ -38,6 +43,10 @@ final class OutputManager {
                 self?.planner.hide(role)
                 self?.save()
             }
+        }
+        if let data = defaults.data(forKey: Self.looksKey),
+           let saved = try? JSONDecoder().decode([String: OutputLook].self, from: data) {
+            for role in OutputRole.allCases { looks[role] = saved[role.storageKey] }
         }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -66,6 +75,19 @@ final class OutputManager {
     func status(_ role: OutputRole) -> OutputStatus { planner.status(role) }
     func fullScreenCandidates(_ role: OutputRole) -> [DisplayInfo] { planner.fullScreenCandidates(role) }
     func displaysInUse(byOtherThan role: OutputRole) -> [DisplayInfo] { planner.displaysInUse(byOtherThan: role) }
+
+    /// The other output full screen on this display, to say which one has it.
+    func role(otherThan role: OutputRole, on display: DisplayInfo) -> OutputRole? {
+        OutputRole.allCases.first { $0 != role && isEnabled($0) && target($0) == .display(display.id) }
+    }
+
+    func look(_ role: OutputRole) -> OutputLook { looks[role] ?? .everything }
+
+    func setLook(_ look: OutputLook, for role: OutputRole) {
+        looks[role] = look
+        let saved = Dictionary(uniqueKeysWithValues: looks.map { ($0.key.storageKey, $0.value) })
+        if let data = try? JSONEncoder().encode(saved) { defaults.set(data, forKey: Self.looksKey) }
+    }
 
     func show(_ target: OutputTarget, for role: OutputRole = .audience) {
         planner.show(target, for: role)
@@ -158,6 +180,7 @@ private extension OutputRole {
     var storageKey: String {
         switch self {
         case .audience: "audience"
+        case .secondAudience: "secondAudience"
         case .stage: "stage"
         }
     }

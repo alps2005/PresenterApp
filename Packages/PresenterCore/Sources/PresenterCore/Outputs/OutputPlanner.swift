@@ -76,14 +76,20 @@ public enum OutputStatus: Equatable, Sendable {
 /// never sees stage-only information.
 public enum OutputRole: CaseIterable, Hashable, Sendable {
     case audience
+    /// Another audience output with its own look: a livestream, a lobby screen.
+    case secondAudience
     case stage
 
     public var title: String {
         switch self {
         case .audience: "Audience Output"
+        case .secondAudience: "Second Output"
         case .stage: "Stage Display"
         }
     }
+
+    /// The audience outputs show the slides; the stage display shows its layout.
+    public var isAudience: Bool { self != .stage }
 }
 
 /// Where an output went last time, kept on this Mac so the outputs come back on the same screens at launch.
@@ -127,7 +133,7 @@ public struct OutputPlanner: Equatable, Sendable {
     public var operatorDisplayID: UInt32? {
         didSet { findRememberedDisplays() }
     }
-    private var channels: [OutputRole: Channel] = [.audience: Channel(), .stage: Channel()]
+    private var channels = Dictionary(uniqueKeysWithValues: OutputRole.allCases.map { ($0, Channel()) })
 
     public init(displays: [DisplayInfo] = [], operatorDisplayID: UInt32? = nil) {
         self.displays = displays

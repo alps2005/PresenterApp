@@ -55,6 +55,11 @@ struct OperatorView: View {
                 editSession = nil
             }
         }
+        .sheet(isPresented: Binding(get: { ui.editingLookRole != nil }, set: { if !$0 { ui.editingLookRole = nil } })) {
+            if let role = ui.editingLookRole {
+                OutputLookSheet(coordinator: coordinator, outputManager: outputManager, role: role)
+            }
+        }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
@@ -165,14 +170,14 @@ struct OperatorView: View {
                 .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) { audioBinToggle }
                 .sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) }
+            ToolbarItem(placement: .primaryAction) { OutputMenu(outputManager: outputManager) { ui.editingLookRole = $0 } }
                 .sharedBackgroundVisibility(.hidden)
         } else {
             ToolbarItemGroup(placement: .primaryAction) {
                 quickEditToggle
                 mediaBinToggle
                 audioBinToggle
-                OutputMenu(outputManager: outputManager)
+                OutputMenu(outputManager: outputManager) { ui.editingLookRole = $0 }
             }
         }
     }

@@ -9,6 +9,8 @@ final class OperatorUIState {
     var isImportingSongs = false
     var isAddingScripture = false
     var isShowingShows = false
+    /// The audience output whose look is being edited.
+    var editingLookRole: OutputRole?
     /// Whether the operator window is on screen; the welcome window quits Presenter when closed without it.
     var isOperatorWindowOpen = false
     /// Set once the operator window has appeared, so the welcome window only skips itself at launch.

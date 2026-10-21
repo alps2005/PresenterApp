@@ -7,6 +7,12 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 This release saves projects in file format 7. Once it opens a project, Presenter 1.1 can't open that project.
 
+### Outputs
+- **Second output:** a second audience output for a livestream or a lobby screen (Output › Second Output).
+- **Looks:** each audience output can leave out the background, the slide, props or messages, show a key colour
+  instead of the background, and restyle the words with another theme (a lower third for a stream), with a live
+  preview (the toolbar's Output menu › Look…). Saved on this Mac.
+
 ### Shows
 - **Welcome window:** Presenter now opens with a window like Xcode's welcome window: the app's version, **Open
   Project…**, **Import Songs…**, **New Show**, and the shows, most recently opened first. Opening a show brings up the

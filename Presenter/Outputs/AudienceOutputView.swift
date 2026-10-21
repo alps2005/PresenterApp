@@ -5,9 +5,12 @@ import PresenterCore
 
 /// What the audience sees, drawn as two layers like ProPresenter: the background layer, and the live slide's
 /// content over it. Each transitions on its own, so a background that stays (a transparent slide) never moves.
-/// Uses the same renderer as the operator's previews.
+/// Uses the same renderer as the operator's previews. An output with a look shows only part of it (see `OutputLook`);
+/// the operator's preview shows everything.
 struct AudienceOutputView: View {
     let coordinator: PresentationCoordinator
+    /// Read in `body`, so a change to the look shows at once.
+    let look: () -> OutputLook
 
     /// One layer's current value, the value it's replacing, and how far the slide transition between them has run.
     private struct Layer<Value: Equatable>: Equatable {
@@ -28,9 +31,10 @@ struct AudienceOutputView: View {
     /// Counts slide changes, so a delayed clean-up only touches the change that scheduled it.
     @State private var generation = 0
 
-    init(coordinator: PresentationCoordinator) {
+    init(coordinator: PresentationCoordinator, look: @escaping () -> OutputLook = { .everything }) {
         self.coordinator = coordinator
-        let parts = Self.layers(of: coordinator.audienceScene)
+        self.look = look
+        let parts = Self.layers(of: Self.scene(of: coordinator, in: look()))
         _isBlack = State(initialValue: parts.isBlack)
         _background = State(initialValue: Layer(shown: parts.background))
         _slide = State(initialValue: Layer(shown: parts.slide))
@@ -53,14 +57,20 @@ struct AudienceOutputView: View {
                     slideView(slide.shown)
                         .environment(\.elementClock, inClock)
                         .modifier(effect(slide, role: .incoming, opaque: false, canvas: proxy.size))
-                    OverlayLayers(coordinator: coordinator)
+                    OverlayLayers(coordinator: coordinator, look: look())
                 }
             }
             .environment(\.liveText, LiveTextResolver { coordinator.liveText($0, at: $1) })
             .clipped()
         }
         .ignoresSafeArea()
-        .onChange(of: coordinator.audienceScene) { _, scene in present(scene) }
+        .onChange(of: Self.scene(of: coordinator, in: look())) { _, scene in present(scene) }
+    }
+
+    /// The audience scene as this output's look shows it.
+    private static func scene(of coordinator: PresentationCoordinator, in look: OutputLook) -> AudienceScene {
+        guard !look.isEverything else { return coordinator.audienceScene }
+        return look.scene(from: coordinator.audienceScene, theme: look.themeID.flatMap(coordinator.project.theme(withID:)))
     }
 
     private func effect<Value>(_ layer: Layer<Value>, role: TransitionMath.Role, opaque: Bool, canvas: CGSize) -> SlideTransitionEffect {
