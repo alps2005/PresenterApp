@@ -74,17 +74,22 @@ jobs:
           echo "Architectures: $archs"
           [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "::error::Expected arm64 and x86_64"; exit 1; }
 
-      # The app and an Applications shortcut, so people drag it into Applications (an app run from the disk
-      # image or from Downloads can't update itself). APFS with lzfse, as Sparkle recommends.
+      # The app and an Applications shortcut over a picture saying to drag it there (an app run from the disk
+      # image or from Downloads can't update itself). APFS with lzfse, as Sparkle recommends. dmgbuild writes the
+      # window layout without Finder, so it works on a runner; it's pinned.
       - name: Make DMG
         env:
           tag: ${{ steps.release.outputs.tag }}
         run: |
-          stage="$RUNNER_TEMP/dmg"
-          mkdir -p "$stage"
-          ditto build/Build/Products/Release/Presenter.app "$stage/Presenter.app"
-          ln -s /Applications "$stage/Applications"
-          hdiutil create -volname Presenter -srcfolder "$stage" -fs APFS -format ULFO "Presenter-$tag.dmg"
+          python3 -m venv "$RUNNER_TEMP/dmgbuild"
+          "$RUNNER_TEMP/dmgbuild/bin/pip" install --quiet dmgbuild==1.6.7
+          art="$RUNNER_TEMP/dmg-background"
+          mkdir -p "$art"
+          swift scripts/make-dmg-background.swift "$art"
+          tiffutil -cathidpicheck "$art/background.png" "$art/background@2x.png" -out "$art/background.tiff"
+          "$RUNNER_TEMP/dmgbuild/bin/dmgbuild" -s scripts/dmg-settings.py \
+            -D app=build/Build/Products/Release/Presenter.app -D background="$art/background.tiff" \
+            Presenter "Presenter-$tag.dmg"
           hdiutil verify "Presenter-$tag.dmg"
 
       # Installed copies only accept an update signed with the key whose public half is in the app

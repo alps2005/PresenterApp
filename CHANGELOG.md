@@ -3,6 +3,11 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Install
+- **Disk image:** the window shows big icons over a picture saying to drag Presenter to Applications.
+
 ## v1.2.1 (2026-10-21)
 
 The first update delivered by Presenter's own updater.
