@@ -6,6 +6,10 @@ public enum SongSectionKind: Sendable, CaseIterable {
     case preChorus
     case chorus
     case bridge
+    case tag
+    case intro
+    case ending
+    case interlude
     case other
 
     /// Recognises English and Spanish section names: "Verse 2", "Coro", "Pre-Chorus", "Puente"…
@@ -16,8 +20,34 @@ public enum SongSectionKind: Sendable, CaseIterable {
         case "pre-chorus", "prechorus", "pre chorus", "pre-coro", "precoro", "pre coro": self = .preChorus
         case "chorus", "coro", "refrain", "estribillo": self = .chorus
         case "bridge", "puente": self = .bridge
+        case "tag": self = .tag
+        case "intro": self = .intro
+        case "ending", "outro", "final": self = .ending
+        case "interlude", "interludio", "instrumental": self = .interlude
         default: self = .other
         }
+    }
+
+    /// The section a key jumps to while operating, as in ProPresenter: V verse, C chorus, P pre-chorus, B bridge,
+    /// T tag, I intro, E ending, N interlude. Nil for any other key.
+    public init?(hotkey: Character) {
+        switch hotkey.lowercased() {
+        case "v": self = .verse
+        case "c": self = .chorus
+        case "p": self = .preChorus
+        case "b": self = .bridge
+        case "t": self = .tag
+        case "i": self = .intro
+        case "e": self = .ending
+        case "n": self = .interlude
+        default: return nil
+        }
+    }
+
+    /// The number a label ends with ("Verse 2" → 2), or nil when it has none.
+    public static func number(inLabel label: String) -> Int? {
+        guard let range = label.range(of: #"\d+\s*:?\s*$"#, options: .regularExpression) else { return nil }
+        return Int(label[range].filter(\.isNumber))
     }
 }
 

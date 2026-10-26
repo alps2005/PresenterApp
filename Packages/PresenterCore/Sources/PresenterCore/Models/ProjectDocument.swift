@@ -17,8 +17,9 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 6: stage layouts (`stageLayouts`, `StageSettings.layoutID`) (v1.1.0).
     /// - 7: song details (`PresentationDocument.song`: authors, copyright, CCLI song number), slide actions
     ///   (`SlideDocument.actions`) and macros (`macros`).
-    /// - 8: presentation kinds (`PresentationDocument.kind`: presentation, song or scripture).
-    public static let currentSchemaVersion = 8
+    /// - 8: presentation kinds (`PresentationDocument.kind`: presentation, song or scripture) (v1.3.0).
+    /// - 9: the church's CCLI licence and on-screen song credits (`ccli`) (v1.4.0).
+    public static let currentSchemaVersion = 9
 
     public let id: UUID
     public var name: String
@@ -47,6 +48,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     public var defaultThemeID: UUID?
     /// Named lists of actions the operator runs with a click (see `Macro`).
     public var macros: [Macro]
+    /// The church's CCLI licence and whether songs show their credits.
+    public var ccli: CCLISettings
 
     public init(
         id: UUID = UUID(),
@@ -64,7 +67,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         props: PresentationDocument = .propsLibrary(),
         themes: [Theme] = Theme.presets(),
         defaultThemeID: UUID? = nil,
-        macros: [Macro] = []
+        macros: [Macro] = [],
+        ccli: CCLISettings = CCLISettings()
     ) {
         self.id = id
         self.name = name
@@ -82,11 +86,12 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         self.themes = themes
         self.defaultThemeID = defaultThemeID
         self.macros = macros
+        self.ccli = ccli
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, name, schemaVersion, presentations, libraryFolders, playlists, activePlaylistID, mediaAssets, timers, stage, stageLayouts, messages, props, themes, defaultThemeID
-        case macros
+        case macros, ccli
     }
 
     /// Files saved before there could be more than one show have just `playlist`.
@@ -120,6 +125,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         themes = try container.decodeIfPresent([Theme].self, forKey: .themes) ?? Theme.presets()
         defaultThemeID = try container.decodeIfPresent(UUID.self, forKey: .defaultThemeID)
         macros = try container.decodeIfPresent([Macro].self, forKey: .macros) ?? []
+        ccli = try container.decodeIfPresent(CCLISettings.self, forKey: .ccli) ?? CCLISettings()
     }
 
     /// The open show. Setting it replaces the open show.

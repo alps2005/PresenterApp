@@ -166,6 +166,7 @@ final class SongImportTests: XCTestCase {
         XCTAssertEqual(song.sections.map(\.label), ["Verse 1", "Chorus", "Misc 1"])
         XCTAssertEqual(song.sections[0].slides.count, 2)
         XCTAssertEqual(song.slideCount, 4, "The footer isn't a slide")
+        XCTAssertEqual(song.licenseNumber, "1234567", "The church's licence, kept apart from the song's credits")
     }
 
     func testSongSelectCopyrightLine() throws {
@@ -288,7 +289,7 @@ final class SongImportTests: XCTestCase {
         old["song"] = nil
         let legacy = try JSONDecoder().decode(PresentationDocument.self, from: JSONSerialization.data(withJSONObject: old))
         XCTAssertNil(legacy.song)
-        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 8)
+        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 9)
     }
 
     func testKindRoundTripsAndFormat7FilesGetAGuess() throws {

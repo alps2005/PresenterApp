@@ -19,6 +19,9 @@ public struct ImportedSong: Equatable, Sendable {
     public var sections: [Section]
     /// Section labels in singing order, repeats allowed. Empty means the sections in file order.
     public var order: [String]
+    /// The church's CCLI licence number, when the file carries one (SongSelect's "CCLI License #" line). Not the
+    /// song's: it fills in the project's licence number if that's still empty.
+    public var licenseNumber = ""
 
     public init(title: String, info: SongInfo = SongInfo(), sections: [Section], order: [String] = []) {
         self.title = title
@@ -75,8 +78,8 @@ public struct ImportedSong: Equatable, Sendable {
     }
 }
 
-/// Reads song files: OpenLyrics XML, ChordPro, and SongSelect's lyrics (.txt) and SongPro (.usr) downloads. Any
-/// other text file is read as plain lyrics, as New Song reads pasted words.
+/// Reads song files: OpenLyrics XML, ProPresenter 7 (.pro), ChordPro, and SongSelect's lyrics (.txt) and SongPro
+/// (.usr) downloads. Any other text file is read as plain lyrics, as New Song reads pasted words.
 public enum SongImporter {
     public enum ImportError: Error, Equatable, Sendable {
         /// Not text, or not a song this app can read.
@@ -98,6 +101,10 @@ public enum SongImporter {
         var song: ImportedSong
         if OpenLyricsParser.looksLikeOpenLyrics(data) {
             song = try OpenLyricsParser.parse(data)
+        } else if fileExtension == "pro", ProPresenterParser.isPresentation(data) {
+            // .pro is also a ChordPro extension; a ChordPro text file never reads as a ProPresenter one.
+            guard let proPresenter = ProPresenterParser.parse(data) else { throw .noLyrics }
+            song = proPresenter
         } else {
             guard let text = decodeText(data) else { throw .unreadable }
             if SongSelectParser.looksLikeSongPro(text) {

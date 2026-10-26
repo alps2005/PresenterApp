@@ -1,5 +1,6 @@
 import SwiftUI
 import PresenterCore
+import UniformTypeIdentifiers
 
 /// The operator's main window: playlist, slides, live state and controls.
 struct OperatorView: View {
@@ -14,6 +15,10 @@ struct OperatorView: View {
     let outputManager: OutputManager
     let persistence: ProjectPersistence
     @Bindable var ui: OperatorUIState
+    @Environment(MediaLibrary.self) private var mediaLibrary
+    /// "Importing page 3 of 12…" while a PDF's pages are imported.
+    @State private var pdfImportStatus: String?
+    @State private var pdfImportProblem: String?
     /// A sidebar click asks the workspace to scroll to that item.
     @State private var scrollRequest: UUID?
     /// A library presentation clicked in the sidebar, shown in place of the show's slides.
@@ -43,6 +48,16 @@ struct OperatorView: View {
             ui.isOperatorWindowOpen = true
             ui.hasShownOperatorWindow = true
         }
+        // Once per launch, after the outputs have had a moment to come back on their screens; only if something's wrong.
+        .task {
+            guard !ui.hasRunLaunchCheck else { return }
+            ui.hasRunLaunchCheck = true
+            try? await Task.sleep(for: .seconds(2))
+            if !PreServiceCheckSheet.problems(coordinator, outputManager, mediaLibrary, mode: .launch).isEmpty,
+               ui.preServiceCheck == nil {
+                ui.preServiceCheck = .launch
+            }
+        }
         .onDisappear { ui.isOperatorWindowOpen = false }
         // Opened from the welcome window, or the open show deleted: leave whatever belonged to the old show.
         .onChange(of: coordinator.project.activePlaylistID) {
@@ -59,6 +74,38 @@ struct OperatorView: View {
             if let role = ui.editingLookRole {
                 OutputLookSheet(coordinator: coordinator, outputManager: outputManager, role: role)
             }
+        }
+        .sheet(item: $ui.preServiceCheck) { mode in
+            PreServiceCheckSheet(coordinator: coordinator, outputManager: outputManager, mode: mode) { itemID in
+                browsedPresentationID = nil
+                editSession = nil
+                coordinator.selectItem(itemID)
+                scrollRequest = itemID
+            }
+        }
+        .onChange(of: ui.isImportingPDF) { _, isImporting in
+            guard isImporting else { return }
+            ui.isImportingPDF = false
+            importPDF()
+        }
+        .sheet(isPresented: Binding(get: { pdfImportStatus != nil }, set: { _ in })) {
+            HStack(spacing: Spacing.md) {
+                ProgressView().controlSize(.small)
+                Text(pdfImportStatus ?? "")
+            }
+            .padding(Spacing.xl)
+            .interactiveDismissDisabled()
+        }
+        .alert("Import PDF", isPresented: Binding(
+            get: { pdfImportProblem != nil },
+            set: { if !$0 { pdfImportProblem = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(pdfImportProblem ?? "")
+        }
+        .sheet(isPresented: $ui.isShowingCCLIReport) {
+            CCLIReportSheet(coordinator: coordinator)
         }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
@@ -84,6 +131,42 @@ struct OperatorView: View {
             Button("OK") {}
         } message: {
             Text(persistence.problem ?? "")
+        }
+    }
+
+    /// Turns a PDF's pages into a presentation, one picture per slide, added to the show. Keynote and PowerPoint decks
+    /// come in this way after File › Export To › PDF.
+    private func importPDF() {
+        guard let url = MediaPanel.choose([.pdf], message: "Choose a PDF. Export a Keynote or PowerPoint deck as a PDF first.").first
+        else { return }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("PDF-\(UUID().uuidString)", isDirectory: true)
+        let title = url.deletingPathExtension().lastPathComponent
+        pdfImportStatus = "Reading “\(title)”…"
+        Task {
+            defer {
+                pdfImportStatus = nil
+                try? FileManager.default.removeItem(at: folder)
+            }
+            do {
+                let pages = try await Task.detached(priority: .userInitiated) {
+                    let isScoped = url.startAccessingSecurityScopedResource()
+                    defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+                    return try PDFPages.render(url, into: folder, maxPixels: MediaLibrary.maxPixelSize) { _, _ in }
+                }.value
+                var assetIDs: [UUID] = []
+                for (index, page) in pages.enumerated() {
+                    pdfImportStatus = "Importing page \(index + 1) of \(pages.count)…"
+                    let asset = try await mediaLibrary.importImage(at: page)
+                    coordinator.addMediaAsset(asset)
+                    assetIDs.append(asset.id)
+                }
+                if let item = coordinator.addPresentation(title: title, pictures: assetIDs) {
+                    browsedPresentationID = nil
+                    scrollRequest = item.id
+                }
+            } catch {
+                pdfImportProblem = error.localizedDescription
+            }
         }
     }
 

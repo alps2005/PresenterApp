@@ -4,7 +4,8 @@ import PresenterCore
 /// Every playlist item's slides in one continuous scroll, in running order. The sidebar follows the
 /// presentation at the top of the viewport; clicking a sidebar item scrolls to it.
 /// Click cues a slide; double-click takes it live. With the workspace focused:
-/// → or Space = next, ← = previous, Return = take cued slide live.
+/// → or Space = next, ← = previous, Return = take cued slide live, and section keys (V, C, B… then a number) jump
+/// to a song's sections.
 struct SlideWorkspace: View {
     let coordinator: PresentationCoordinator
     /// Set by the sidebar when the operator clicks an item; the workspace scrolls there and clears it.
@@ -34,6 +35,8 @@ struct SlideWorkspace: View {
     @State private var topItemID: UUID?
     /// Where each on-screen slide sits. A plain reference, so scrolling doesn't re-render the workspace.
     @State private var slideFrames = SlideFrames()
+    /// A section key waiting briefly for a number ("V" then "2"), when the song has more than one such section.
+    @State private var pendingSection: PendingSection?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private struct GoToNextTarget: Identifiable {
@@ -41,6 +44,14 @@ struct SlideWorkspace: View {
         let presentationID: UUID
         var id: UUID { slideID }
     }
+
+    private struct PendingSection {
+        let kind: SongSectionKind
+        let task: Task<Void, Never>
+    }
+
+    /// How long a section key waits for a number before going to the next section of its kind.
+    private static let sectionNumberWait = Duration.milliseconds(600)
 
     private struct SlideDeletion: Identifiable {
         let slide: SlideDocument
@@ -174,6 +185,7 @@ struct SlideWorkspace: View {
                 .onKeyPress(.space) { navigate { coordinator.nextSlide() } }
                 .onKeyPress(.leftArrow) { navigate { coordinator.previousSlide() } }
                 .onKeyPress(.return) { navigate { coordinator.takeLive() } }
+                .onKeyPress(phases: .down) { sectionKey($0) }
                 .onAppear {
                     if let selected = coordinator.state.selectedItemID {
                         proxy.scrollTo(selected, anchor: .top)
@@ -205,6 +217,35 @@ struct SlideWorkspace: View {
     private func navigate(_ command: () -> CommandResult) -> KeyPress.Result {
         guard editingTitle == nil else { return .ignored }
         _ = command()
+        return .handled
+    }
+
+    /// V, C, P, B, T, I, E or N takes a section of the live (or selected) song live, as in ProPresenter. When the
+    /// song has several sections of that kind, it waits a moment for a number ("V" then "2" = Verse 2) so the wrong
+    /// verse never flashes up; without one it goes to the next of that kind.
+    private func sectionKey(_ press: KeyPress) -> KeyPress.Result {
+        guard editingTitle == nil, press.modifiers.isDisjoint(with: [.command, .control, .option]),
+              let character = press.characters.first else { return .ignored }
+        if let pending = pendingSection, let digit = character.wholeNumberValue, (1...9).contains(digit) {
+            pending.task.cancel()
+            pendingSection = nil
+            coordinator.takeLiveSection(pending.kind, number: digit)
+            return .handled
+        }
+        guard let kind = SongSectionKind(hotkey: character) else { return .ignored }
+        pendingSection?.task.cancel()
+        pendingSection = nil
+        guard coordinator.sectionCount(kind) > 1 else {
+            coordinator.takeLiveSection(kind)
+            return .handled
+        }
+        let task = Task { @MainActor in
+            try? await Task.sleep(for: Self.sectionNumberWait)
+            guard !Task.isCancelled else { return }
+            pendingSection = nil
+            coordinator.takeLiveSection(kind)
+        }
+        pendingSection = PendingSection(kind: kind, task: task)
         return .handled
     }
 

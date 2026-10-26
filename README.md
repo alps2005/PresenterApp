@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** 1.2. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.4. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
@@ -77,6 +77,8 @@ swift test
 | Cue a slide (preview only, audience unaffected) | Click it |
 | Take a slide live | Double-click it, press Return with the workspace focused, or ⌘Return |
 | Next / previous slide (continues into the next or previous presentation) | → or Space / ←, with the workspace focused, or ⌥⌘→ / ⌥⌘← from anywhere |
+| Take a song section live (verse, chorus, pre-chorus, bridge, tag, intro, ending, interlude) | V, C, P, B, T, I, E, N with the workspace focused; add a number for one in particular (V then 2 = Verse 2) |
+| Check the show before the service | ⌥⌘K (Live › Pre-Service Check…) |
 | Clear the slide's words, keeping the background | ⌥⌘C (Clear Slide) |
 | Clear the background, keeping the words | ⌥⌘X (Clear Background) |
 | Clear both | ⌥⌘A (Clear All) |
@@ -86,6 +88,8 @@ swift test
 | New presentation / new slide | ⌘N / ⇧⌘N |
 | New song from pasted lyrics | ⌥⌘N, or **New Song…** under the playlist |
 | Import song files | ⇧⌘I (File › Import Songs…) |
+| Import a PDF (or a Keynote/PowerPoint deck exported as PDF) | File › Import PDF… |
+| CCLI licence, song credits and usage report | File › CCLI Report… |
 | Undo / redo the last edit | ⌘Z / ⇧⌘Z |
 | Save now (the project also autosaves) | ⌘S |
 | Open a project file / export a copy | ⌘O / ⇧⌘S |
@@ -106,13 +110,21 @@ swift test
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
 
 **Importing songs.** **File › Import Songs…** (⇧⌘I) reads song files, several at once, and lists each song with its writers and slide count, or says why a file couldn't be read, before anything is added. Imported songs go into the library and the open show, as one step to undo.
-- **Formats:** OpenLyrics (.xml, from OpenLP and others), ChordPro (.cho, .chordpro, .chopro, .pro), SongSelect's lyrics (.txt) and SongPro (.usr) downloads, and plain lyrics in any text file (typed as for New Song). Chords are left out.
-- **Sections and order:** sections become labelled groups (Verse 1, Chorus…). If the file gives a singing order (OpenLyrics' verse order, or ChordPro's `{chorus}`), the song gets a **Song Order** arrangement that plays.
+- **Formats:** ProPresenter 7 (.pro), OpenLyrics (.xml, from OpenLP and others), ChordPro (.cho, .chordpro, .chopro, .pro), SongSelect's lyrics (.txt) and SongPro (.usr) downloads, and plain lyrics in any text file (typed as for New Song). Chords are left out. A ProPresenter song brings its words, groups, selected arrangement and CCLI details; its formatting, media and translations stay behind.
+- **Sections and order:** sections become labelled groups (Verse 1, Chorus…). If the file gives a singing order (ProPresenter's selected arrangement, OpenLyrics' verse order, or ChordPro's `{chorus}`), the song gets a **Song Order** arrangement that plays.
 - **Credits:** writers, copyright and the CCLI song number are kept with the song, for your licence reports. See or change them in the slide editor under **Document › Song**.
+
+**Section keys.** With the workspace focused, a letter takes a section of the live song live in its song order, like ProPresenter: **V** verse, **C** chorus, **P** pre-chorus, **B** bridge, **T** tag, **I** intro, **E** ending, **N** interlude. Press the letter then a number for one in particular (V, 2 for Verse 2); press the letter again to move on to the next one. With nothing live, the keys work on the selected song. English and Spanish section names both count (Verso, Coro, Puente…).
+
+**CCLI.** **File › CCLI Report…** holds the church's CCLI licence number and turns song credits on or off.
+- **Credits on screen:** a song with credits shows a small line with its title, writers, copyright, CCLI song number and the licence number on its first and last slides, as CCLI asks. An output's **Look…** can leave it out (for a stream with its own captions, say).
+- **Usage report:** each song counts once a day, when it goes live. The report lists the songs shown between two dates and how many times, and **Export CSV…** saves it for CCLI's online reporting. The log is kept on this Mac, beside the project (`SongUsage.jsonl`).
+- Importing a SongSelect file fills in the licence number if it's empty.
 
 **Scripture.** **Scripture…** (⌥⌘V, or the sidebar) adds a Bible passage to the show as text slides.
 - **Reference or words:** type a reference in English or Spanish, like *Juan 3:16-18*, *1 Co 13:4-7*, *Jn 3:16*, *Salmo 23* or *Mateo 5:3-12; 6:9-13*, or search for words and click a verse. Accents and capitals don't matter.
 - **Slides:** choose 1 to 4 verses per slide, with or without small verse numbers and the reference ("Juan 3:16-17 · RVR1909") on each slide. A long verse is split at a sentence or clause. New passages follow the **Scripture** theme: verses at the top left, the reference small at the bottom.
+- **Two Bibles:** choose a **Second Bible** to show the passage in another translation below the first, the same verses on every slide, for bilingual services ("Juan 3:16 · RVR1909 / KJV"). The theme styles both; each takes half the slide. If the second Bible lacks the passage, the sheet says so and only the first shows.
 - **Bibles:** Presenter doesn't include or download any. **Import Bible…** reads Zefania, OSIS and USFX XML files, and USX Bibles (choose the Bible's folder, or all its book files; a Digital Bible Library bundle's `metadata.xml` names the translation). These are the free formats public-domain and open translations are shared in. The [open-bibles](https://github.com/seven1m/open-bibles) collection has several, including the King James Version (OSIS); [eBible.org](https://ebible.org) shares the World English Bible and many others as USFX and USX; and the Zefania XML Bible project shares Zefania files on SourceForge. Check each translation's license first: use only public-domain or freely licensed ones.
 - Imported Bibles are kept in `Application Support/Presenter/Bibles`, outside the project; the slides are ordinary text, so a project never needs the Bible file.
 
@@ -146,6 +158,9 @@ swift test
 - **Opening a show** never changes the audience output. What's live stays on screen until you take a slide live, and Undo starts afresh.
 - **Folders:** **New Folder…** in the Library makes a folder. Drag presentations onto it, or right-click one and choose **Move To**. Dragging one onto the **Library** header takes it out of its folder. Deleting a folder keeps its presentations: they move to the top of the library.
 - **Deleting a presentation** removes it from the library and from every show.
+- **Icons:** presentations, songs and Bible passages each have their own icon in the sidebar. Right-click › **Show As** changes one.
+- **Import PDF:** **File › Import PDF…** makes a presentation with one page per slide, filling the screen over black. Export a Keynote, PowerPoint or Google Slides deck as a PDF to bring it in.
+- **Pre-Service Check:** **Live › Pre-Service Check…** (⌥⌘K) lists what the open show needs fixed: media files that are missing, fonts not installed on this Mac, an audience output that's off, disconnected or behind the operator window, presentations with nothing on their slides, and songs without credits. **Show** goes to each one. It opens by itself at launch only when something needs attention (an output that's still off doesn't count then).
 
 **Audio.**
 - **Audio bin:** the **Audio** toolbar button (⌥⌘U) opens it under the workspace. **Import…** adds music and sounds (MP3, M4A, WAV, AIFF…); files that don't play are rejected. Click a track to play it for the audience. Right-click to loop it, to play it when the cued slide goes live, or to make it the soundtrack of the cued slide's presentation.
@@ -153,6 +168,7 @@ swift test
 - **Soundtracks:** in the Document tab, **Soundtrack** plays a track when you move into the presentation from another item, unless it's already playing. A slide's own audio comes first.
 - **In the Live panel:** the playing track shows under the Audience preview, with pause, a position slider, the time left and **Stop**, which fades it out over 2 seconds. A new track crossfades with the old one.
 - **Clear and Blackout:** **Clear All** fades the audio out; **Blackout** leaves it playing.
+- **Sound output:** **Settings › Audio** chooses where music, audio cues, soundtracks and video sound play: the Mac's sound output, or a device such as the interface that feeds the sound desk. If the chosen device is unplugged, sound falls back to the Mac's output and the Live panel says so. Kept on this Mac.
 
 **Video backgrounds and the media bin.**
 - **Media Bin:** the **Media** toolbar button (⌥⌘I) opens it under the workspace. **Import…** adds images and videos (MP4, MOV, M4V…); files that don't play are rejected.

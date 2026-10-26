@@ -24,6 +24,7 @@ struct OutputLookSheet: View {
                     Toggle("Slide", isOn: binding(\.showsSlide))
                     Toggle("Props", isOn: binding(\.showsProps))
                     Toggle("Messages", isOn: binding(\.showsMessages))
+                    Toggle("Song credits", isOn: binding(\.showsCredits))
                 }
                 Section {
                     Picker("Without the background", selection: Binding(

@@ -274,3 +274,14 @@ final class AudioCommandTests: XCTestCase {
         XCTAssertNil(f.b.soundtrack)
     }
 }
+
+final class AudioDeviceChoiceTests: XCTestCase {
+    func testChosenDeviceWhileConnectedElseTheSystemOutput() {
+        XCTAssertNil(AudioDeviceChoice.resolve(saved: nil, available: ["usb"]))
+        XCTAssertEqual(AudioDeviceChoice.resolve(saved: "usb", available: ["built-in", "usb"]), "usb")
+        XCTAssertNil(AudioDeviceChoice.resolve(saved: "usb", available: ["built-in"]), "Unplugged: the Mac's output")
+        XCTAssertTrue(AudioDeviceChoice.isMissing(saved: "usb", available: ["built-in"]))
+        XCTAssertFalse(AudioDeviceChoice.isMissing(saved: nil, available: []))
+        XCTAssertFalse(AudioDeviceChoice.isMissing(saved: "usb", available: ["usb"]))
+    }
+}

@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import os
 import PresenterCore
@@ -9,6 +10,12 @@ final class OperatorUIState {
     var isImportingSongs = false
     var isAddingScripture = false
     var isShowingShows = false
+    var isShowingCCLIReport = false
+    /// Asks the operator window to import a PDF's pages as a presentation.
+    var isImportingPDF = false
+    var preServiceCheck: PreServiceCheckMode?
+    /// The check runs once at launch, when the operator window first appears.
+    var hasRunLaunchCheck = false
     /// The audience output whose look is being edited.
     var editingLookRole: OutputRole?
     /// Whether the operator window is on screen; the welcome window quits Presenter when closed without it.
@@ -28,6 +35,8 @@ final class AppEnvironment {
     let playback: MediaPlaybackController
     /// Plays audio cues, soundtracks and tracks from the audio bin.
     let audio: AudioPlaybackController
+    /// The sound output music and video play through, chosen in Settings.
+    let audioOutput = AudioOutput()
     /// Moves the live slide on when its Slideshow or Go To Next countdown ends.
     let autoAdvance: AutoAdvanceDriver
     let persistence: ProjectPersistence
@@ -45,12 +54,28 @@ final class AppEnvironment {
         persistence = ProjectPersistence(
             coordinator: coordinator, store: store, mediaDirectory: mediaLibrary.store.directory, loadProblem: initial.problem
         )
-        playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
-        audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
+        playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary, output: audioOutput)
+        audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary, output: audioOutput)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
         updater = UpdaterController { [coordinator, outputManager] in
             coordinator.state.isPresenting(outputsShowing: outputManager.isAnyOutputOn)
+        }
+        // Songs count for the CCLI report when they go live. Written off the main thread: it reads the log.
+        coordinator.onSongWentLive = { presentation in
+            let log = SongUsageLog.app
+            let now = Date()
+            Task {
+                let failure = await Task.detached(priority: .utility) { () -> String? in
+                    do {
+                        try log.record(presentation, at: now)
+                        return nil
+                    } catch {
+                        return error.localizedDescription
+                    }
+                }.value
+                if let failure { Log.persistence.error("Song usage not recorded: \(failure, privacy: .public)") }
+            }
         }
         preloadProjectMedia()
         if initial.loadedFromDisk {

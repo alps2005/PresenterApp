@@ -7,6 +7,7 @@ struct LivePanel: View {
     let outputManager: OutputManager
     let onEditProps: (UUID?) -> Void
     @Environment(MediaLibrary.self) private var mediaLibrary
+    @Environment(AudioOutput.self) private var audioOutput
 
     var body: some View {
         ScrollView {
@@ -16,6 +17,10 @@ struct LivePanel: View {
                     // In words, here, because the toolbar's output menu shows only a warning icon.
                     ForEach(waitingOutputs, id: \.role) { output in
                         WarningLabel("\(output.role.title): \(output.message)", font: .callout.bold())
+                    }
+                    if audioOutput.isChosenMissing {
+                        WarningLabel("Sound: \(audioOutput.chosenName ?? "the chosen output") isn't connected, so sound plays through the Mac's output.",
+                                     font: .callout.bold())
                     }
                     // The output's own view, so slide and element transitions play here too.
                     AudienceOutputView(coordinator: coordinator)

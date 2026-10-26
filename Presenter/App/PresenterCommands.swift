@@ -40,11 +40,15 @@ struct PresenterCommands: Commands {
             Button("Import Songs…") { inOperatorWindow { ui.isImportingSongs = true } }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
 
+            Button("Import PDF…") { inOperatorWindow { ui.isImportingPDF = true } }
+
             // ⌥⌘V, for verse: ⌥⌘B is Blackout.
             Button("Add Scripture…") { inOperatorWindow { ui.isAddingScripture = true } }
                 .keyboardShortcut("v", modifiers: [.command, .option])
 
             Divider()
+
+            Button("CCLI Report…") { inOperatorWindow { ui.isShowingCCLIReport = true } }
 
             Button("Shows…") { inOperatorWindow { ui.isShowingShows = true } }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
@@ -126,6 +130,9 @@ struct PresenterCommands: Commands {
             // Always enabled: its state would rebuild the menus at every slide change while a Slideshow runs.
             Button("Stop Auto-Advance") { coordinator.stopAutoAdvance() }
                 .keyboardShortcut(".", modifiers: [.command, .option])
+            Divider()
+            Button("Pre-Service Check…") { inOperatorWindow { ui.preServiceCheck = .menu } }
+                .keyboardShortcut("k", modifiers: [.command, .option])
         }
 
         CommandMenu("Output") {

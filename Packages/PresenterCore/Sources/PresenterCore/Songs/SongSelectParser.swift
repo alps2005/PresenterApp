@@ -42,11 +42,14 @@ enum SongSelectParser {
         }
 
         var info = SongInfo()
+        var licenseNumber = ""
         for line in lines[footerStart...] where !line.isEmpty {
             let lowered = line.lowercased()
             if lowered.hasPrefix("ccli song") {
                 info.ccliNumber = SongInfo.ccliNumber(from: line)
-            } else if lowered.hasPrefix("ccli licen") || lowered.hasPrefix("for use solely") || lowered.contains("www.ccli.com") {
+            } else if lowered.hasPrefix("ccli licen") {
+                licenseNumber = SongInfo.ccliNumber(from: line)
+            } else if lowered.hasPrefix("for use solely") || lowered.contains("www.ccli.com") {
                 continue
             } else if line.hasPrefix("©") || lowered.hasPrefix("copyright") || lowered.hasPrefix("public domain") {
                 info.copyright = SongInfo.copyright(from: line)
@@ -55,6 +58,7 @@ enum SongSelectParser {
             }
         }
         var song = ImportedSong(title: title, info: info, sections: sections)
+        song.licenseNumber = licenseNumber
         song.numberRepeatedLabels()
         return song
     }

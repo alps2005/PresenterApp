@@ -53,7 +53,8 @@ final class LyricsTests: XCTestCase {
         XCTAssertEqual(SongSectionKind(label: "Coro"), .chorus)
         XCTAssertEqual(SongSectionKind(label: "Pre-Chorus"), .preChorus)
         XCTAssertEqual(SongSectionKind(label: "Puente"), .bridge)
-        XCTAssertEqual(SongSectionKind(label: "Tag"), .other)
+        XCTAssertEqual(SongSectionKind(label: "Tag"), .tag)
+        XCTAssertEqual(SongSectionKind(label: "Notes"), .other)
     }
 
     @MainActor

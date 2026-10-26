@@ -145,6 +145,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case noAudio
     case unknownStageLayout
     case unknownMacro
+    /// A section key named a section the presentation doesn't have (e.g. B in a song without a bridge).
+    case noSuchSection
 
     public var message: String {
         switch self {
@@ -172,6 +174,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownStageLayout: "That stage layout no longer exists."
         case .unknownMacro: "That macro no longer exists."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
+        case .noSuchSection: "This presentation has no section like that."
         }
     }
 }

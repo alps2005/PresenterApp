@@ -3,6 +3,47 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.4.0 (2026-10-26)
+
+This release saves projects in file format 9. Once it opens a project, Presenter 1.3 can't open that project.
+
+### Live
+- **Section keys:** with the show focused, V, C, P, B, T, I, E and N take a song's verse, chorus, pre-chorus, bridge,
+  tag, intro, ending or interlude live, in its song order. Add a number for one in particular (V then 2 = Verse 2);
+  pressing the key again moves on to the next one. English and Spanish section names both work.
+
+### Songs and CCLI
+- **Song credits on screen:** a song with credits shows a small line with its title, writers, copyright, CCLI song
+  number and the church's licence number on its first and last slides, as CCLI asks. Each output's Look can leave it
+  out.
+- **ProPresenter songs:** Import Songs reads ProPresenter 7 files (.pro): each song's words, groups, selected
+  arrangement and CCLI details come across, so a church can bring its ProPresenter library. Formatting, media and
+  translations stay behind. ChordPro files ending in .pro still read as ChordPro.
+- **CCLI Report** (File › CCLI Report…): the church's CCLI licence number, the credits switch, and which songs were
+  shown between two dates with how many times, exported as CSV for CCLI reporting. A song counts once a day, when it
+  goes live; the log stays on this Mac. Importing a SongSelect file fills in the licence number if it's empty.
+
+### Scripture
+- **Two Bibles at once:** Add Scripture's **Second Bible** shows the passage in another translation below the first,
+  the same verses on each slide, for bilingual services (Reina-Valera above, KJV below). A verse the second Bible
+  doesn't have leaves its half without it, and the sheet says when the second Bible lacks the passage.
+
+### Show
+- **Pre-Service Check** (Live › Pre-Service Check…, ⌥⌘K): a checklist for the open show: media files that are
+  missing, fonts that aren't installed, an audience output that's off, disconnected or behind the operator window,
+  presentations with nothing on their slides, and songs without credits, each with **Show** to go to it. At launch it
+  opens by itself only when something needs attention.
+
+### Audio
+- **Choose the sound output** (Settings › Audio): music, audio cues, soundtracks and video sound play through the
+  interface you pick, such as the one feeding the sound desk, instead of whatever the Mac's sound output is set to.
+  If it's unplugged, sound falls back to the Mac's output and the Live panel says so. Kept on this Mac.
+
+### Library
+- **Import PDF** (File › Import PDF…): each page of a PDF becomes a slide, the page filling the screen over black,
+  in a new presentation added to the show. Keynote, PowerPoint and Google Slides decks come in this way after
+  exporting them as a PDF.
+
 ## v1.3.0 (2026-10-26)
 
 This release saves projects in file format 8. Once it opens a project, Presenter 1.2 can't open that project.

@@ -36,6 +36,7 @@ struct PresenterApp: App {
             .environment(appDelegate.environment.playback)
             .environment(appDelegate.environment.audio)
             .environment(appDelegate.environment.bibleLibrary)
+            .environment(appDelegate.environment.audioOutput)
         }
         .defaultSize(width: 1280, height: 800)
         // Make the window enforce the content's minimum size instead of letting panes get clipped.
@@ -51,7 +52,12 @@ struct PresenterApp: App {
         }
 
         Settings {
-            UpdateSettingsView(updater: appDelegate.environment.updater)
+            TabView {
+                UpdateSettingsView(updater: appDelegate.environment.updater)
+                    .tabItem { Label("General", systemImage: "gearshape") }
+                AudioSettingsView(output: appDelegate.environment.audioOutput)
+                    .tabItem { Label("Audio", systemImage: "speaker.wave.2") }
+            }
         }
     }
 }
