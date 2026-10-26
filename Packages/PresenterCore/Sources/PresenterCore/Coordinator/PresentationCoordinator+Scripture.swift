@@ -8,15 +8,17 @@ extension PresentationCoordinator {
         return project.themes.first { names.contains($0.name.lowercased()) }?.id ?? project.defaultThemeID
     }
 
-    /// Adds the passage as a new presentation in the library and at the end of the show, and selects it. Its slides
-    /// follow `themeID` (nil, or a deleted theme, none). Returns nil, changing nothing, when the passage has no verses.
+    /// Adds the passage as a new presentation in the library and at the end of the show, and selects it. With a
+    /// `second` passage (the same reference in another Bible), each slide shows both. Its slides follow `themeID`
+    /// (nil, or a deleted theme, none). Returns nil, changing nothing, when the passage has no verses.
     @discardableResult
-    public func addScripture(_ passage: BiblePassage, options: ScriptureSlides.Options = ScriptureSlides.Options(),
-                             themeID: UUID?) -> PresentationItem? {
-        let slides = ScriptureSlides.make(passage, options: options)
+    public func addScripture(_ passage: BiblePassage, second: BiblePassage? = nil,
+                             options: ScriptureSlides.Options = ScriptureSlides.Options(), themeID: UUID?) -> PresentationItem? {
+        let slides = ScriptureSlides.make(passage, second: second, options: options)
         guard !slides.isEmpty else { return nil }
+        let title = second.map { "\(passage.caption) / \($0.translationAbbreviation)" } ?? passage.caption
         return recordingUndo("Add Scripture") {
-            let presentation = PresentationDocument(title: passage.caption, slides: slides, themeID: existingThemeID(themeID),
+            let presentation = PresentationDocument(title: title, slides: slides, themeID: existingThemeID(themeID),
                                                     kind: .scripture)
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)

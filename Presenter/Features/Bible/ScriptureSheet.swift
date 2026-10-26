@@ -13,6 +13,8 @@ struct ScriptureSheet: View {
     @Environment(BibleLibrary.self) private var library
     @Environment(\.dismiss) private var dismiss
     @AppStorage("scriptureTranslationID") private var translationID = ""
+    /// A second Bible shown below the first on every slide, for bilingual services. Empty for none.
+    @AppStorage("scriptureSecondTranslationID") private var secondTranslationID = ""
     @AppStorage("scriptureVersesPerSlide") private var versesPerSlide = 2
     @AppStorage("scriptureShowsVerseNumbers") private var showsVerseNumbers = true
     @AppStorage("scriptureShowsReference") private var showsReference = true
@@ -26,7 +28,17 @@ struct ScriptureSheet: View {
     @State private var draftAbbreviation = ""
 
     private var translation: BibleTranslation? {
-        library.open.flatMap { $0.id.uuidString == translationID ? $0 : nil }
+        library.translation(UUID(uuidString: translationID))
+    }
+
+    private var secondTranslation: BibleTranslation? {
+        secondTranslationID == translationID ? nil : library.translation(UUID(uuidString: secondTranslationID))
+    }
+
+    /// The same passage in the second Bible. Nil when there's no second Bible, or it doesn't have the passage.
+    private var secondPassage: BiblePassage? {
+        guard let secondTranslation, let passage else { return nil }
+        return try? secondTranslation.passage(for: passage.reference)
     }
 
     private var options: ScriptureSlides.Options {
@@ -40,9 +52,9 @@ struct ScriptureSheet: View {
         do {
             return .success(try translation.passage(for: ScriptureReference.parse(typed)))
         } catch let error as ScriptureReference.ParseError {
-            return .failure(LookupError(message: error.message(in: .english)))
+            return .failure(LookupError(message: error.message(in: translation.language)))
         } catch let error as BiblePassageError {
-            return .failure(LookupError(message: error.message(in: .english)))
+            return .failure(LookupError(message: error.message(in: translation.language)))
         } catch {
             return .failure(LookupError(message: error.localizedDescription))
         }
@@ -84,9 +96,15 @@ struct ScriptureSheet: View {
             if library.entries.first(where: { $0.id.uuidString == translationID }) == nil {
                 translationID = library.entries.first?.id.uuidString ?? ""
             }
+            if library.entries.first(where: { $0.id.uuidString == secondTranslationID }) == nil {
+                secondTranslationID = ""
+            }
         }
-        .task(id: translationID) {
-            if let id = UUID(uuidString: translationID) { await library.open(id) }
+        .task(id: translationID + secondTranslationID) {
+            let first = UUID(uuidString: translationID)
+            let second = UUID(uuidString: secondTranslationID)
+            if let first { await library.open(first, keeping: Set([second].compactMap { $0 })) }
+            if let second, second != first { await library.open(second, keeping: Set([first].compactMap { $0 })) }
         }
         .confirmDeletion(
             "Remove this Bible?",
@@ -94,7 +112,8 @@ struct ScriptureSheet: View {
             of: $translationPendingRemoval
         ) { entry in
             library.delete(entry.id)
-            translationID = library.entries.first?.id.uuidString ?? ""
+            if secondTranslationID == entry.id.uuidString { secondTranslationID = "" }
+            if translationID == entry.id.uuidString { translationID = library.entries.first?.id.uuidString ?? "" }
         }
     }
 
@@ -187,6 +206,9 @@ struct ScriptureSheet: View {
                     Label("\(passage.caption) · \(passage.verses.count == 1 ? "1 verse" : "\(passage.verses.count) verses")",
                           systemImage: "checkmark.circle")
                         .foregroundStyle(.secondary)
+                    if let secondTranslation, secondPassage == nil {
+                        WarningLabel("\(secondTranslation.abbreviation) doesn't have this passage, so only \(passage.translationAbbreviation) will show.")
+                    }
                 case .failure(let error)?:
                     WarningLabel(error.message)
                 case nil:
@@ -233,7 +255,7 @@ struct ScriptureSheet: View {
 
     /// The slides the passage will make, so the split can be checked before adding.
     private var preview: some View {
-        let slides = passage.map { ScriptureSlides.make($0, options: options) } ?? []
+        let slides = passage.map { ScriptureSlides.make($0, second: secondPassage, options: options) } ?? []
         return VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(slides.count == 1 ? "1 slide" : "\(slides.count) slides")
                 .font(.caption.bold())
@@ -247,9 +269,12 @@ struct ScriptureSheet: View {
                                 if let label = slide.label { Text(label).foregroundStyle(.secondary) }
                             }
                             .font(.caption2)
-                            Text(slide.primaryText)
+                            // Both translations' words, without the reference.
+                            Text(slide.elements.compactMap { element -> String? in
+                                if case .text(let text) = element, text.role == .body { text.text } else { nil }
+                            }.joined(separator: "\n\n"))
                                 .font(.caption)
-                                .lineLimit(5)
+                                .lineLimit(8)
                         }
                         .padding(Spacing.sm)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -261,22 +286,35 @@ struct ScriptureSheet: View {
     }
 
     private var optionsRow: some View {
-        HStack(spacing: Spacing.lg) {
-            Picker("Verses per slide", selection: $versesPerSlide) {
-                ForEach(1...4, id: \.self) { Text("\($0)").tag($0) }
-            }
-            .fixedSize()
-            Toggle("Verse numbers", isOn: $showsVerseNumbers)
-            Toggle("Reference", isOn: $showsReference)
-                .help("Show the reference and translation on each slide")
-            Picker("Theme", selection: $themeID) {
-                Text("None").tag(UUID?.none)
-                Divider()
-                ForEach(coordinator.project.themes) { theme in
-                    Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.lg) {
+                Picker("Second Bible", selection: $secondTranslationID) {
+                    Text("None").tag("")
+                    Divider()
+                    ForEach(library.entries.filter { $0.id.uuidString != translationID }) { entry in
+                        Text("\(entry.name) (\(entry.abbreviation))").tag(entry.id.uuidString)
+                    }
                 }
+                .fixedSize()
+                .help("Show the passage in a second Bible below the first, on the same slides, for bilingual services")
+                Picker("Theme", selection: $themeID) {
+                    Text("None").tag(UUID?.none)
+                    Divider()
+                    ForEach(coordinator.project.themes) { theme in
+                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                    }
+                }
+                .fixedSize()
             }
-            .fixedSize()
+            HStack(spacing: Spacing.lg) {
+                Picker("Verses per slide", selection: $versesPerSlide) {
+                    ForEach(1...4, id: \.self) { Text("\($0)").tag($0) }
+                }
+                .fixedSize()
+                Toggle("Verse numbers", isOn: $showsVerseNumbers)
+                Toggle("Reference", isOn: $showsReference)
+                    .help("Show the reference and translation on each slide")
+            }
         }
     }
 
@@ -289,7 +327,8 @@ struct ScriptureSheet: View {
             Button("Cancel", role: .cancel) { dismiss() }
                 .keyboardShortcut(.cancelAction)
             Button("Add to Show") {
-                if let passage, let item = coordinator.addScripture(passage, options: options, themeID: themeID) {
+                if let passage, let item = coordinator.addScripture(passage, second: secondPassage, options: options,
+                                                                    themeID: themeID) {
                     onAdded(item)
                 }
                 dismiss()

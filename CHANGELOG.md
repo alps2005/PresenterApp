@@ -15,6 +15,11 @@ This release saves projects in file format 9. Once it opens a project, Presenter
   shown between two dates with how many times, exported as CSV for CCLI reporting. A song counts once a day, when it
   goes live; the log stays on this Mac. Importing a SongSelect file fills in the licence number if it's empty.
 
+### Scripture
+- **Two Bibles at once:** Add Scripture's **Second Bible** shows the passage in another translation below the first,
+  the same verses on each slide, for bilingual services (Reina-Valera above, KJV below). A verse the second Bible
+  doesn't have leaves its half without it, and the sheet says when the second Bible lacks the passage.
+
 ### Live
 - **Section keys:** with the show focused, V, C, P, B, T, I, E and N take a song's verse, chorus, pre-chorus, bridge,
   tag, intro, ending or interlude live, in its song order. Add a number for one in particular (V then 2 = Verse 2);

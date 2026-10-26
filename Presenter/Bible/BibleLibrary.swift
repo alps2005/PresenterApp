@@ -3,13 +3,14 @@ import Observation
 import os
 import PresenterCore
 
-/// The imported Bible translations (see `BibleStore`, in `Application Support/Presenter/Bibles`), and the one open in
-/// the Scripture sheet. Reading and parsing happen off the main actor; only one translation is kept in memory.
+/// The imported Bible translations (see `BibleStore`, in `Application Support/Presenter/Bibles`), and the ones open in
+/// the Scripture sheet. Reading and parsing happen off the main actor; only the translations in use (one, or two for
+/// a passage in both) are kept in memory.
 @Observable
 final class BibleLibrary {
     private(set) var entries: [BibleStore.Entry]
-    /// The translation the Scripture sheet last opened.
-    private(set) var open: BibleTranslation?
+    /// The translations the Scripture sheet has open, by ID.
+    private(set) var loaded: [UUID: BibleTranslation] = [:]
     private(set) var isWorking = false
 
     @ObservationIgnored let store: BibleStore
@@ -38,16 +39,24 @@ final class BibleLibrary {
         }
     }
 
-    /// Opens a translation, reading it from disk unless it's already open.
-    func open(_ id: UUID) async {
-        if open?.id == id { return }
+    /// An open translation, or nil while it's being read (or if it couldn't be).
+    func translation(_ id: UUID?) -> BibleTranslation? {
+        id.flatMap { loaded[$0] }
+    }
+
+    /// Opens a translation, reading it from disk unless it's already open. Translations other than this one and
+    /// `others` are closed, to keep memory down.
+    func open(_ id: UUID, keeping others: Set<UUID> = []) async {
+        loaded = loaded.filter { $0.key == id || others.contains($0.key) }
+        if loaded[id] != nil { return }
         isWorking = true
         defer { isWorking = false }
         let store = store
         do {
-            open = try await Task.detached(priority: .userInitiated) { try store.load(id) }.value
+            let translation = try await Task.detached(priority: .userInitiated) { try store.load(id) }.value
+            loaded[id] = translation
         } catch {
-            open = nil
+            loaded[id] = nil
             logger.error("Couldn't open Bible \(id, privacy: .public): \(String(describing: error), privacy: .public)")
         }
     }
@@ -57,7 +66,7 @@ final class BibleLibrary {
         do {
             try store.save(translation)
             entries = store.entries()
-            if open?.id == translation.id { open = translation }
+            if loaded[translation.id] != nil { loaded[translation.id] = translation }
         } catch {
             logger.error("Couldn't save Bible \(translation.id, privacy: .public): \(String(describing: error), privacy: .public)")
         }
@@ -66,7 +75,7 @@ final class BibleLibrary {
     func delete(_ id: UUID) {
         try? store.delete(id)
         entries = store.entries()
-        if open?.id == id { open = nil }
+        loaded[id] = nil
     }
 
     struct ImportFailure: Error {
