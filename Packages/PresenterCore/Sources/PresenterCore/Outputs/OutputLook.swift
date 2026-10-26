@@ -8,6 +8,8 @@ public struct OutputLook: Codable, Equatable, Sendable {
     public var showsSlide: Bool
     public var showsProps: Bool
     public var showsMessages: Bool
+    /// A song's credit line on its first and last slides (see `CCLISettings`).
+    public var showsCredits: Bool
     /// What fills the background while it's hidden. Nil is black.
     public var keyColor: RGBAColor?
     /// The theme the live slide's words are restyled with on this output. Nil keeps them as they are. Text the
@@ -15,11 +17,13 @@ public struct OutputLook: Codable, Equatable, Sendable {
     public var themeID: UUID?
 
     public init(showsBackground: Bool = true, showsSlide: Bool = true, showsProps: Bool = true,
-                showsMessages: Bool = true, keyColor: RGBAColor? = nil, themeID: UUID? = nil) {
+                showsMessages: Bool = true, showsCredits: Bool = true, keyColor: RGBAColor? = nil,
+                themeID: UUID? = nil) {
         self.showsBackground = showsBackground
         self.showsSlide = showsSlide
         self.showsProps = showsProps
         self.showsMessages = showsMessages
+        self.showsCredits = showsCredits
         self.keyColor = keyColor
         self.themeID = themeID
     }
@@ -48,7 +52,7 @@ public struct OutputLook: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case showsBackground, showsSlide, showsProps, showsMessages, keyColor, themeID
+        case showsBackground, showsSlide, showsProps, showsMessages, showsCredits, keyColor, themeID
     }
 
     /// Fields added later decode with their defaults, so a look saved by an older version still loads.
@@ -58,6 +62,7 @@ public struct OutputLook: Codable, Equatable, Sendable {
         showsSlide = try container.decodeIfPresent(Bool.self, forKey: .showsSlide) ?? true
         showsProps = try container.decodeIfPresent(Bool.self, forKey: .showsProps) ?? true
         showsMessages = try container.decodeIfPresent(Bool.self, forKey: .showsMessages) ?? true
+        showsCredits = try container.decodeIfPresent(Bool.self, forKey: .showsCredits) ?? true
         keyColor = try container.decodeIfPresent(RGBAColor.self, forKey: .keyColor)
         themeID = try container.decodeIfPresent(UUID.self, forKey: .themeID)
     }

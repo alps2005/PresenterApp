@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import os
 import PresenterCore
@@ -9,6 +10,7 @@ final class OperatorUIState {
     var isImportingSongs = false
     var isAddingScripture = false
     var isShowingShows = false
+    var isShowingCCLIReport = false
     /// The audience output whose look is being edited.
     var editingLookRole: OutputRole?
     /// Whether the operator window is on screen; the welcome window quits Presenter when closed without it.
@@ -51,6 +53,22 @@ final class AppEnvironment {
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
         updater = UpdaterController { [coordinator, outputManager] in
             coordinator.state.isPresenting(outputsShowing: outputManager.isAnyOutputOn)
+        }
+        // Songs count for the CCLI report when they go live. Written off the main thread: it reads the log.
+        coordinator.onSongWentLive = { presentation in
+            let log = SongUsageLog.app
+            let now = Date()
+            Task {
+                let failure = await Task.detached(priority: .utility) { () -> String? in
+                    do {
+                        try log.record(presentation, at: now)
+                        return nil
+                    } catch {
+                        return error.localizedDescription
+                    }
+                }.value
+                if let failure { Log.persistence.error("Song usage not recorded: \(failure, privacy: .public)") }
+            }
         }
         preloadProjectMedia()
         if initial.loadedFromDisk {

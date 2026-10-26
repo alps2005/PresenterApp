@@ -60,6 +60,9 @@ struct OperatorView: View {
                 OutputLookSheet(coordinator: coordinator, outputManager: outputManager, role: role)
             }
         }
+        .sheet(isPresented: $ui.isShowingCCLIReport) {
+            CCLIReportSheet(coordinator: coordinator)
+        }
         .sheet(isPresented: $ui.isAddingSong) {
             NewSongSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }

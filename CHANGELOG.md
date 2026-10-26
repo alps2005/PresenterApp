@@ -5,6 +5,16 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 ## Unreleased
 
+This release saves projects in file format 9. Once it opens a project, Presenter 1.3 can't open that project.
+
+### Songs and CCLI
+- **Song credits on screen:** a song with credits shows a small line with its title, writers, copyright, CCLI song
+  number and the church's licence number on its first and last slides, as CCLI asks. Each output's Look can leave it
+  out.
+- **CCLI Report** (File › CCLI Report…): the church's CCLI licence number, the credits switch, and which songs were
+  shown between two dates with how many times, exported as CSV for CCLI reporting. A song counts once a day, when it
+  goes live; the log stays on this Mac. Importing a SongSelect file fills in the licence number if it's empty.
+
 ### Live
 - **Section keys:** with the show focused, V, C, P, B, T, I, E and N take a song's verse, chorus, pre-chorus, bridge,
   tag, intro, ending or interlude live, in its song order. Add a number for one in particular (V then 2 = Verse 2);

@@ -46,6 +46,8 @@ struct PresenterCommands: Commands {
 
             Divider()
 
+            Button("CCLI Report…") { inOperatorWindow { ui.isShowingCCLIReport = true } }
+
             Button("Shows…") { inOperatorWindow { ui.isShowingShows = true } }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
 

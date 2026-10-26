@@ -1,7 +1,7 @@
 import SwiftUI
 import PresenterCore
 
-/// The audience output's top layers, over the background and slide: props, then the message bar.
+/// The audience output's top layers, over the background and slide: props, a song's credits, then the message bar.
 /// Drawn on the audience output and in the operator's Audience preview, so both match.
 struct OverlayLayers: View {
     let coordinator: PresentationCoordinator
@@ -14,6 +14,9 @@ struct OverlayLayers: View {
                 ForEach(coordinator.audienceProps) { prop in
                     SlideRenderView(scene: .slide(RenderedSlide(slide: prop, background: .transparent)), transparency: .clear)
                 }
+            }
+            if look.showsCredits, let credits = coordinator.audienceCredits {
+                CreditsLine(text: credits)
             }
             if look.showsMessages, let (message, values) = coordinator.audienceMessage {
                 MessageBar(coordinator: coordinator, message: message, values: values)
@@ -46,6 +49,28 @@ private struct MessageBar: View {
                     .background(message.barColor.color)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: message.position == .top ? .top : .bottom)
+        }
+    }
+}
+
+/// A song's credits in small type at the bottom of the output, as CCLI asks for on its first and last slides. Sized
+/// for the 1920×1080 canvas and scaled to fit, with a shadow so it reads over any background.
+private struct CreditsLine: View {
+    let text: String
+
+    var body: some View {
+        GeometryReader { geometry in
+            let scale = min(geometry.size.width / SlideRenderView.canvasSize.width,
+                            geometry.size.height / SlideRenderView.canvasSize.height)
+            Text(text)
+                .font(.system(size: 24 * scale, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
+                .shadow(color: .black.opacity(0.8), radius: 3 * scale, y: 1 * scale)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 80 * scale)
+                .padding(.bottom, 24 * scale)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
     }
 }

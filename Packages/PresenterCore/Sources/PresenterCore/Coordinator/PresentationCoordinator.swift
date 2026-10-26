@@ -21,6 +21,8 @@ public final class PresentationCoordinator {
     @ObservationIgnored var coalescingKey: String?
     @ObservationIgnored var lastEditTime = Date.distantPast
     @ObservationIgnored var recordingDepth = 0
+    /// Called when a song goes live from another item, for the CCLI usage log. The app writes the log.
+    @ObservationIgnored public var onSongWentLive: ((PresentationDocument) -> Void)?
     /// The clock for coalescing, timers and edit dates. Tests replace it.
     @ObservationIgnored var now: () -> Date = { Date() }
 
@@ -176,6 +178,10 @@ public final class PresentationCoordinator {
         startAutoAdvance(for: LiveSlide(position: position, rendered: rendered))
         cueAudio(for: position, after: previous)
         runSlideActions(at: position, after: previous)
+        if position.itemID != previous?.itemID, let presentation = project.presentation(forItem: position.itemID),
+           presentation.kind == .song {
+            onSongWentLive?(presentation)
+        }
         Log.coordinator.info("Live: item \(position.itemID, privacy: .public) slide \(position.slideID, privacy: .public)")
         return applied()
     }
