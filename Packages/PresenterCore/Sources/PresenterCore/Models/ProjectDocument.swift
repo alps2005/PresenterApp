@@ -17,7 +17,8 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 6: stage layouts (`stageLayouts`, `StageSettings.layoutID`) (v1.1.0).
     /// - 7: song details (`PresentationDocument.song`: authors, copyright, CCLI song number), slide actions
     ///   (`SlideDocument.actions`) and macros (`macros`).
-    public static let currentSchemaVersion = 7
+    /// - 8: presentation kinds (`PresentationDocument.kind`: presentation, song or scripture).
+    public static let currentSchemaVersion = 8
 
     public let id: UUID
     public var name: String

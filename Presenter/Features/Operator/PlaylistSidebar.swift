@@ -40,6 +40,10 @@ struct PlaylistSidebar: View {
                     row(for: item)
                         .tag(SidebarSelection.item(item.id))
                         .contextMenu {
+                            if let presentation = coordinator.project.presentation(withID: item.presentationID) {
+                                kindMenu(for: presentation)
+                                Divider()
+                            }
                             Button("Remove from Show…", role: .destructive) {
                                 itemPendingRemoval = item
                             }
@@ -122,7 +126,7 @@ struct PlaylistSidebar: View {
                 Button {
                     coordinator.addPresentation(title: "Untitled")
                 } label: {
-                    Label("New Presentation", systemImage: "plus")
+                    Label("New Presentation", systemImage: PresentationKind.presentation.systemImage)
                 }
                 Button { onNewSong() } label: {
                     Label("New Song…", systemImage: "music.note.list")
@@ -331,10 +335,23 @@ struct PlaylistSidebar: View {
         }
     }
 
+    /// Fixes a kind guessed wrongly for a presentation saved before kinds existed.
+    private func kindMenu(for presentation: PresentationDocument) -> some View {
+        Picker("Show As", selection: Binding(
+            get: { presentation.kind },
+            set: { coordinator.setKind($0, presentationID: presentation.id) }
+        )) {
+            ForEach(PresentationKind.allCases, id: \.self) { kind in
+                Label(kind.title, systemImage: kind.systemImage)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
     private func libraryRow(_ presentation: PresentationDocument) -> some View {
         let inPlaylist = coordinator.project.playlist.items.contains { $0.presentationID == presentation.id }
         return HStack {
-            Label(presentation.title.isEmpty ? "Untitled" : presentation.title, systemImage: "doc.text")
+            Label(presentation.title.isEmpty ? "Untitled" : presentation.title, systemImage: presentation.kind.systemImage)
                 .foregroundStyle(inPlaylist ? .primary : .secondary)
             Spacer()
             // Not by colour alone: a mark shows which presentations are already in the playlist.
@@ -357,6 +374,7 @@ struct PlaylistSidebar: View {
         .contextMenu {
             Button("Add to Show") { addToPlaylist(presentation) }
             moveMenu(for: presentation)
+            kindMenu(for: presentation)
             Divider()
             Button("Delete Presentation…", role: .destructive) { presentationPendingDeletion = presentation }
         }
@@ -406,7 +424,7 @@ struct PlaylistSidebar: View {
     private func row(for item: PresentationItem) -> some View {
         if let presentation = coordinator.project.presentation(withID: item.presentationID) {
             HStack {
-                Label(presentation.title.isEmpty ? "Untitled" : presentation.title, systemImage: "doc.text")
+                Label(presentation.title.isEmpty ? "Untitled" : presentation.title, systemImage: presentation.kind.systemImage)
                 Spacer()
                 if coordinator.state.live?.position.itemID == item.id {
                     Image(systemName: "dot.radiowaves.left.and.right")
@@ -440,6 +458,25 @@ private enum FolderNaming {
         switch self {
         case .new: "Create"
         case .rename: "Rename"
+        }
+    }
+}
+
+extension PresentationKind {
+    /// Matches the sidebar's New Presentation, New Song… and Scripture… buttons.
+    var systemImage: String {
+        switch self {
+        case .presentation: "play.rectangle"
+        case .song: "music.note.list"
+        case .scripture: "book"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .presentation: "Presentation"
+        case .song: "Song"
+        case .scripture: "Scripture"
         }
     }
 }

@@ -256,6 +256,7 @@ final class SongImportTests: XCTestCase {
         XCTAssertEqual(presentation.slides.count, 8, "Split to one line a slide")
         XCTAssertEqual(presentation.activeArrangement?.groups, ["Verse 1", "Verse 2", "Chorus", "Verse 2"])
         XCTAssertNil(coordinator.project.presentation(withID: items[1].presentationID)?.song, "No credits, no song details")
+        XCTAssertEqual(coordinator.project.presentation(withID: items[1].presentationID)?.kind, .song, "Still a song")
         XCTAssertEqual(coordinator.undoActionName, "Import Songs")
 
         coordinator.undo()
@@ -287,6 +288,46 @@ final class SongImportTests: XCTestCase {
         old["song"] = nil
         let legacy = try JSONDecoder().decode(PresentationDocument.self, from: JSONSerialization.data(withJSONObject: old))
         XCTAssertNil(legacy.song)
-        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 7)
+        XCTAssertEqual(ProjectDocument.currentSchemaVersion, 8)
+    }
+
+    func testKindRoundTripsAndFormat7FilesGetAGuess() throws {
+        let caption = SlideDocument(elements: [.text(TextElement(text: "John 3:16 · KJV", role: .caption))])
+        var labelled = SlideDocument.text("Amazing grace")
+        labelled.label = "Verse 1"
+        let cases: [(PresentationDocument, PresentationKind)] = [
+            (PresentationDocument(title: "Deck", slides: [.text("Welcome")]), .presentation),
+            (PresentationDocument(title: "Song", slides: [labelled]), .song),
+            (PresentationDocument(title: "Credits", slides: [.text("a")], song: SongInfo(authors: ["A"])), .song),
+            (PresentationDocument(title: "Ordered", slides: [.text("a")], arrangements: [Arrangement(name: "O", groups: [])]), .song),
+            (PresentationDocument(title: "John 3:16", slides: [caption, caption]), .scripture),
+            (PresentationDocument(title: "Empty", slides: []), .presentation),
+        ]
+        for (presentation, guess) in cases {
+            var saved = presentation
+            saved.kind = .scripture
+            let data = try JSONEncoder().encode(saved)
+            XCTAssertEqual(try JSONDecoder().decode(PresentationDocument.self, from: data).kind, .scripture)
+
+            var old = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            old["kind"] = nil
+            let legacy = try JSONDecoder().decode(PresentationDocument.self, from: JSONSerialization.data(withJSONObject: old))
+            XCTAssertEqual(legacy.kind, guess, presentation.title)
+        }
+    }
+
+    @MainActor
+    func testSetKindChangesAndUndoes() throws {
+        let coordinator = PresentationCoordinator(project: ProjectDocument(name: "T"))
+        let item = coordinator.addPresentation(title: "Untitled")
+        let id = item.presentationID
+        XCTAssertEqual(coordinator.project.presentation(withID: id)?.kind, .presentation)
+
+        XCTAssertEqual(coordinator.setKind(.song, presentationID: id), .applied)
+        XCTAssertEqual(coordinator.project.presentation(withID: id)?.kind, .song)
+        XCTAssertEqual(coordinator.undoActionName, "Change Type")
+        coordinator.undo()
+        XCTAssertEqual(coordinator.project.presentation(withID: id)?.kind, .presentation)
+        XCTAssertEqual(coordinator.setKind(.song, presentationID: coordinator.project.props.id), .rejected(.unknownPresentation))
     }
 }

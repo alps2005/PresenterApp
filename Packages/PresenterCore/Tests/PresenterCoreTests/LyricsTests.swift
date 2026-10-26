@@ -66,6 +66,7 @@ final class LyricsTests: XCTestCase {
         let presentation = coordinator.project.presentation(forItem: item!.id)
         XCTAssertEqual(presentation?.title, "Grace")
         XCTAssertEqual(presentation?.slides.map(\.label), ["Verse", "Chorus"])
+        XCTAssertEqual(presentation?.kind, .song)
         XCTAssertNil(coordinator.addSong(title: "Empty", lyrics: "\n\n"))
 
         coordinator.undo()

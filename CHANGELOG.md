@@ -3,6 +3,17 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.3.0 (2026-10-26)
+
+This release saves projects in file format 8. Once it opens a project, Presenter 1.2 can't open that project.
+
+### Sidebar
+- **Icons by kind:** presentations, songs and Bible passages each have their own icon in the show and the library.
+  Items from older projects are recognised from their slides; right-click › **Show As** changes one.
+
+### Install
+- **Disk image:** the window shows big icons over a picture saying to drag Presenter to Applications.
+
 ## v1.2.1 (2026-10-21)
 
 The first update delivered by Presenter's own updater.

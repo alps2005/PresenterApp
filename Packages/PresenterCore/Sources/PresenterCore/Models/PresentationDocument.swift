@@ -24,6 +24,8 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
     /// Who wrote the song and who holds its copyright, for licence reporting and credits. Nil for presentations that
     /// aren't songs, or songs nobody has filled in.
     public var song: SongInfo?
+    /// Whether it's a presentation, a song or a Bible passage, for its icon in the sidebar.
+    public var kind: PresentationKind
     public var createdAt: Date
     public var updatedAt: Date
 
@@ -39,6 +41,7 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         folderID: UUID? = nil,
         soundtrack: AudioTrack? = nil,
         song: SongInfo? = nil,
+        kind: PresentationKind = .presentation,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -53,16 +56,18 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         self.folderID = folderID
         self.soundtrack = soundtrack
         self.song = song
+        self.kind = kind
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, soundtrack, song
+        case id, title, slides, background, arrangements, activeArrangementID, themeID, slideshowInterval, folderID, soundtrack, song, kind
         case createdAt, updatedAt
     }
 
-    /// Files saved before arrangements, themes, slideshows, folders, soundtracks or song details existed load with none.
+    /// Files saved before arrangements, themes, slideshows, folders, soundtracks or song details existed load with none,
+    /// and files saved before kinds existed load with a guess (see `PresentationKind.guessed(for:)`).
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -78,6 +83,9 @@ public struct PresentationDocument: Identifiable, Codable, Hashable, Sendable {
         song = try container.decodeIfPresent(SongInfo.self, forKey: .song)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        // A placeholder first: the guess reads the rest of `self`, which needs every field set.
+        kind = .presentation
+        kind = try container.decodeIfPresent(PresentationKind.self, forKey: .kind) ?? .guessed(for: self)
     }
 
     public func slide(withID slideID: UUID) -> SlideDocument? {

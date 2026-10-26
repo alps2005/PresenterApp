@@ -19,7 +19,8 @@ extension PresentationCoordinator {
                     arrangements: arrangement.map { [$0] } ?? [],
                     activeArrangementID: arrangement?.id,
                     themeID: theme,
-                    song: song.info.isEmpty ? nil : song.info
+                    song: song.info.isEmpty ? nil : song.info,
+                    kind: .song
                 )
                 let item = PresentationItem(presentationID: presentation.id)
                 project.presentations.append(presentation)

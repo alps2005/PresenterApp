@@ -29,7 +29,7 @@ extension PresentationCoordinator {
         guard !slides.isEmpty else { return nil }
         return recordingUndo("Add Song") {
             let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides,
-                                                    themeID: existingThemeID(themeID))
+                                                    themeID: existingThemeID(themeID), kind: .song)
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
             project.playlist.items.append(item)
@@ -37,6 +37,16 @@ extension PresentationCoordinator {
             lastRejection = nil
             Log.coordinator.info("Added song \(presentation.id, privacy: .public) with \(slides.count) slides")
             return item
+        }
+    }
+
+    /// Changes whether a presentation shows as a presentation, a song or a Bible passage, e.g. to fix a guess for one
+    /// saved before kinds existed.
+    @discardableResult
+    public func setKind(_ kind: PresentationKind, presentationID: UUID) -> CommandResult {
+        recordingUndo("Change Type") {
+            guard presentationID != project.props.id else { return reject(.unknownPresentation) }
+            return editPresentation(presentationID) { $0.kind = kind }
         }
     }
 
