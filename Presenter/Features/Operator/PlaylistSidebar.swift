@@ -466,7 +466,7 @@ extension PresentationKind {
     /// Matches the sidebar's New Presentation, New Song… and Scripture… buttons.
     var systemImage: String {
         switch self {
-        case .presentation: "rectangle.inset.filled.and.person.filled"
+        case .presentation: "play.rectangle"
         case .song: "music.note.list"
         case .scripture: "book"
         }
