@@ -7,6 +7,11 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 This release saves projects in file format 9. Once it opens a project, Presenter 1.3 can't open that project.
 
+### Library
+- **Import PDF** (File › Import PDF…): each page of a PDF becomes a slide, the page filling the screen over black,
+  in a new presentation added to the show. Keynote, PowerPoint and Google Slides decks come in this way after
+  exporting them as a PDF.
+
 ### Audio
 - **Choose the sound output** (Settings › Audio): music, audio cues, soundtracks and video sound play through the
   interface you pick, such as the one feeding the sound desk, instead of whatever the Mac's sound output is set to.

@@ -1,5 +1,6 @@
 import SwiftUI
 import PresenterCore
+import UniformTypeIdentifiers
 
 /// The operator's main window: playlist, slides, live state and controls.
 struct OperatorView: View {
@@ -15,6 +16,9 @@ struct OperatorView: View {
     let persistence: ProjectPersistence
     @Bindable var ui: OperatorUIState
     @Environment(MediaLibrary.self) private var mediaLibrary
+    /// "Importing page 3 of 12…" while a PDF's pages are imported.
+    @State private var pdfImportStatus: String?
+    @State private var pdfImportProblem: String?
     /// A sidebar click asks the workspace to scroll to that item.
     @State private var scrollRequest: UUID?
     /// A library presentation clicked in the sidebar, shown in place of the show's slides.
@@ -79,6 +83,27 @@ struct OperatorView: View {
                 scrollRequest = itemID
             }
         }
+        .onChange(of: ui.isImportingPDF) { _, isImporting in
+            guard isImporting else { return }
+            ui.isImportingPDF = false
+            importPDF()
+        }
+        .sheet(isPresented: Binding(get: { pdfImportStatus != nil }, set: { _ in })) {
+            HStack(spacing: Spacing.md) {
+                ProgressView().controlSize(.small)
+                Text(pdfImportStatus ?? "")
+            }
+            .padding(Spacing.xl)
+            .interactiveDismissDisabled()
+        }
+        .alert("Import PDF", isPresented: Binding(
+            get: { pdfImportProblem != nil },
+            set: { if !$0 { pdfImportProblem = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(pdfImportProblem ?? "")
+        }
         .sheet(isPresented: $ui.isShowingCCLIReport) {
             CCLIReportSheet(coordinator: coordinator)
         }
@@ -106,6 +131,42 @@ struct OperatorView: View {
             Button("OK") {}
         } message: {
             Text(persistence.problem ?? "")
+        }
+    }
+
+    /// Turns a PDF's pages into a presentation, one picture per slide, added to the show. Keynote and PowerPoint decks
+    /// come in this way after File › Export To › PDF.
+    private func importPDF() {
+        guard let url = MediaPanel.choose([.pdf], message: "Choose a PDF. Export a Keynote or PowerPoint deck as a PDF first.").first
+        else { return }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("PDF-\(UUID().uuidString)", isDirectory: true)
+        let title = url.deletingPathExtension().lastPathComponent
+        pdfImportStatus = "Reading “\(title)”…"
+        Task {
+            defer {
+                pdfImportStatus = nil
+                try? FileManager.default.removeItem(at: folder)
+            }
+            do {
+                let pages = try await Task.detached(priority: .userInitiated) {
+                    let isScoped = url.startAccessingSecurityScopedResource()
+                    defer { if isScoped { url.stopAccessingSecurityScopedResource() } }
+                    return try PDFPages.render(url, into: folder, maxPixels: MediaLibrary.maxPixelSize) { _, _ in }
+                }.value
+                var assetIDs: [UUID] = []
+                for (index, page) in pages.enumerated() {
+                    pdfImportStatus = "Importing page \(index + 1) of \(pages.count)…"
+                    let asset = try await mediaLibrary.importImage(at: page)
+                    coordinator.addMediaAsset(asset)
+                    assetIDs.append(asset.id)
+                }
+                if let item = coordinator.addPresentation(title: title, pictures: assetIDs) {
+                    browsedPresentationID = nil
+                    scrollRequest = item.id
+                }
+            } catch {
+                pdfImportProblem = error.localizedDescription
+            }
         }
     }
 

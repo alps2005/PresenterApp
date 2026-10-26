@@ -20,6 +20,31 @@ extension PresentationCoordinator {
         }
     }
 
+    /// Creates a presentation with one picture per slide, filling the screen without cropping over black, from images
+    /// already imported (a PDF's pages, say), adds it to the show and selects it. Returns nil, changing nothing, when
+    /// there are no images or one isn't in the project.
+    @discardableResult
+    public func addPresentation(title: String, pictures assetIDs: [UUID]) -> PresentationItem? {
+        guard !assetIDs.isEmpty, assetIDs.allSatisfy({ project.asset(withID: $0) != nil }) else { return nil }
+        return recordingUndo("Import Pictures") {
+            var slides: [SlideDocument] = []
+            for assetID in assetIDs {
+                var slide = SlideDocument(elements: [])
+                slide.background = .image(ImageBackground(assetID: assetID, scaling: .fit))
+                slides.append(slide)
+            }
+            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled" : title, slides: slides,
+                                                    background: .color(.black))
+            let item = PresentationItem(presentationID: presentation.id)
+            project.presentations.append(presentation)
+            project.playlist.items.append(item)
+            state.selectedItemID = item.id
+            lastRejection = nil
+            Log.coordinator.info("Added \(slides.count) pictures as \(presentation.id, privacy: .public)")
+            return item
+        }
+    }
+
     /// Creates a presentation from pasted lyrics (see `LyricsParser`), adds it to the playlist and selects it.
     /// Returns nil, changing nothing, when the lyrics contain no words.
     @discardableResult

@@ -11,6 +11,8 @@ final class OperatorUIState {
     var isAddingScripture = false
     var isShowingShows = false
     var isShowingCCLIReport = false
+    /// Asks the operator window to import a PDF's pages as a presentation.
+    var isImportingPDF = false
     var preServiceCheck: PreServiceCheckMode?
     /// The check runs once at launch, when the operator window first appears.
     var hasRunLaunchCheck = false

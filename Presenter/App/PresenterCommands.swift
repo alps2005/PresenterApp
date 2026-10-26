@@ -40,6 +40,8 @@ struct PresenterCommands: Commands {
             Button("Import Songs…") { inOperatorWindow { ui.isImportingSongs = true } }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
 
+            Button("Import PDF…") { inOperatorWindow { ui.isImportingPDF = true } }
+
             // ⌥⌘V, for verse: ⌥⌘B is Blackout.
             Button("Add Scripture…") { inOperatorWindow { ui.isAddingScripture = true } }
                 .keyboardShortcut("v", modifiers: [.command, .option])
