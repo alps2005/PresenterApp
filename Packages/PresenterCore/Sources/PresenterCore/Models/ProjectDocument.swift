@@ -18,7 +18,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
     /// - 7: song details (`PresentationDocument.song`: authors, copyright, CCLI song number), slide actions
     ///   (`SlideDocument.actions`) and macros (`macros`).
     /// - 8: presentation kinds (`PresentationDocument.kind`: presentation, song or scripture) (v1.3.0).
-    /// - 9: the church's CCLI licence and on-screen song credits (`ccli`).
+    /// - 9: the church's CCLI licence and on-screen song credits (`ccli`) (v1.4.0).
     public static let currentSchemaVersion = 9
 
     public let id: UUID

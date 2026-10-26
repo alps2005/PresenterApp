@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** 1.2. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.4. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
