@@ -33,6 +33,8 @@ final class AppEnvironment {
     let playback: MediaPlaybackController
     /// Plays audio cues, soundtracks and tracks from the audio bin.
     let audio: AudioPlaybackController
+    /// The sound output music and video play through, chosen in Settings.
+    let audioOutput = AudioOutput()
     /// Moves the live slide on when its Slideshow or Go To Next countdown ends.
     let autoAdvance: AutoAdvanceDriver
     let persistence: ProjectPersistence
@@ -50,8 +52,8 @@ final class AppEnvironment {
         persistence = ProjectPersistence(
             coordinator: coordinator, store: store, mediaDirectory: mediaLibrary.store.directory, loadProblem: initial.problem
         )
-        playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
-        audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary)
+        playback = MediaPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary, output: audioOutput)
+        audio = AudioPlaybackController(coordinator: coordinator, mediaLibrary: mediaLibrary, output: audioOutput)
         outputManager = OutputManager(coordinator: coordinator, mediaLibrary: mediaLibrary, playback: playback)
         autoAdvance = AutoAdvanceDriver(coordinator: coordinator, playback: playback, mediaLibrary: mediaLibrary)
         updater = UpdaterController { [coordinator, outputManager] in

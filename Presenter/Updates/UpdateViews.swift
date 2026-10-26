@@ -18,7 +18,7 @@ struct UpdateCommands: Commands {
     }
 }
 
-/// The Settings window's one setting so far. Sparkle keeps it; it's set only when the operator changes it.
+/// The Settings window's General tab: updates. Sparkle keeps the setting; it's set only when the operator changes it.
 struct UpdateSettingsView: View {
     let updater: UpdaterController
     @State private var checksAutomatically = false

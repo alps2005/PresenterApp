@@ -7,6 +7,11 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 This release saves projects in file format 9. Once it opens a project, Presenter 1.3 can't open that project.
 
+### Audio
+- **Choose the sound output** (Settings › Audio): music, audio cues, soundtracks and video sound play through the
+  interface you pick, such as the one feeding the sound desk, instead of whatever the Mac's sound output is set to.
+  If it's unplugged, sound falls back to the Mac's output and the Live panel says so. Kept on this Mac.
+
 ### Songs and CCLI
 - **Song credits on screen:** a song with credits shows a small line with its title, writers, copyright, CCLI song
   number and the church's licence number on its first and last slides, as CCLI asks. Each output's Look can leave it

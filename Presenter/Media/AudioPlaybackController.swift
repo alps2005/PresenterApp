@@ -22,15 +22,30 @@ final class AudioPlaybackController {
     @ObservationIgnored private var rampTimer: Timer?
     @ObservationIgnored private let coordinator: PresentationCoordinator
     @ObservationIgnored private let mediaLibrary: MediaLibrary
+    @ObservationIgnored private let output: AudioOutput
     @ObservationIgnored private let logger = Logger(subsystem: "io.github.alps2005.Presenter", category: "Audio")
 
     /// Volume ramps step 30 times a second: smooth to the ear, and cheap.
     private static let rampInterval: TimeInterval = 1.0 / 30
 
-    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, output: AudioOutput) {
         self.coordinator = coordinator
         self.mediaLibrary = mediaLibrary
+        self.output = output
         follow()
+        followDevice()
+    }
+
+    /// Moves every playing track to the chosen sound output when it changes, is plugged in or goes away.
+    private func followDevice() {
+        let uid = withObservationTracking {
+            output.effectiveUID
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.followDevice() }
+        }
+        for track in [current].compactMap({ $0 }) + fadingOut where track.player.audioOutputDeviceUniqueID != uid {
+            track.player.audioOutputDeviceUniqueID = uid
+        }
     }
 
     /// Watches the live audio and keeps the players in step.
@@ -70,7 +85,8 @@ final class AudioPlaybackController {
 
     private func start(_ live: LiveAudio) {
         guard let asset = coordinator.project.asset(withID: live.track.assetID) else { return }
-        let track = Track(live: live, url: mediaLibrary.store.url(for: asset), duration: asset.duration ?? 0) { [weak self] time in
+        let track = Track(live: live, url: mediaLibrary.store.url(for: asset), duration: asset.duration ?? 0,
+                          deviceUID: output.effectiveUID) { [weak self] time in
             self?.currentTime = time
         } onEnd: { [weak self] in
             self?.coordinator.audioDidFinish(startID: live.startID)
@@ -159,11 +175,12 @@ private final class Track {
 
     var isFading: Bool { fade != nil }
 
-    init(live: LiveAudio, url: URL, duration: Double, onTime: @escaping @MainActor (Double) -> Void,
+    init(live: LiveAudio, url: URL, duration: Double, deviceUID: String?, onTime: @escaping @MainActor (Double) -> Void,
          onEnd: @escaping @MainActor () -> Void) {
         startID = live.startID
         let item = AVPlayerItem(url: url)
         player.volume = 0
+        player.audioOutputDeviceUniqueID = deviceUID
         if live.track.loops {
             looper = AVPlayerLooper(player: player, templateItem: item)
         } else {

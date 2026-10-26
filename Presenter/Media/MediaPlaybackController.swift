@@ -29,11 +29,13 @@ final class MediaPlaybackController {
     @ObservationIgnored private var endObserver: NSObjectProtocol?
     @ObservationIgnored private let coordinator: PresentationCoordinator
     @ObservationIgnored private let mediaLibrary: MediaLibrary
+    @ObservationIgnored private let output: AudioOutput
     @ObservationIgnored private let logger = Logger(subsystem: "io.github.alps2005.Presenter", category: "Playback")
 
-    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) {
+    init(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary, output: AudioOutput) {
         self.coordinator = coordinator
         self.mediaLibrary = mediaLibrary
+        self.output = output
         player.isMuted = true
         timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 4), queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
@@ -44,6 +46,17 @@ final class MediaPlaybackController {
             }
         }
         follow()
+        followDevice()
+    }
+
+    /// A video's sound goes to the chosen sound output too.
+    private func followDevice() {
+        let uid = withObservationTracking {
+            output.effectiveUID
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.followDevice() }
+        }
+        if player.audioOutputDeviceUniqueID != uid { player.audioOutputDeviceUniqueID = uid }
     }
 
     /// Watches the live background (and blackout) and keeps the player in step.
