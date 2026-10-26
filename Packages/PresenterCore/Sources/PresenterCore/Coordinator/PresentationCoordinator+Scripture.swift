@@ -16,7 +16,8 @@ extension PresentationCoordinator {
         let slides = ScriptureSlides.make(passage, options: options)
         guard !slides.isEmpty else { return nil }
         return recordingUndo("Add Scripture") {
-            let presentation = PresentationDocument(title: passage.caption, slides: slides, themeID: existingThemeID(themeID))
+            let presentation = PresentationDocument(title: passage.caption, slides: slides, themeID: existingThemeID(themeID),
+                                                    kind: .scripture)
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
             project.playlist.items.append(item)

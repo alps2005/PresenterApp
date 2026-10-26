@@ -113,6 +113,7 @@ final class ScriptureTests: XCTestCase {
         let presentation = try XCTUnwrap(c.project.presentation(forItem: item.id))
         XCTAssertEqual(presentation.title, "John 3:16-17 · KJV")
         XCTAssertEqual(presentation.themeID, themeID)
+        XCTAssertEqual(presentation.kind, .scripture)
         XCTAssertEqual(c.state.selectedItemID, item.id)
         XCTAssertEqual(c.project.playlist.items.last?.id, item.id)
 
