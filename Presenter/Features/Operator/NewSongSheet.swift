@@ -140,6 +140,8 @@ extension SongSectionKind {
         case .preChorus: .teal
         case .chorus: .purple
         case .bridge: .brown
+        case .tag, .ending: .pink
+        case .intro, .interlude: .cyan
         case .other: .gray
         }
     }

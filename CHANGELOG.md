@@ -3,6 +3,13 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Live
+- **Section keys:** with the show focused, V, C, P, B, T, I, E and N take a song's verse, chorus, pre-chorus, bridge,
+  tag, intro, ending or interlude live, in its song order. Add a number for one in particular (V then 2 = Verse 2);
+  pressing the key again moves on to the next one. English and Spanish section names both work.
+
 ## v1.3.0 (2026-10-26)
 
 This release saves projects in file format 8. Once it opens a project, Presenter 1.2 can't open that project.

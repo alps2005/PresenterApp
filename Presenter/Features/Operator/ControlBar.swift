@@ -57,9 +57,14 @@ struct ControlBar: View {
                     .foregroundStyle(Palette.warning)
                     .lineLimit(1)
             } else {
-                Text("→ or Space next · ← previous")
+                Text("→ or Space next · ← previous · V C B sections")
                     .foregroundStyle(.secondary)
-                    .help("Move through every presentation in the show. ⌥⌘→ / ⌥⌘← work from anywhere.")
+                    .help("""
+                        Move through every presentation in the show. ⌥⌘→ / ⌥⌘← work from anywhere.
+                        Section keys take a song's section live: V verse, C chorus, P pre-chorus, B bridge, T tag, \
+                        I intro, E ending, N interlude. Add a number for one in particular (V then 2 = Verse 2); \
+                        pressing the key again moves on to the next one.
+                        """)
             }
         }
         .controlSize(.large)
