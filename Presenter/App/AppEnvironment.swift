@@ -11,6 +11,9 @@ final class OperatorUIState {
     var isAddingScripture = false
     var isShowingShows = false
     var isShowingCCLIReport = false
+    var preServiceCheck: PreServiceCheckMode?
+    /// The check runs once at launch, when the operator window first appears.
+    var hasRunLaunchCheck = false
     /// The audience output whose look is being edited.
     var editingLookRole: OutputRole?
     /// Whether the operator window is on screen; the welcome window quits Presenter when closed without it.

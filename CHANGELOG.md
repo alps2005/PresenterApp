@@ -15,6 +15,12 @@ This release saves projects in file format 9. Once it opens a project, Presenter
   shown between two dates with how many times, exported as CSV for CCLI reporting. A song counts once a day, when it
   goes live; the log stays on this Mac. Importing a SongSelect file fills in the licence number if it's empty.
 
+### Show
+- **Pre-Service Check** (Live › Pre-Service Check…, ⌥⌘K): a checklist for the open show: media files that are
+  missing, fonts that aren't installed, an audience output that's off, disconnected or behind the operator window,
+  presentations with nothing on their slides, and songs without credits, each with **Show** to go to it. At launch it
+  opens by itself only when something needs attention.
+
 ### Scripture
 - **Two Bibles at once:** Add Scripture's **Second Bible** shows the passage in another translation below the first,
   the same verses on each slide, for bilingual services (Reina-Valera above, KJV below). A verse the second Bible

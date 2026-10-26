@@ -14,6 +14,7 @@ struct OperatorView: View {
     let outputManager: OutputManager
     let persistence: ProjectPersistence
     @Bindable var ui: OperatorUIState
+    @Environment(MediaLibrary.self) private var mediaLibrary
     /// A sidebar click asks the workspace to scroll to that item.
     @State private var scrollRequest: UUID?
     /// A library presentation clicked in the sidebar, shown in place of the show's slides.
@@ -43,6 +44,16 @@ struct OperatorView: View {
             ui.isOperatorWindowOpen = true
             ui.hasShownOperatorWindow = true
         }
+        // Once per launch, after the outputs have had a moment to come back on their screens; only if something's wrong.
+        .task {
+            guard !ui.hasRunLaunchCheck else { return }
+            ui.hasRunLaunchCheck = true
+            try? await Task.sleep(for: .seconds(2))
+            if !PreServiceCheckSheet.problems(coordinator, outputManager, mediaLibrary, mode: .launch).isEmpty,
+               ui.preServiceCheck == nil {
+                ui.preServiceCheck = .launch
+            }
+        }
         .onDisappear { ui.isOperatorWindowOpen = false }
         // Opened from the welcome window, or the open show deleted: leave whatever belonged to the old show.
         .onChange(of: coordinator.project.activePlaylistID) {
@@ -58,6 +69,14 @@ struct OperatorView: View {
         .sheet(isPresented: Binding(get: { ui.editingLookRole != nil }, set: { if !$0 { ui.editingLookRole = nil } })) {
             if let role = ui.editingLookRole {
                 OutputLookSheet(coordinator: coordinator, outputManager: outputManager, role: role)
+            }
+        }
+        .sheet(item: $ui.preServiceCheck) { mode in
+            PreServiceCheckSheet(coordinator: coordinator, outputManager: outputManager, mode: mode) { itemID in
+                browsedPresentationID = nil
+                editSession = nil
+                coordinator.selectItem(itemID)
+                scrollRequest = itemID
             }
         }
         .sheet(isPresented: $ui.isShowingCCLIReport) {

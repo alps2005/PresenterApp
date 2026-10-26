@@ -128,6 +128,9 @@ struct PresenterCommands: Commands {
             // Always enabled: its state would rebuild the menus at every slide change while a Slideshow runs.
             Button("Stop Auto-Advance") { coordinator.stopAutoAdvance() }
                 .keyboardShortcut(".", modifiers: [.command, .option])
+            Divider()
+            Button("Pre-Service Check…") { inOperatorWindow { ui.preServiceCheck = .menu } }
+                .keyboardShortcut("k", modifiers: [.command, .option])
         }
 
         CommandMenu("Output") {
