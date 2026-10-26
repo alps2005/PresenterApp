@@ -106,8 +106,8 @@ swift test
 **Songs.** **New Song…** (⌥⌘N) takes pasted lyrics and makes one slide per stanza: a blank line starts a new slide. A line that's only a section name, such as *Verse 1*, *[Chorus]*, *Coro:*, *Verso 2*, *Puente* or *Bridge*, isn't shown on screen. Instead, it labels the slides after it with a coloured tag, which you can change in the slide editor's Format panel. **Lines per slide** splits long stanzas into slides of 2, 3 or 4 lines.
 
 **Importing songs.** **File › Import Songs…** (⇧⌘I) reads song files, several at once, and lists each song with its writers and slide count, or says why a file couldn't be read, before anything is added. Imported songs go into the library and the open show, as one step to undo.
-- **Formats:** OpenLyrics (.xml, from OpenLP and others), ChordPro (.cho, .chordpro, .chopro, .pro), SongSelect's lyrics (.txt) and SongPro (.usr) downloads, and plain lyrics in any text file (typed as for New Song). Chords are left out.
-- **Sections and order:** sections become labelled groups (Verse 1, Chorus…). If the file gives a singing order (OpenLyrics' verse order, or ChordPro's `{chorus}`), the song gets a **Song Order** arrangement that plays.
+- **Formats:** ProPresenter 7 (.pro), OpenLyrics (.xml, from OpenLP and others), ChordPro (.cho, .chordpro, .chopro, .pro), SongSelect's lyrics (.txt) and SongPro (.usr) downloads, and plain lyrics in any text file (typed as for New Song). Chords are left out. A ProPresenter song brings its words, groups, selected arrangement and CCLI details; its formatting, media and translations stay behind.
+- **Sections and order:** sections become labelled groups (Verse 1, Chorus…). If the file gives a singing order (ProPresenter's selected arrangement, OpenLyrics' verse order, or ChordPro's `{chorus}`), the song gets a **Song Order** arrangement that plays.
 - **Credits:** writers, copyright and the CCLI song number are kept with the song, for your licence reports. See or change them in the slide editor under **Document › Song**.
 
 **Scripture.** **Scripture…** (⌥⌘V, or the sidebar) adds a Bible passage to the show as text slides.

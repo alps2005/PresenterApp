@@ -21,6 +21,9 @@ This release saves projects in file format 9. Once it opens a project, Presenter
 - **Song credits on screen:** a song with credits shows a small line with its title, writers, copyright, CCLI song
   number and the church's licence number on its first and last slides, as CCLI asks. Each output's Look can leave it
   out.
+- **ProPresenter songs:** Import Songs reads ProPresenter 7 files (.pro): each song's words, groups, selected
+  arrangement and CCLI details come across, so a church can bring its ProPresenter library. Formatting, media and
+  translations stay behind. ChordPro files ending in .pro still read as ChordPro.
 - **CCLI Report** (File › CCLI Report…): the church's CCLI licence number, the credits switch, and which songs were
   shown between two dates with how many times, exported as CSV for CCLI reporting. A song counts once a day, when it
   goes live; the log stays on this Mac. Importing a SongSelect file fills in the licence number if it's empty.

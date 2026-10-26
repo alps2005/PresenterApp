@@ -2,7 +2,7 @@ import PresenterCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Imports song files (OpenLyrics, ChordPro, SongSelect, plain lyrics) into the library and the open show. Files are
+/// Imports song files (ProPresenter, OpenLyrics, ChordPro, SongSelect, plain lyrics) into the library and the open show. Files are
 /// read when chosen, so the list shows each song's title, writers and slides, or why a file couldn't be read, before
 /// anything is added.
 struct ImportSongsSheet: View {
@@ -43,7 +43,7 @@ struct ImportSongsSheet: View {
             list
                 .frame(minHeight: 240)
 
-            Text("Reads OpenLyrics (.xml), ChordPro (.cho, .chordpro, .pro), SongSelect lyrics (.txt) and SongPro (.usr) files, and plain lyrics in text files. Chords are left out. Writers, copyright and CCLI numbers are kept with each song.")
+            Text("Reads ProPresenter 7 (.pro), OpenLyrics (.xml), ChordPro (.cho, .chordpro, .pro), SongSelect lyrics (.txt) and SongPro (.usr) files, and plain lyrics in text files. Chords are left out. Writers, copyright and CCLI numbers are kept with each song.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
