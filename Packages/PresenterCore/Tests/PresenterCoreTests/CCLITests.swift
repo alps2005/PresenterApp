@@ -130,7 +130,9 @@ final class CCLITests: XCTestCase {
         formatter.timeZone = calendar.timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         let row = SongUsageLog.Row(title: "Hello, \"World\"", ccliNumber: "1", authors: "A", uses: 2, lastUsed: sunday)
-        XCTAssertEqual(SongUsageLog.csv([row], dateFormatter: formatter),
+        let csv = Data(SongUsageLog.csv([row], dateFormatter: formatter).utf8)
+        XCTAssertEqual(Array(csv.prefix(3)), [0xEF, 0xBB, 0xBF], "A UTF-8 byte order mark, so Excel keeps accents")
+        XCTAssertEqual(String(decoding: csv.dropFirst(3), as: UTF8.self),
                        "Title,Writers,CCLI Song Number,Times Used,Last Used\n\"Hello, \"\"World\"\"\",A,1,2,2026-09-21\n")
     }
 }

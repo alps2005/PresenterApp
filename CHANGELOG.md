@@ -3,6 +3,12 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Fixes
+- **CCLI Report CSV in Excel:** the exported file now opens in Excel on a Mac with accents intact (Océanos), not
+  garbled. Numbers and Google Sheets read it as before.
+
 ## v1.4.0 (2026-10-26)
 
 This release saves projects in file format 9. Once it opens a project, Presenter 1.3 can't open that project.
