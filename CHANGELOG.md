@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v1.5.0 (2026-10-31)
 
 ### Scripture
 - **Scripture over the cued slide:** cue any slide, click **Scripture…** in the Live panel (or ⌥⌘L), pick a passage
