@@ -67,8 +67,9 @@ public final class PresentationCoordinator {
         return sequence[index + 1]
     }
 
+    /// The next page of verses shown over the live slide, else the slide at `upNextPosition`.
     public var upNextSlide: RenderedSlide? {
-        upNextPosition.flatMap(project.renderedSlide(at:))
+        nextScripturePage ?? upNextPosition.flatMap(project.renderedSlide(at:))
     }
 
     /// True after Clear Background when the live slide (taken live again) or the next one has a background of its
@@ -142,9 +143,11 @@ public final class PresentationCoordinator {
     /// so the audience sees an older version.
     public var liveSlideHasPendingEdits: Bool {
         guard let live = state.live, var current = project.renderedSlide(at: live.position) else { return false }
+        // Under verses, the slide went live as it was before they were added.
+        let shown = state.scriptureOverlay.map(\.baseRendered) ?? live.rendered
         // Notes never reach the audience, so editing them leaves nothing to take live again.
-        current.slide.notes = live.slide.notes
-        return current != live.rendered
+        current.slide.notes = shown.slide.notes
+        return current != shown
     }
 
     /// The live slide's notes as they are now. Notes never reach the audience, so edits show on the stage
@@ -161,6 +164,9 @@ public final class PresentationCoordinator {
     func goLive(at position: SlidePosition) -> CommandResult {
         guard let rendered = project.renderedSlide(at: position) else { return reject(.unknownSlide) }
         let previous = state.live?.position
+        // Any slide taken live ends the verses over the last one.
+        state.scriptureOverlay = nil
+        state.clearedScriptureOverlay = nil
         state.live = LiveSlide(position: position, rendered: rendered)
         state.cleared = nil
         // An opaque slide replaces the background layer; a transparent one leaves what's on screen.
@@ -188,6 +194,14 @@ public final class PresentationCoordinator {
 
     func step(by offset: Int, boundary: CommandRejection) -> CommandResult {
         guard let live = state.live else { return reject(.nothingLive) }
+        // Verses over the slide page through first; past either end, the show carries on from the slide under them.
+        if let overlay = state.scriptureOverlay, live.position == overlay.base {
+            let page = overlay.index + offset
+            if overlay.pages.indices.contains(page) {
+                showScripturePage(page, of: overlay)
+                return applied()
+            }
+        }
         let sequence = slideSequence()
         guard let index = Self.index(of: live.position, in: sequence) else { return reject(.liveSlideMissing) }
         let target = index + offset

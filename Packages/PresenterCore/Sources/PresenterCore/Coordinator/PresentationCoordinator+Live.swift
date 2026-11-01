@@ -54,6 +54,8 @@ extension PresentationCoordinator {
         guard let live = state.live else { return reject(.nothingLive) }
         state.cleared = live
         state.live = nil
+        state.clearedScriptureOverlay = state.scriptureOverlay
+        state.scriptureOverlay = nil
         state.autoAdvance = nil
         Log.coordinator.info("Slide cleared")
         return applied()
@@ -105,6 +107,9 @@ extension PresentationCoordinator {
         if state.live == nil, let cleared = state.cleared {
             state.live = cleared
             state.cleared = nil
+            // Verses come back on the page they were on, and keep paging.
+            state.scriptureOverlay = state.clearedScriptureOverlay
+            state.clearedScriptureOverlay = nil
             changed = true
         }
         if state.liveBackground == nil, let background = state.clearedBackground {
@@ -124,7 +129,7 @@ extension PresentationCoordinator {
         }
         guard changed else { return reject(.nothingToRestore) }
         // The slide back on screen starts its countdown again; a running one carries on.
-        if state.autoAdvance == nil, let live = state.live { startAutoAdvance(for: live) }
+        if state.autoAdvance == nil, state.scriptureOverlay == nil, let live = state.live { startAutoAdvance(for: live) }
         Log.coordinator.info("Output restored")
         return applied()
     }

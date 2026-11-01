@@ -4,11 +4,19 @@ import PresenterCore
 
 /// Type a reference ("Juan 3:16-18") or search for words, check the slides, and add the passage to the show.
 /// Translations are public-domain or openly licensed files (Zefania, OSIS, USFX, USX) the operator imports; none are
-/// bundled.
+/// bundled. Over the cued slide, the passage goes live on top of that slide instead, and nothing is added.
 struct ScriptureSheet: View {
+    enum Mode {
+        /// The passage becomes a presentation in the library and the show.
+        case addToShow
+        /// The cued slide goes live with the passage on top, a page of verses at a time.
+        case overCuedSlide
+    }
+
     let coordinator: PresentationCoordinator
+    var mode = Mode.addToShow
     /// Called with the new show item, so the workspace can scroll to it.
-    let onAdded: (PresentationItem) -> Void
+    var onAdded: (PresentationItem) -> Void = { _ in }
 
     @Environment(BibleLibrary.self) private var library
     @Environment(\.dismiss) private var dismiss
@@ -70,7 +78,8 @@ struct ScriptureSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Scripture").font(.title2.bold())
+            Text(mode == .overCuedSlide ? "Scripture Over the Cued Slide" : "Scripture").font(.title2.bold())
+            if mode == .overCuedSlide { cuedSlideWarning }
             translationRow
             if library.entries.isEmpty {
                 emptyState
@@ -114,6 +123,16 @@ struct ScriptureSheet: View {
             library.delete(entry.id)
             if secondTranslationID == entry.id.uuidString { secondTranslationID = "" }
             if translationID == entry.id.uuidString { translationID = library.entries.first?.id.uuidString ?? "" }
+        }
+    }
+
+    /// The verses cover whatever is on the cued slide, so say so before they go live.
+    @ViewBuilder
+    private var cuedSlideWarning: some View {
+        if coordinator.previewSlide == nil {
+            WarningLabel("Nothing is cued. Cue the slide the verses should show on, then open this again.")
+        } else {
+            WarningLabel("The verses will show on top of the cued slide. Its words and pictures stay underneath, so check the preview before showing them.")
         }
     }
 
@@ -253,8 +272,35 @@ struct ScriptureSheet: View {
 
     // MARK: Preview and options
 
-    /// The slides the passage will make, so the split can be checked before adding.
+    /// The slides the passage will make, so the split can be checked before adding. Over the cued slide, each page
+    /// as the audience will see it, so words that overlap show.
+    @ViewBuilder
     private var preview: some View {
+        if mode == .overCuedSlide { overCuedPreview } else { slidesPreview }
+    }
+
+    private var overCuedPreview: some View {
+        let pages = passage.map { coordinator.scripturePreview($0, second: secondPassage, options: options, themeID: themeID) } ?? []
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(pages.count == 1 ? "1 slide" : "\(pages.count) slides")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            Text("\(index + 1)").monospacedDigit().font(.caption2).foregroundStyle(.secondary)
+                            SlideRenderView(scene: .slide(page))
+                                .aspectRatio(16 / 9, contentMode: .fit)
+                                .tileFrame(.idle)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var slidesPreview: some View {
         let slides = passage.map { ScriptureSlides.make($0, second: secondPassage, options: options) } ?? []
         return VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(slides.count == 1 ? "1 slide" : "\(slides.count) slides")
@@ -326,15 +372,28 @@ struct ScriptureSheet: View {
             Spacer()
             Button("Cancel", role: .cancel) { dismiss() }
                 .keyboardShortcut(.cancelAction)
-            Button("Add to Show") {
-                if let passage, let item = coordinator.addScripture(passage, second: secondPassage, options: options,
-                                                                    themeID: themeID) {
-                    onAdded(item)
+            switch mode {
+            case .addToShow:
+                Button("Add to Show") {
+                    if let passage, let item = coordinator.addScripture(passage, second: secondPassage, options: options,
+                                                                        themeID: themeID) {
+                        onAdded(item)
+                    }
+                    dismiss()
                 }
-                dismiss()
+                .keyboardShortcut(.defaultAction)
+                .disabled(passage == nil)
+            case .overCuedSlide:
+                Button("Show Live") {
+                    if let passage {
+                        coordinator.showScripture(passage, second: secondPassage, options: options, themeID: themeID)
+                    }
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(passage == nil || coordinator.state.preview == nil)
+                .help("Take the cued slide live with these verses on top")
             }
-            .keyboardShortcut(.defaultAction)
-            .disabled(passage == nil)
         }
     }
 }

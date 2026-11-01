@@ -5,6 +5,8 @@ import PresenterCore
 struct LivePanel: View {
     let coordinator: PresentationCoordinator
     let outputManager: OutputManager
+    /// Opens the Scripture window to show verses over the cued slide.
+    let onShowScripture: () -> Void
     let onEditProps: (UUID?) -> Void
     @Environment(MediaLibrary.self) private var mediaLibrary
     @Environment(AudioOutput.self) private var audioOutput
@@ -33,6 +35,9 @@ struct LivePanel: View {
                     } else if case .video = coordinator.state.liveBackground, !coordinator.state.isBlackout {
                         TransportControls()
                     }
+                    if let overlay = coordinator.state.scriptureOverlay, !coordinator.state.isBlackout {
+                        scriptureStatus(overlay)
+                    }
                     AudioTransport(coordinator: coordinator)
                     AutoAdvanceStatus(coordinator: coordinator)
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
@@ -58,7 +63,14 @@ struct LivePanel: View {
                 // Shown as it will appear: a transparent slide over the background that's on screen.
                 slot(title: "Up Next", slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
                      placeholder: upNextPlaceholder, tile: .idle)
-                slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued", tile: .cued)
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued", tile: .cued)
+                    Button { onShowScripture() } label: {
+                        Label("Scripture…", systemImage: "book")
+                    }
+                    .disabled(coordinator.state.preview == nil)
+                    .help("Show verses over the cued slide, without adding them to the show")
+                }
 
                 Divider()
                 ShowControls(coordinator: coordinator, outputManager: outputManager, onEditProps: onEditProps)
@@ -88,6 +100,20 @@ struct LivePanel: View {
     private var audienceTileState: TileState {
         let state = coordinator.state
         return !state.isBlackout && (state.live != nil || state.liveBackground != nil) ? .live : .idle
+    }
+
+    /// Which page of verses is over the live slide, and a way to take them off.
+    private func scriptureStatus(_ overlay: ScriptureOverlay) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+            Label("\(overlay.caption) · \(overlay.index + 1) of \(overlay.pages.count) over the slide. Next steps through the verses.",
+                  systemImage: "book")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            Button("Remove Verses") { coordinator.endScripture() }
+                .controlSize(.small)
+                .help("Take the verses off, leaving the slide under them live")
+        }
     }
 
     private func missingMediaWarning(_ background: SlideBackground?) -> some View {

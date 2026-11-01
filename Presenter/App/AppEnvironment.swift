@@ -9,6 +9,8 @@ final class OperatorUIState {
     var isAddingSong = false
     var isImportingSongs = false
     var isAddingScripture = false
+    /// Opens the Scripture window to show verses over the cued slide, instead of adding them to the show.
+    var isShowingScriptureOverCue = false
     var isShowingShows = false
     var isShowingCCLIReport = false
     /// Asks the operator window to import a PDF's pages as a presentation.

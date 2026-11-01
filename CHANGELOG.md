@@ -5,6 +5,12 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 ## Unreleased
 
+### Scripture
+- **Scripture over the cued slide:** cue any slide, click **Scripture…** in the Live panel (or ⌥⌘L), pick a passage
+  and click **Show Live**. The slide goes live with the verses on top, in the Scripture theme, without adding a
+  presentation. The window warns that the verses cover the cued slide and previews each page over it. Next and
+  Previous step through the verses, then carry on with the show.
+
 ### Fixes
 - **CCLI Report CSV in Excel:** the exported file now opens in Excel on a Mac with accents intact (Océanos), not
   garbled. Numbers and Google Sheets read it as before.
