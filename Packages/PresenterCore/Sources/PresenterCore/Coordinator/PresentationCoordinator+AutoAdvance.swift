@@ -121,7 +121,8 @@ extension PresentationCoordinator {
 
     /// After a timer edit, the live slide's countdown starts again if the slide is in that presentation.
     private func restartAutoAdvance(ifLiveIn presentationID: UUID) {
-        guard let live = state.live, !state.isBlackout,
+        // Verses over the slide stay until the operator moves on.
+        guard let live = state.live, !state.isBlackout, state.scriptureOverlay == nil,
               project.presentation(forItem: live.position.itemID)?.id == presentationID else { return }
         startAutoAdvance(for: live)
     }

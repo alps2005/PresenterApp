@@ -104,6 +104,9 @@ struct PresenterCommands: Commands {
         CommandMenu("Live") {
             Button("Take Live") { coordinator.takeLive() }
                 .keyboardShortcut(.return, modifiers: .command)
+            // ⌥⌘L, for lectura. Always enabled, like the rest: the window says when nothing is cued.
+            Button("Scripture Over Cued Slide…") { inOperatorWindow { ui.isShowingScriptureOverCue = true } }
+                .keyboardShortcut("l", modifiers: [.command, .option])
             Button("Next Slide") { coordinator.nextSlide() }
                 .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
             Button("Previous Slide") { coordinator.previousSlide() }

@@ -44,6 +44,10 @@ public final class PresentationState {
     /// The stage layout a slide action or macro switched to, over the project's choice until the operator picks one.
     /// Live, like the rest of this state: never saved or undone.
     public internal(set) var stageLayoutOverride: StageLayoutOverride?
+    /// Verses shown over the live slide from the Scripture window, without adding a presentation, and the ones
+    /// Clear Slide removed. Live, like the rest of this state: never saved or undone.
+    public internal(set) var scriptureOverlay: ScriptureOverlay?
+    public internal(set) var clearedScriptureOverlay: ScriptureOverlay?
 
     public init(
         selectedItemID: UUID? = nil,
@@ -88,6 +92,28 @@ public struct LiveSlide: Equatable, Sendable {
     }
 
     public var slide: SlideDocument { rendered.slide }
+}
+
+/// A passage shown over a slide taken live, one page of verses at a time. The live slide is the base slide with the
+/// current page's words added on top (see `PresentationCoordinator.showScripture`).
+public struct ScriptureOverlay: Equatable, Sendable {
+    /// The slide under the verses.
+    public var base: SlidePosition
+    /// The base slide as it was taken live, so edits to it can be noticed.
+    public var baseRendered: RenderedSlide
+    /// Each page's verse and reference text, with the Scripture theme's look written in.
+    public var pages: [SlideDocument]
+    public var index: Int
+    /// The passage, like "Juan 3:16-18 · RVR".
+    public var caption: String
+
+    public init(base: SlidePosition, baseRendered: RenderedSlide, pages: [SlideDocument], index: Int = 0, caption: String) {
+        self.base = base
+        self.baseRendered = baseRendered
+        self.pages = pages
+        self.index = index
+        self.caption = caption
+    }
 }
 
 /// What the audience renderer should draw. Derived from `PresentationState`, never stored.
@@ -147,6 +173,8 @@ public enum CommandRejection: Error, Equatable, Sendable {
     case unknownMacro
     /// A section key named a section the presentation doesn't have (e.g. B in a song without a bridge).
     case noSuchSection
+    /// A passage that makes no slides.
+    case noVerses
 
     public var message: String {
         switch self {
@@ -175,6 +203,7 @@ public enum CommandRejection: Error, Equatable, Sendable {
         case .unknownMacro: "That macro no longer exists."
         case .autoAdvanceOff: "The live slide isn't moving on by itself."
         case .noSuchSection: "This presentation has no section like that."
+        case .noVerses: "That passage has no verses to show."
         }
     }
 }

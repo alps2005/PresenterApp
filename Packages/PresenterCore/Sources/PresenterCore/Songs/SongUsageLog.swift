@@ -94,7 +94,8 @@ public struct SongUsageLog: Sendable {
         }
     }
 
-    /// The report as CSV, for CCLI's online reporting or a spreadsheet.
+    /// The report as CSV, for CCLI's online reporting or a spreadsheet. It starts with a byte order mark, without
+    /// which Excel on a Mac reads UTF-8 as Mac Roman and garbles accents (Océanos).
     public static func csv(_ rows: [Row], dateFormatter: DateFormatter) -> String {
         func field(_ text: String) -> String {
             text.contains(where: { $0 == "," || $0 == "\"" || $0 == "\n" })
@@ -104,6 +105,6 @@ public struct SongUsageLog: Sendable {
             [row.title, row.authors, row.ccliNumber, String(row.uses), dateFormatter.string(from: row.lastUsed)]
                 .map(field).joined(separator: ",")
         }
-        return (["Title,Writers,CCLI Song Number,Times Used,Last Used"] + lines).joined(separator: "\n") + "\n"
+        return "\u{FEFF}" + (["Title,Writers,CCLI Song Number,Times Used,Last Used"] + lines).joined(separator: "\n") + "\n"
     }
 }

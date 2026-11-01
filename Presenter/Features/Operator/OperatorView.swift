@@ -116,6 +116,9 @@ struct OperatorView: View {
         .sheet(isPresented: $ui.isAddingScripture) {
             ScriptureSheet(coordinator: coordinator) { item in scrollRequest = item.id }
         }
+        .sheet(isPresented: $ui.isShowingScriptureOverCue) {
+            ScriptureSheet(coordinator: coordinator, mode: .overCuedSlide)
+        }
         .sheet(isPresented: Binding(get: { persistence.activity != nil }, set: { _ in })) {
             HStack(spacing: Spacing.md) {
                 ProgressView().controlSize(.small)
@@ -214,7 +217,8 @@ struct OperatorView: View {
                         workspace
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         Divider()
-                        LivePanel(coordinator: coordinator, outputManager: outputManager) { propID in
+                        LivePanel(coordinator: coordinator, outputManager: outputManager,
+                                  onShowScripture: { ui.isShowingScriptureOverCue = true }) { propID in
                             editSession = EditSession(itemID: nil, presentationID: coordinator.project.props.id, initialSlideID: propID)
                         }
                             .frame(width: liveWidth)
