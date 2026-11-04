@@ -3,6 +3,12 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## Unreleased
+
+### Fixes
+- **Welcome window:** shows just the version (Version 1.5.0), without the build number. About Presenter still shows
+  the build.
+
 ## v1.5.0 (2026-10-31)
 
 ### Scripture

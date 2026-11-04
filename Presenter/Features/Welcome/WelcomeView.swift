@@ -139,12 +139,11 @@ struct WelcomeView: View {
         .controlSize(.large)
     }
 
-    /// "Version 1.2 (build 15)", from the bundle (CI sets both from the tag and the run number).
+    /// "Version 1.5.0", from the bundle (CI sets it from the tag). The build number stays out of sight: only the
+    /// updater needs it, and About Presenter still shows it.
     static var versionText: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "Version \(version) (build \(build))"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        return "Version \(version)"
     }
 
     private func openOperatorWindow() {
