@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** 1.4. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.5. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
@@ -224,7 +224,7 @@ swift test
   - **Element transitions:** select a text, shape or image and give it its own **In** and **Out** transition (Fade, Push, Wipe or Zoom), for when the whole slide shouldn't move. They play with the slide change: one → brings the slide, its elements transition in (an In can wait up to 5 seconds), and the previous slide's elements transition out without holding the new slide back. Everything else follows the slide's own transition. Slides with element transitions show ✦ under their thumbnail.
   - **Document:** the presentation's title, theme and background.
 
-The audience output keeps running while you edit, and edits don't reach it until a slide is taken live again. Build animations (moving text and shapes on and off a slide) and audio are coming in the next phase.
+The audience output keeps running while you edit, and edits don't reach it until a slide is taken live again.
 
 **Themes.** A theme is a reusable look, like ProPresenter's: a font, size, colour, position and effects for each kind of text (title, body and caption) and a background. New projects start with three: **Worship**, **Scripture** (verses top left, the reference small at the bottom) and **Lower Third** (words in a dark band along the bottom, with no background, for a stream or camera feed).
 
