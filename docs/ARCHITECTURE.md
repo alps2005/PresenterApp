@@ -249,15 +249,36 @@ row fits its column are in [ADR 0002](adr/0002-spacing-and-panel-padding.md).
 
 ## Windows
 
-A Windows version shares the engine: `PresenterCore` builds and passes its tests on Windows too, and the Windows
-screens will be a C#/.NET (Avalonia) app calling it through a bridge DLL. The reasons and the order of work are in
-[ADR 0003](adr/0003-windows-shared-engine.md). For the engine, that means:
+The Windows version shares the engine: `PresenterCore` builds and passes its tests on Windows too, and the Windows
+screens are a C#/.NET app (Avalonia) that calls it through a bridge DLL. The reasons and the order of work are in
+[ADR 0003](adr/0003-windows-shared-engine.md).
+
+- **`Packages/PresenterBridge`** builds the engine as `PresenterBridge.dll` (a `.dylib` on a Mac) with a small C
+  interface (`CInterface.swift`): `presenter_open` a data folder, `presenter_send` a command as JSON,
+  `presenter_state` for everything to draw as JSON, `presenter_tick` for automatic advancing, `presenter_close`
+  and `presenter_free`. `BridgeSession` runs the commands and saves the project after each one that changes it;
+  `BridgeState` describes the state, with slides ready to draw (themed, backgrounds resolved, media as file paths).
+  Its tests run on both platforms.
+- **`Windows/`** has the app. `Presenter.Windows.Core` loads the DLL (`Engine.cs`) and reads the state
+  (`EngineState.cs`). `Presenter.Windows` is the operator window, the audience output and the slide renderer
+  (`SlideView.cs`, the same 1920×1080 canvas and layout rules as `SlideRenderView`). The app calls the engine only
+  from its UI thread, and `Engine` checks that.
+- **The project is the same on both.** `%LOCALAPPDATA%\Presenter` holds `Project.json`, `Media/` and `Backups/`, as
+  Application Support does on a Mac, and projects exported on either open on the other.
+- **CI** (`windows-build.yml`, run by `ci.yml` and `windows-release.yml`) builds the DLL and the app, copies the Swift
+  and Microsoft C++ runtimes into the app's folder, runs a smoke test with Swift taken off `PATH` (so it passes only
+  if the folder has everything), checks the app starts, and zips it. A `windows-v*` tag publishes the zip as a
+  release that is never marked latest, because the Mac app's update feed is at `releases/latest`.
+
+For the engine, that means:
 - **Fence Apple-only code.** Code that needs an Apple framework goes behind `#if canImport(...)`. The logger
   (`Log.swift`) writes to standard error off Apple platforms, and the XML parsers import `FoundationXML` there.
 - **Platform work goes behind a protocol the app supplies.** `MediaStore` checks imported files through a
   `MediaProbe`. On a Mac that's `AppleMediaProbe` (ImageIO and AVFoundation), the default.
 - **Tests must run everywhere.** A test that needs a real media file is fenced the same way, and the logic around it
   is tested with a fake (`FakeMediaProbe`).
+- **Parse XML strictly.** Use `XMLParser.parseStrictly()`: off Apple platforms Foundation parses in libxml2's
+  recovery mode, where `parse()` returns true for a damaged file.
 
 ## Testing
 
@@ -266,4 +287,4 @@ screens will be a C#/.NET (Avalonia) app calling it through a bridge DLL. The re
   folders are injected, so the tests are deterministic.
 - **App:** the app target has no tests of its own. Logic worth testing moves into the core.
 - **CI:** `.github/workflows/ci.yml` runs the core tests and a Debug build on every push and pull request to
-  `develop` and `main`, and the core tests again on Windows (`core-windows`). `release.yml` builds the universal, ad-hoc-signed app when a version tag is pushed.
+  `develop` and `main`, the core tests again on Windows (`core-windows`), and the Windows app (`windows-app`, see Windows above). `release.yml` builds the universal, ad-hoc-signed app when a version tag is pushed.

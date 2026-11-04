@@ -5,6 +5,10 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 
 ## Unreleased
 
+### Windows
+- **Presenter for Windows, open beta:** a Windows app on the same engine, released on its own `windows-v` tags
+  (first: windows-v0.1.0-beta.1, notes in [docs/release-notes](docs/release-notes)). Nothing changes in the Mac app.
+
 ### Fixes
 - **Welcome window:** shows just the version (Version 1.5.0), without the build number. About Presenter still shows
   the build.

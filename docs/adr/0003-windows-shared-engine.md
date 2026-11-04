@@ -1,6 +1,6 @@
 # ADR 0003: A Windows version that shares the Swift engine
 
-- **Status:** Accepted
+- **Status:** Accepted. Steps 1 and 2 are done: the first Windows app went out as an open beta (windows-v0.1.0-beta.1).
 - **Date:** 2026-11-04
 
 ## Context
@@ -33,8 +33,9 @@ The views already only send commands to `PresentationCoordinator` and read its s
   moves between a Mac and a PC.
 - **Order of work:**
   1. The engine passes its tests on Windows in CI.
-  2. A small preview: open a project, take slides live, and show them full screen on a second display.
-  3. The full app, only after the user has tried the preview.
+  2. A first app: open a project, take slides live, and show them full screen on a second display. It became an
+     open beta that works without a Mac: songs typed or imported, shows, and the live controls.
+  3. The full app, a release at a time, with what beta testers report.
 
 ## Consequences
 

@@ -36,6 +36,11 @@ jobs:
         working-directory: Packages/PresenterCore
         run: swift test
 
+      # The library the Windows app loads; its tests run on a Mac too.
+      - name: Test PresenterBridge
+        working-directory: Packages/PresenterBridge
+        run: swift test
+
       - name: Build app
         run: |
           xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Debug \

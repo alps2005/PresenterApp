@@ -2,7 +2,7 @@
 
 A free, open-source, macOS-native live presentation app for worship services, conferences, schools and live events. Live reliability comes first. The operator's view is kept strictly separate from what the audience sees.
 
-**Status:** 1.5. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
+**Status:** 1.5 for Mac. The latest download is on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, and from 1.2 on Presenter updates itself. **Presenter for Windows** is in open beta (see [Windows](#windows-beta) below). See [`PROJECT_PROPOSAL.md`](PROJECT_PROPOSAL.md) for the roadmap.
 
 ## Install
 
@@ -35,10 +35,27 @@ Every push and pull request to `develop` or `main` also runs the tests and a bui
 
 The release needs the repository secret `SPARKLE_ED_PRIVATE_KEY` (the update signing key; its public half is `SPARKLE_PUBLIC_ED_KEY` in the project). Write the release notes in `docs/release-notes/<tag>.md` first: they're shown in the update window, without their "Install" section. **Actions › Release › Run workflow** does a dry run that builds and signs everything and keeps the files, without publishing. Tags with a suffix (`v1.3.0-beta.1`) become pre-releases, which are never offered as updates.
 
+### Windows (beta)
+
+Presenter for Windows runs on the same engine as the Mac app, and projects move between them (**File › Export Project…** on one, **File › Open Project File…** on the other). The beta does songs (typed, pasted or imported), shows, live control and the audience output on a second display; videos, audio, Bibles and the slide editor come later. Each beta's notes list what it does.
+
+Download `Presenter-Windows-<version>.zip` from the Windows release on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, unzip the whole folder and run **Presenter.exe**. The app isn't code-signed yet, so the first time Windows says "Windows protected your PC": click **More info**, then **Run anyway**. Needs Windows 10 or 11 (64-bit). There are no automatic updates in the beta: replace the folder with the new one. The project stays in `%LOCALAPPDATA%\Presenter`.
+
+To publish a Windows release, write its notes in `docs/release-notes/windows-v<version>.md` and push a `windows-v` tag:
+
+```sh
+git tag windows-v0.1.0-beta.1
+git push origin windows-v0.1.0-beta.1
+```
+
+`.github/workflows/windows-release.yml` builds it, tests it on Windows and attaches the zip. Windows releases are never marked as the latest release, because the Mac app looks for its updates there. Every CI run also builds the zip, as a download on the run's page.
+
 ## Requirements
 
 - macOS 14 Sonoma or later to run the app
 - Xcode 26 or later to build it (CI uses Xcode 26.6)
+- For the Windows app: Windows 10 or 11 (64-bit) to run it; Swift 6.4 and the .NET 10 SDK on Windows to build it
+  (CI builds it, see `.github/workflows/windows-build.yml`)
 
 ## Build and run
 
@@ -69,6 +86,8 @@ The presentation engine lives in a local Swift package and its tests run without
 cd Packages/PresenterCore
 swift test
 ```
+
+The bridge the Windows app uses has its own tests, which run on a Mac too: `cd Packages/PresenterBridge && swift test`.
 
 ## Using the app
 
@@ -265,6 +284,8 @@ Presenter/                     macOS app target (SwiftUI + AppKit)
   Support/                     Logging and AppKit helpers
 Packages/PresenterCore/        UI-free core, with unit tests: models, PresentationCoordinator, persistence (store,
                                archive, backups, loading), the media store, and output and playback decisions
+Packages/PresenterBridge/      The core as a library with a C interface (JSON commands and state), for the Windows app
+Windows/                       Presenter for Windows (C#, Avalonia): the engine wrapper, the app and a smoke test
 docs/                          Architecture, decision records and release notes
 ```
 

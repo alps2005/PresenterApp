@@ -19,7 +19,7 @@ try
         var state = engine.State();
         Check(state.Items.Count == 0 && state.Shows.Count == 1, "a new folder starts an empty project");
 
-        var added = engine.Send(new { type = "addSong", title = "Canción de prueba", text = "Verse 1\nPrimera línea\n\nChorus\nCoro" });
+        var added = engine.Send(new { type = "addSong", title = "Canción de prueba", text = "Verse 1\nPrimera línea\n\nChorus\nCantamos juntos" });
         Check(added.Ok, "a song can be added");
         state = engine.State();
         Check(state.Items.Count == 1 && state.Items[0].Title == "Canción de prueba", "the song is in the show, accents intact");
@@ -30,7 +30,7 @@ try
             "a slide goes live");
         Check(engine.Send(new { type = "next" }).Ok, "Next moves on");
         state = engine.State();
-        Check(state.Audience?.Elements.FirstOrDefault()?.Text == "Coro", "the audience sees the chorus");
+        Check(state.Audience?.Elements.FirstOrDefault()?.Text == "Cantamos juntos", "the audience sees the chorus");
         var end = engine.Send(new { type = "next" });
         Check(!end.Ok && !string.IsNullOrEmpty(end.Error), $"Next at the end says why ({end.Error})");
         Check(engine.Send(new { type = "blackout" }).Ok && engine.State().Audience is null, "Blackout hides everything");
