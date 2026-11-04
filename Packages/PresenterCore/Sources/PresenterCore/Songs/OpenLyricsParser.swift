@@ -24,7 +24,7 @@ enum OpenLyricsParser {
         parser.shouldResolveExternalEntities = false
         parser.shouldProcessNamespaces = true
         parser.delegate = delegate
-        guard parser.parse() else {
+        guard parser.parseStrictly() else {
             throw .malformed(parser.parserError?.localizedDescription ?? "Unknown error")
         }
         var song = ImportedSong(

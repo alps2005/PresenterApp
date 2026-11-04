@@ -32,7 +32,7 @@ public enum BibleFileParser {
             parser.shouldResolveExternalEntities = false
             parser.shouldProcessNamespaces = false
             parser.delegate = delegate
-            let ok = parser.parse()
+            let ok = parser.parseStrictly()
             guard delegate.format != nil else { continue }
             guard ok else { throw .malformed(parser.parserError?.localizedDescription ?? "Unknown error") }
             delegate.endDocument()
