@@ -24,3 +24,7 @@ graphify-out/
 
 # Python bytecode from the release scripts
 __pycache__/
+
+# .NET build output for the Windows app
+Windows/**/bin/
+Windows/**/obj/

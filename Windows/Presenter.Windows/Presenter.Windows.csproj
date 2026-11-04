@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Windows app: Avalonia screens over the shared engine (docs/adr/0003-windows-shared-engine.md).
+       PresenterBridge.dll and the Swift runtime are copied beside Presenter.exe by CI. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Presenter.Windows</RootNamespace>
+    <AssemblyName>Presenter</AssemblyName>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaVersion>11.3.2</AvaloniaVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Presenter.Windows.Core\Presenter.Windows.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,52 @@
+name: Windows release
+
+# Push a tag like windows-v0.1.0-beta.1 to build Presenter for Windows and publish it as a GitHub Release with the
+# zip attached. Mac releases use plain v tags (release.yml); the two never trigger each other.
+#
+# A Windows release is never marked as the repository's latest release: the Mac app finds its updates at
+# releases/latest (Sparkle's appcast.xml), so "latest" must stay a Mac release.
+on:
+  push:
+    tags: ['windows-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      # windows-v0.1.0-beta.1 → 0.1.0-beta.1
+      - id: read
+        run: echo "version=${GITHUB_REF_NAME#windows-v}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/windows-build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: presenter-windows
+
+      # Tags with a suffix (windows-v0.1.0-beta.1) are pre-releases. Notes come from docs/release-notes/<tag>.md.
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          tag: ${{ github.ref_name }}
+          version: ${{ needs.version.outputs.version }}
+        run: |
+          notes="docs/release-notes/$tag.md"
+          [[ -f "$notes" ]] || { echo "::error::Write the release notes in $notes first."; exit 1; }
+          args=(--title "Presenter for Windows $version" --notes-file "$notes" --latest=false)
+          if [[ "$version" == *-* ]]; then args+=(--prerelease); fi
+          gh release create "$tag" "Presenter-Windows-$version.zip" "${args[@]}"

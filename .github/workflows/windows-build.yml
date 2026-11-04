@@ -1,0 +1,111 @@
+name: Windows build
+
+# Builds Presenter for Windows (docs/adr/0003-windows-shared-engine.md): the engine as PresenterBridge.dll, the
+# Avalonia app around it, and a zip with everything it needs. Used by CI and by Windows releases.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version the app shows, like 0.1.0-beta.1'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      APP_DIR: ${{ github.workspace }}\dist\Presenter
+      ZIP_NAME: Presenter-Windows-${{ inputs.version }}.zip
+    steps:
+      # Keep the files' own line endings, as on the Mac.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+
+      # Pinned to a commit (v0.5.1) and the same Swift as Xcode 26.6 (6.4.2). Update them together, and with ci.yml.
+      - uses: compnerd/gha-setup-swift@9ff1ee4c44888c5817fc14d1b257ac8cabb4935f # v0.5.1
+        with:
+          swift-version: swift-6.4.2-release
+          swift-build: 6.4.2-RELEASE
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test the bridge
+        working-directory: Packages/PresenterBridge
+        run: swift test
+
+      - name: Build the engine library
+        working-directory: Packages/PresenterBridge
+        run: |
+          swift build -c release --product PresenterBridge
+          $bin = swift build -c release --show-bin-path
+          "BRIDGE_BIN=$bin" >> $env:GITHUB_ENV
+          Get-ChildItem $bin -Filter *.dll | Format-Table Name, Length
+
+      - name: Build the app
+        run: |
+          dotnet publish Windows/Presenter.Windows/Presenter.Windows.csproj -c Release -r win-x64 --self-contained true `
+            -p:Version=${{ inputs.version }} -o $env:APP_DIR
+          dotnet publish Windows/Presenter.Windows.SmokeTest/Presenter.Windows.SmokeTest.csproj -c Release -r win-x64 `
+            --self-contained true -o dist/SmokeTest
+
+      # The app runs on PCs without Swift or Visual Studio, so it carries the engine, the Swift runtime and the
+      # Microsoft C++ runtime (which Microsoft allows apps to include) in its own folder.
+      - name: Add the engine and its runtimes
+        run: |
+          Copy-Item "$env:BRIDGE_BIN\PresenterBridge.dll" $env:APP_DIR
+
+          $runtime = $env:Path -split ';' | Where-Object { $_ -and (Test-Path (Join-Path $_ 'swiftCore.dll')) } | Select-Object -First 1
+          if (-not $runtime) { throw "Couldn't find the Swift runtime (swiftCore.dll) on PATH." }
+          Write-Host "Swift runtime: $runtime"
+          Copy-Item "$runtime\*.dll" $env:APP_DIR
+
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -property installationPath
+          $crt = Get-ChildItem "$vs\VC\Redist\MSVC\*\x64\Microsoft.VC14*.CRT" -Directory | Sort-Object FullName | Select-Object -Last 1
+          if (-not $crt) { throw "Couldn't find the Microsoft C++ runtime to include." }
+          Write-Host "C++ runtime: $($crt.FullName)"
+          Copy-Item "$($crt.FullName)\*.dll" $env:APP_DIR
+
+          Copy-Item LICENSE "$env:APP_DIR\LICENSE.txt"
+          Copy-Item Windows/README.txt "$env:APP_DIR\README.txt"
+
+          # The smoke test loads the same files.
+          Get-ChildItem $env:APP_DIR -Filter *.dll | Where-Object { -not (Test-Path (Join-Path dist/SmokeTest $_.Name)) } |
+            Copy-Item -Destination dist/SmokeTest
+
+      # With Swift taken off PATH, so this passes only if the app's folder has everything the engine needs.
+      - name: Smoke test the engine from the app's folder
+        run: |
+          $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          dist/SmokeTest/Presenter.Windows.SmokeTest.exe
+          if ($LASTEXITCODE -ne 0) { throw "The smoke test failed." }
+
+      # Starts the real app on a fresh folder and checks it's still running after a while, with no problem logged.
+      - name: Check the app starts
+        run: |
+          $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          $data = Join-Path $env:RUNNER_TEMP 'presenter-start'
+          $app = Start-Process "$env:APP_DIR\Presenter.exe" -ArgumentList '--data', $data -PassThru
+          Start-Sleep -Seconds 15
+          $logs = Join-Path $env:LOCALAPPDATA 'Presenter\Logs'
+          if (Test-Path $logs) { Get-ChildItem $logs | ForEach-Object { Get-Content $_.FullName } }
+          if ($app.HasExited) { throw "Presenter.exe quit on its own (exit code $($app.ExitCode))." }
+          Stop-Process -Id $app.Id
+          if ((Test-Path $logs) -and (Get-ChildItem $logs).Count -gt 0) { throw "Presenter.exe logged a problem." }
+
+      - name: Zip
+        run: |
+          Compress-Archive -Path $env:APP_DIR -DestinationPath $env:ZIP_NAME
+          Get-Item $env:ZIP_NAME | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: presenter-windows
+          path: ${{ env.ZIP_NAME }}
+          if-no-files-found: error

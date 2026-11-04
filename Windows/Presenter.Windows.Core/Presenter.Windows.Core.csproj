@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The engine (PresenterBridge.dll, built from Packages/PresenterBridge) and the state it reports. No UI. -->
+  <PropertyGroup>
+    <RootNamespace>Presenter.Windows.Core</RootNamespace>
+  </PropertyGroup>
+</Project>
