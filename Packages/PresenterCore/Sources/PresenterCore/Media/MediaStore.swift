@@ -1,107 +1,86 @@
-import AVFoundation
 import Foundation
-import ImageIO
 
 public enum MediaImportError: Error, Equatable, Sendable {
-    /// The file isn't an image ImageIO can decode.
+    /// The file isn't an image this computer can decode.
     case unreadableImage
-    /// The file isn't a video this Mac can play.
+    /// The file isn't a video this computer can play.
     case unplayableVideo
-    /// The file isn't audio this Mac can play.
+    /// The file isn't audio this computer can play.
     case unplayableAudio
     case copyFailed(String)
+}
+
+/// Looks inside a media file before it's copied in: whether this computer can show or play it, and its size and
+/// length. Each platform answers with its own frameworks: ImageIO and AVFoundation on a Mac (`AppleMediaProbe`).
+public protocol MediaProbe: Sendable {
+    /// The image's width and height in pixels, or nil if it isn't an image this computer can decode.
+    func imageSize(at url: URL) -> (width: Int, height: Int)?
+    /// The video's width and height as shown (after any rotation the file asks for) and its length in seconds, or
+    /// nil if it isn't a video this computer can play.
+    func video(at url: URL) async -> (width: Int, height: Int, duration: Double)?
+    /// The audio's length in seconds, or nil if it isn't audio this computer can play.
+    func audioDuration(at url: URL) async -> Double?
 }
 
 /// Keeps copies of imported media in one folder, named by UUID, so backgrounds keep working when the
 /// operator moves or deletes the original file. UI-free; the app wraps it with decoding and caching.
 public struct MediaStore: Sendable {
     public let directory: URL
+    private let probe: any MediaProbe
 
-    public init(directory: URL) {
+#if canImport(AVFoundation) && canImport(ImageIO)
+    public init(directory: URL, probe: any MediaProbe = AppleMediaProbe()) {
         self.directory = directory
+        self.probe = probe
     }
+#else
+    /// Off Apple platforms the app passes the probe, from the frameworks it plays media with.
+    public init(directory: URL, probe: any MediaProbe) {
+        self.directory = directory
+        self.probe = probe
+    }
+#endif
 
     /// Checks that `source` is a readable image, copies it into the store and describes the copy.
     public func importImage(at source: URL) throws -> MediaAsset {
-        guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil),
-              CGImageSourceGetCount(imageSource) > 0,
-              let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any],
-              let width = properties[kCGImagePropertyPixelWidth] as? Int,
-              let height = properties[kCGImagePropertyPixelHeight] as? Int else {
-            throw MediaImportError.unreadableImage
-        }
-
+        guard let size = probe.imageSize(at: source) else { throw MediaImportError.unreadableImage }
         let id = UUID()
-        let fileExtension = source.pathExtension.isEmpty ? "img" : source.pathExtension.lowercased()
-        let storedFilename = "\(id.uuidString).\(fileExtension)"
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
-        } catch {
-            throw MediaImportError.copyFailed(error.localizedDescription)
-        }
-
+        let storedFilename = try copyIn(source, as: id, defaultExtension: "img")
         return MediaAsset(
             id: id,
             kind: .image,
             originalFilename: source.lastPathComponent,
             storedFilename: storedFilename,
-            pixelWidth: width,
-            pixelHeight: height
+            pixelWidth: size.width,
+            pixelHeight: size.height
         )
     }
 
     /// Checks that `source` is a playable video, copies it into the store and describes the copy.
     public func importVideo(at source: URL) async throws -> MediaAsset {
-        let asset = AVURLAsset(url: source)
-        let isPlayable = (try? await asset.load(.isPlayable)) ?? false
-        guard isPlayable,
-              let track = try? await asset.loadTracks(withMediaType: .video).first,
-              let size = try? await track.load(.naturalSize),
-              let transform = try? await track.load(.preferredTransform),
-              let duration = try? await asset.load(.duration), duration.seconds > 0 else {
+        guard let video = await probe.video(at: source), video.duration > 0 else {
             throw MediaImportError.unplayableVideo
         }
-        // Width and height as shown, after any rotation the file asks for.
-        let shown = size.applying(transform)
         let id = UUID()
-        let fileExtension = source.pathExtension.isEmpty ? "mov" : source.pathExtension.lowercased()
-        let storedFilename = "\(id.uuidString).\(fileExtension)"
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
-        } catch {
-            throw MediaImportError.copyFailed(error.localizedDescription)
-        }
+        let storedFilename = try copyIn(source, as: id, defaultExtension: "mov")
         return MediaAsset(
             id: id,
             kind: .video,
             originalFilename: source.lastPathComponent,
             storedFilename: storedFilename,
-            pixelWidth: Int(abs(shown.width).rounded()),
-            pixelHeight: Int(abs(shown.height).rounded()),
-            duration: duration.seconds
+            pixelWidth: video.width,
+            pixelHeight: video.height,
+            duration: video.duration
         )
     }
 
     /// Checks that `source` is playable audio, copies it into the store and describes the copy.
     public func importAudio(at source: URL) async throws -> MediaAsset {
-        let asset = AVURLAsset(url: source)
-        let isPlayable = (try? await asset.load(.isPlayable)) ?? false
-        guard isPlayable,
-              let tracks = try? await asset.loadTracks(withMediaType: .audio), !tracks.isEmpty,
-              let duration = try? await asset.load(.duration), duration.seconds > 0 else {
+        guard let duration = await probe.audioDuration(at: source), duration > 0 else {
             throw MediaImportError.unplayableAudio
         }
         let id = UUID()
-        let fileExtension = source.pathExtension.isEmpty ? "m4a" : source.pathExtension.lowercased()
-        let storedFilename = "\(id.uuidString).\(fileExtension)"
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
-        } catch {
-            throw MediaImportError.copyFailed(error.localizedDescription)
-        }
+        let storedFilename = try copyIn(source, as: id, defaultExtension: "m4a")
         return MediaAsset(
             id: id,
             kind: .audio,
@@ -109,8 +88,21 @@ public struct MediaStore: Sendable {
             storedFilename: storedFilename,
             pixelWidth: 0,
             pixelHeight: 0,
-            duration: duration.seconds
+            duration: duration
         )
+    }
+
+    /// Copies `source` into the folder named by the asset's ID, keeping its extension (lowercased), and returns the name.
+    private func copyIn(_ source: URL, as id: UUID, defaultExtension: String) throws -> String {
+        let fileExtension = source.pathExtension.isEmpty ? defaultExtension : source.pathExtension.lowercased()
+        let storedFilename = "\(id.uuidString).\(fileExtension)"
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(storedFilename))
+        } catch {
+            throw MediaImportError.copyFailed(error.localizedDescription)
+        }
+        return storedFilename
     }
 
     public func url(for asset: MediaAsset) -> URL {

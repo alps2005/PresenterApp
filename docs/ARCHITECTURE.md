@@ -247,6 +247,18 @@ components (`StateBadge`, `tileFrame`, `WarningLabel`, `RowCard`, `RowMenuButton
 [ADR 0001: Quiet native design](adr/0001-quiet-native-design.md). Panel padding and the rule that every inspector
 row fits its column are in [ADR 0002](adr/0002-spacing-and-panel-padding.md).
 
+## Windows
+
+A Windows version shares the engine: `PresenterCore` builds and passes its tests on Windows too, and the Windows
+screens will be a C#/.NET (Avalonia) app calling it through a bridge DLL. The reasons and the order of work are in
+[ADR 0003](adr/0003-windows-shared-engine.md). For the engine, that means:
+- **Fence Apple-only code.** Code that needs an Apple framework goes behind `#if canImport(...)`. The logger
+  (`Log.swift`) writes to standard error off Apple platforms, and the XML parsers import `FoundationXML` there.
+- **Platform work goes behind a protocol the app supplies.** `MediaStore` checks imported files through a
+  `MediaProbe`. On a Mac that's `AppleMediaProbe` (ImageIO and AVFoundation), the default.
+- **Tests must run everywhere.** A test that needs a real media file is fenced the same way, and the logic around it
+  is tested with a fake (`FakeMediaProbe`).
+
 ## Testing
 
 - **Core:** the tests in `Packages/PresenterCore/Tests` cover the models, every coordinator command, undo,
@@ -254,4 +266,4 @@ row fits its column are in [ADR 0002](adr/0002-spacing-and-panel-padding.md).
   folders are injected, so the tests are deterministic.
 - **App:** the app target has no tests of its own. Logic worth testing moves into the core.
 - **CI:** `.github/workflows/ci.yml` runs the core tests and a Debug build on every push and pull request to
-  `develop` and `main`. `release.yml` builds the universal, ad-hoc-signed app when a version tag is pushed.
+  `develop` and `main`, and the core tests again on Windows (`core-windows`). `release.yml` builds the universal, ad-hoc-signed app when a version tag is pushed.

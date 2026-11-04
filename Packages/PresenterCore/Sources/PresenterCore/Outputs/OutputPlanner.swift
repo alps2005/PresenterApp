@@ -1,4 +1,6 @@
+#if canImport(CoreGraphics)
 import CoreGraphics
+#endif
 import Foundation
 
 /// What identifies a display across launches and reconnections, unlike its CoreGraphics ID. Zero means the display

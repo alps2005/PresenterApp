@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationXML)
+// XMLParser lives in its own module off Apple platforms.
+import FoundationXML
+#endif
 
 /// Reads OpenLyrics XML (openlyrics.org), the open song format OpenLP, Worship Extreme and others export:
 /// `<song><properties>` with titles, authors, copyright, `ccliNo` and `verseOrder`, then `<lyrics>` with one `<verse>`

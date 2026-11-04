@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationXML)
+// XMLParser lives in its own module off Apple platforms.
+import FoundationXML
+#endif
 
 /// Reads a Bible translation from Zefania XML, OSIS XML, USFX or USX, the free formats public-domain and open
 /// translations are shared in. The format is told by each file's root element. USX comes one file per book, so several

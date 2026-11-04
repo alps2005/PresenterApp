@@ -1,4 +1,6 @@
+#if canImport(AVFoundation)
 import AVFoundation
+#endif
 import Foundation
 import XCTest
 @testable import PresenterCore
@@ -15,6 +17,7 @@ final class VideoTests: XCTestCase {
         try? FileManager.default.removeItem(at: root)
     }
 
+#if canImport(AVFoundation)
     /// Writes a one-second, 64×36 H.264 movie of solid frames.
     private struct MovieWriterStalled: Error {}
 
@@ -72,6 +75,8 @@ final class VideoTests: XCTestCase {
             XCTAssertEqual(error as? MediaImportError, .unplayableVideo)
         }
     }
+
+#endif
 
     func testVideoBackgroundRoundTripsAndOldAssetsLoad() throws {
         let asset = MediaAsset(kind: .video, originalFilename: "loop.mp4", storedFilename: "l.mp4",
