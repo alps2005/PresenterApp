@@ -33,7 +33,7 @@ extension PresentationCoordinator {
                 slide.background = .image(ImageBackground(assetID: assetID, scaling: .fit))
                 slides.append(slide)
             }
-            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled" : title, slides: slides,
+            let presentation = PresentationDocument(title: title.isEmpty ? Localization.text("Untitled") : title, slides: slides,
                                                     background: .color(.black))
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
@@ -53,7 +53,7 @@ extension PresentationCoordinator {
         let slides = LyricsParser.slides(from: lyrics, maxLinesPerSlide: maxLinesPerSlide)
         guard !slides.isEmpty else { return nil }
         return recordingUndo("Add Song") {
-            let presentation = PresentationDocument(title: title.isEmpty ? "Untitled Song" : title, slides: slides,
+            let presentation = PresentationDocument(title: title.isEmpty ? Localization.text("Untitled Song") : title, slides: slides,
                                                     themeID: existingThemeID(themeID), kind: .song)
             let item = PresentationItem(presentationID: presentation.id)
             project.presentations.append(presentation)
@@ -121,7 +121,7 @@ extension PresentationCoordinator {
     @discardableResult
     public func addArrangement(name: String, groups: [String], toPresentation presentationID: UUID) -> Arrangement? {
         recordingUndo("Add Arrangement") {
-            let arrangement = Arrangement(name: name.isEmpty ? "Arrangement" : name, groups: groups)
+            let arrangement = Arrangement(name: name.isEmpty ? Localization.text("Arrangement") : name, groups: groups)
             let result = editPresentation(presentationID) { presentation in
                 presentation.arrangements.append(arrangement)
                 presentation.activeArrangementID = arrangement.id

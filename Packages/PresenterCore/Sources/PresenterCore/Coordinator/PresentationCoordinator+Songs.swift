@@ -18,7 +18,7 @@ extension PresentationCoordinator {
             for song in songs {
                 let arrangement = song.arrangement
                 let presentation = PresentationDocument(
-                    title: song.title.isEmpty ? "Untitled Song" : song.title,
+                    title: song.title.isEmpty ? Localization.text("Untitled Song") : song.title,
                     slides: song.slides(maxLinesPerSlide: maxLinesPerSlide),
                     arrangements: arrangement.map { [$0] } ?? [],
                     activeArrangementID: arrangement?.id,

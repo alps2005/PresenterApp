@@ -19,7 +19,7 @@ extension PresentationCoordinator {
     public func addStageLayout(named name: String, basedOn layoutID: UUID? = nil) -> StageLayout? {
         recordingUndo("New Stage Layout") {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
-            var layout = StageLayout.standard(name: trimmed.isEmpty ? "Stage Layout" : trimmed)
+            var layout = StageLayout.standard(name: trimmed.isEmpty ? Localization.text("Stage Layout") : trimmed)
             if let layoutID {
                 guard let source = project.stageLayout(withID: layoutID) else {
                     _ = reject(.unknownStageLayout)

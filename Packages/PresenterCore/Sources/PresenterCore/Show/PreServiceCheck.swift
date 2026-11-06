@@ -16,11 +16,11 @@ public struct PreServiceProblem: Identifiable, Hashable, Sendable {
 
         public var title: String {
             switch self {
-            case .output: "Audience output"
-            case .missingMedia: "Missing media"
-            case .missingFont: "Missing fonts"
-            case .emptyPresentation: "Empty presentations"
-            case .songWithoutCredits: "Songs without credits"
+            case .output: Localization.text("Audience output")
+            case .missingMedia: Localization.text("Missing media")
+            case .missingFont: Localization.text("Missing fonts")
+            case .emptyPresentation: Localization.text("Empty presentations")
+            case .songWithoutCredits: Localization.text("Songs without credits")
             }
         }
     }
@@ -56,11 +56,11 @@ public enum PreServiceCheck {
 
         switch audience {
         case .off where includesOutputOff:
-            problems.append(.init(kind: .output, message: "The audience output is off. Turn it on in the Output menu."))
+            problems.append(.init(kind: .output, message: Localization.text("The audience output is off. Turn it on in the Output menu.")))
         case .displayMissing(let name):
-            problems.append(.init(kind: .output, message: "\(name) isn't connected. The audience output shows on it when it's plugged in again."))
+            problems.append(.init(kind: .output, message: Localization.text("{0} isn't connected. The audience output shows on it when it's plugged in again.", name)))
         case .displayHasOperatorWindow(let name):
-            problems.append(.init(kind: .output, message: "The operator window is on \(name), so the audience output is hidden. Move the operator window to another screen."))
+            problems.append(.init(kind: .output, message: Localization.text("The operator window is on {0}, so the audience output is hidden. Move the operator window to another screen.", name)))
         default:
             break
         }
@@ -75,11 +75,11 @@ public enum PreServiceCheck {
             let name = asset.originalFilename
             if let (item, presentation) = items.first(where: { uses(asset.id, $0.1, project: project) }) {
                 problems.append(.init(kind: .missingMedia,
-                                      message: "“\(name)” is missing, used in “\(title(presentation))”.", itemID: item.id))
+                                      message: Localization.text("“{0}” is missing, used in “{1}”.", name, title(presentation)), itemID: item.id))
             } else if project.props.uses(asset.id) {
-                problems.append(.init(kind: .missingMedia, message: "“\(name)” is missing, used by a prop."))
+                problems.append(.init(kind: .missingMedia, message: Localization.text("“{0}” is missing, used by a prop.", name)))
             } else if let macro = project.macrosUsing(asset: asset.id).first {
-                problems.append(.init(kind: .missingMedia, message: "“\(name)” is missing, played by the macro “\(macro.name)”."))
+                problems.append(.init(kind: .missingMedia, message: Localization.text("“{0}” is missing, played by the macro “{1}”.", name, macro.name)))
             }
         }
 
@@ -92,7 +92,7 @@ public enum PreServiceCheck {
                     guard let family = text.style.fontFamily, !installedFonts.contains(family),
                           reportedFonts.insert(family).inserted else { continue }
                     problems.append(.init(kind: .missingFont,
-                                          message: "The font “\(family)” isn't installed on this Mac, used in “\(title(presentation))”. The system font shows instead.",
+                                          message: Localization.text("The font “{0}” isn't installed on this Mac, used in “{1}”. The system font shows instead.", family, title(presentation)),
                                           itemID: item.id))
                 }
             }
@@ -101,11 +101,11 @@ public enum PreServiceCheck {
         for (item, presentation) in items {
             if presentation.background == nil, presentation.slides.allSatisfy(isEmpty) {
                 problems.append(.init(kind: .emptyPresentation,
-                                      message: "“\(title(presentation))” has nothing on its slides.", itemID: item.id))
+                                      message: Localization.text("“{0}” has nothing on its slides.", title(presentation)), itemID: item.id))
             }
             if presentation.kind == .song, presentation.song?.isEmpty ?? true {
                 problems.append(.init(kind: .songWithoutCredits,
-                                      message: "“\(title(presentation))” has no writers, copyright or CCLI number. Add them in the editor's Document › Song.",
+                                      message: Localization.text("“{0}” has no writers, copyright or CCLI number. Add them in the editor's Document › Song.", title(presentation)),
                                       itemID: item.id))
             }
         }
@@ -113,7 +113,7 @@ public enum PreServiceCheck {
     }
 
     private static func title(_ presentation: PresentationDocument) -> String {
-        presentation.title.isEmpty ? "Untitled" : presentation.title
+        presentation.title.isEmpty ? Localization.text("Untitled") : presentation.title
     }
 
     /// Whether the presentation, its theme's background or a slide action plays or shows the asset.

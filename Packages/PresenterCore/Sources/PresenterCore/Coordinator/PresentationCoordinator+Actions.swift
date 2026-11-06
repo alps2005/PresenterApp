@@ -73,7 +73,7 @@ extension PresentationCoordinator {
     @discardableResult
     public func addMacro(named name: String) -> Macro {
         recordingUndo("New Macro") {
-            let macro = Macro(name: name.isEmpty ? "Untitled Macro" : name)
+            let macro = Macro(name: name.isEmpty ? Localization.text("Untitled Macro") : name)
             project.macros.append(macro)
             lastRejection = nil
             return macro

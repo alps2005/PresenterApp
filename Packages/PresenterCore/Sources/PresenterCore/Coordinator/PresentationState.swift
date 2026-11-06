@@ -178,32 +178,32 @@ public enum CommandRejection: Error, Equatable, Sendable {
 
     public var message: String {
         switch self {
-        case .unknownItem: "That playlist item no longer exists."
-        case .unknownSlide: "That slide no longer exists."
-        case .unknownPresentation: "That presentation no longer exists."
-        case .nothingCued: "Nothing is cued. Click a slide first."
-        case .nothingLive: "Nothing is live."
-        case .atEndOfPlaylist: "Already at the last slide."
-        case .atStartOfPlaylist: "Already at the first slide."
-        case .liveSlideMissing: "The live slide isn't in the open show anymore. Take a slide live to continue."
-        case .nothingToRestore: "Output is already showing normally."
-        case .nothingToClear: "Only the default background is showing."
-        case .unknownArrangement: "That arrangement no longer exists."
-        case .unknownTimer: "That timer no longer exists."
-        case .unknownMessage: "That message no longer exists."
-        case .unknownProp: "That prop no longer exists."
-        case .unknownMediaAsset: "That image isn't in the project's media library."
-        case .unknownElement: "That item is no longer on the slide."
-        case .unknownTheme: "That theme no longer exists."
-        case .unknownFolder: "That folder no longer exists."
-        case .unknownShow: "That show no longer exists."
-        case .lastShow: "This is the only show. Make another before deleting it."
-        case .noAudio: "No audio is playing."
-        case .unknownStageLayout: "That stage layout no longer exists."
-        case .unknownMacro: "That macro no longer exists."
-        case .autoAdvanceOff: "The live slide isn't moving on by itself."
-        case .noSuchSection: "This presentation has no section like that."
-        case .noVerses: "That passage has no verses to show."
+        case .unknownItem: Localization.text("That playlist item no longer exists.")
+        case .unknownSlide: Localization.text("That slide no longer exists.")
+        case .unknownPresentation: Localization.text("That presentation no longer exists.")
+        case .nothingCued: Localization.text("Nothing is cued. Click a slide first.")
+        case .nothingLive: Localization.text("Nothing is live.")
+        case .atEndOfPlaylist: Localization.text("Already at the last slide.")
+        case .atStartOfPlaylist: Localization.text("Already at the first slide.")
+        case .liveSlideMissing: Localization.text("The live slide isn't in the open show anymore. Take a slide live to continue.")
+        case .nothingToRestore: Localization.text("Output is already showing normally.")
+        case .nothingToClear: Localization.text("Only the default background is showing.")
+        case .unknownArrangement: Localization.text("That arrangement no longer exists.")
+        case .unknownTimer: Localization.text("That timer no longer exists.")
+        case .unknownMessage: Localization.text("That message no longer exists.")
+        case .unknownProp: Localization.text("That prop no longer exists.")
+        case .unknownMediaAsset: Localization.text("That image isn't in the project's media library.")
+        case .unknownElement: Localization.text("That item is no longer on the slide.")
+        case .unknownTheme: Localization.text("That theme no longer exists.")
+        case .unknownFolder: Localization.text("That folder no longer exists.")
+        case .unknownShow: Localization.text("That show no longer exists.")
+        case .lastShow: Localization.text("This is the only show. Make another before deleting it.")
+        case .noAudio: Localization.text("No audio is playing.")
+        case .unknownStageLayout: Localization.text("That stage layout no longer exists.")
+        case .unknownMacro: Localization.text("That macro no longer exists.")
+        case .autoAdvanceOff: Localization.text("The live slide isn't moving on by itself.")
+        case .noSuchSection: Localization.text("This presentation has no section like that.")
+        case .noVerses: Localization.text("That passage has no verses to show.")
         }
     }
 }

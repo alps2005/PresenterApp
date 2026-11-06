@@ -124,7 +124,7 @@ public enum SongImporter {
             return slides.isEmpty ? nil : ImportedSong.Section(label: section.label, slides: slides)
         }
         guard song.slideCount > 0 else { throw .noLyrics }
-        if song.title.trimmingCharacters(in: .whitespaces).isEmpty { song.title = name.isEmpty ? "Untitled Song" : name }
+        if song.title.trimmingCharacters(in: .whitespaces).isEmpty { song.title = name.isEmpty ? Localization.text("Untitled Song") : name }
         return song
     }
 

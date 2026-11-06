@@ -84,9 +84,9 @@ public enum OutputRole: CaseIterable, Hashable, Sendable {
 
     public var title: String {
         switch self {
-        case .audience: "Audience Output"
-        case .secondAudience: "Second Output"
-        case .stage: "Stage Display"
+        case .audience: Localization.text("Audience Output")
+        case .secondAudience: Localization.text("Second Output")
+        case .stage: Localization.text("Stage Display")
         }
     }
 

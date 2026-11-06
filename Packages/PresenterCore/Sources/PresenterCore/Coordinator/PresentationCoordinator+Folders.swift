@@ -7,7 +7,7 @@ extension PresentationCoordinator {
     public func addFolder(named name: String) -> LibraryFolder {
         recordingUndo("New Folder") {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
-            let folder = LibraryFolder(name: trimmed.isEmpty ? "New Folder" : trimmed)
+            let folder = LibraryFolder(name: trimmed.isEmpty ? Localization.text("New Folder") : trimmed)
             project.libraryFolders.append(folder)
             lastRejection = nil
             return folder

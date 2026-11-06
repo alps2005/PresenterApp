@@ -57,7 +57,7 @@ public struct ProjectDocument: Identifiable, Codable, Hashable, Sendable {
         schemaVersion: Int = ProjectDocument.currentSchemaVersion,
         presentations: [PresentationDocument] = [],
         libraryFolders: [LibraryFolder] = [],
-        playlist: PlaylistDocument = PlaylistDocument(title: "Service"),
+        playlist: PlaylistDocument = PlaylistDocument(title: Localization.text("Service")),
         otherPlaylists: [PlaylistDocument] = [],
         mediaAssets: [MediaAsset] = [],
         timers: [TimerDefinition] = TimerDefinition.defaults(),
