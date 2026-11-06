@@ -13,7 +13,7 @@ struct AudioTransport: View {
         } else if let live = coordinator.state.audio {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Label(title(of: live), systemImage: live.isPaused ? "pause.circle" : "speaker.wave.2")
-                    .font(.callout)
+                    .font(.ui(.callout))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(live.isPaused ? "Paused" : "Playing for the audience")
@@ -31,7 +31,7 @@ struct AudioTransport: View {
                         .accessibilityLabel("Audio position")
 
                     Text("-" + TimeText.format(max(audio.duration - audio.currentTime, 0)))
-                        .font(.caption.monospacedDigit())
+                        .font(.ui(.caption).monospacedDigit())
                         .foregroundStyle(.secondary)
                         .frame(width: Widths.valueLabel, alignment: .trailing)
                         .help("Time left in the track")
@@ -154,7 +154,7 @@ struct AudioCueControls: View {
                 EmptyView()
             }
             Text(caption)
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -210,7 +210,7 @@ struct SoundtrackControls: View {
             Text(coordinator.audioAssets.isEmpty
                  ? "Import music in the audio bin (⌥⌘U) to use it as a soundtrack."
                  : "Plays when you move into this presentation from another item, unless it's already playing. A slide's own audio comes first.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

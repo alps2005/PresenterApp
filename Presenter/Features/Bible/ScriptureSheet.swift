@@ -78,7 +78,7 @@ struct ScriptureSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text(mode == .overCuedSlide ? "Scripture Over the Cued Slide" : "Scripture").font(.title2.bold())
+            Text(mode == .overCuedSlide ? "Scripture Over the Cued Slide" : "Scripture").font(.ui(.title2).bold())
             if mode == .overCuedSlide { cuedSlideWarning }
             translationRow
             if library.entries.isEmpty {
@@ -218,7 +218,7 @@ struct ScriptureSheet: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             TextField("Reference, like Juan 3:16-18 or 1 Co 13:4-7", text: $reference)
                 .textFieldStyle(.roundedBorder)
-                .font(.title3)
+                .font(.ui(.title3))
             Group {
                 switch lookup {
                 case .success(let passage)?:
@@ -235,8 +235,8 @@ struct ScriptureSheet: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .font(.caption)
-            if let importError { WarningLabel(importError).font(.caption) }
+            .font(.ui(.caption))
+            if let importError { WarningLabel(importError).font(.ui(.caption)) }
         }
     }
 
@@ -247,15 +247,15 @@ struct ScriptureSheet: View {
             if let translation, !search.trimmingCharacters(in: .whitespaces).isEmpty {
                 let hits = BibleSearch.search(search, in: translation)
                 if hits.isEmpty {
-                    Text("No verses have all those words.").font(.caption).foregroundStyle(.secondary)
+                    Text("No verses have all those words.").font(.ui(.caption)).foregroundStyle(.secondary)
                 } else {
                     List(hits, id: \.self) { hit in
                         Button {
                             reference = hit.reference(in: translation.language)
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(hit.reference(in: translation.language)).font(.caption.bold())
-                                Text(hit.text).font(.caption).lineLimit(2).foregroundStyle(.secondary)
+                                Text(hit.reference(in: translation.language)).font(.ui(.caption).bold())
+                                Text(hit.text).font(.ui(.caption)).lineLimit(2).foregroundStyle(.secondary)
                             }
                         }
                         .buttonStyle(.plain)
@@ -263,7 +263,7 @@ struct ScriptureSheet: View {
                     .listStyle(.plain)
                     .frame(minHeight: 160)
                     Text(hits.count == 200 ? "The first 200 verses. Add words to narrow it down." : "Click a verse to use it.")
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -283,13 +283,13 @@ struct ScriptureSheet: View {
         let pages = passage.map { coordinator.scripturePreview($0, second: secondPassage, options: options, themeID: themeID) } ?? []
         return VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(pages.count == 1 ? "1 slide" : "\(pages.count) slides")
-                .font(.caption.bold())
+                .font(.ui(.caption).bold())
                 .foregroundStyle(.secondary)
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
                         VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text("\(index + 1)").monospacedDigit().font(.caption2).foregroundStyle(.secondary)
+                            Text("\(index + 1)").monospacedDigit().font(.ui(.caption2)).foregroundStyle(.secondary)
                             SlideRenderView(scene: .slide(page))
                                 .aspectRatio(16 / 9, contentMode: .fit)
                                 .tileFrame(.idle)
@@ -304,7 +304,7 @@ struct ScriptureSheet: View {
         let slides = passage.map { ScriptureSlides.make($0, second: secondPassage, options: options) } ?? []
         return VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(slides.count == 1 ? "1 slide" : "\(slides.count) slides")
-                .font(.caption.bold())
+                .font(.ui(.caption).bold())
                 .foregroundStyle(.secondary)
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -314,12 +314,12 @@ struct ScriptureSheet: View {
                                 Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
                                 if let label = slide.label { Text(label).foregroundStyle(.secondary) }
                             }
-                            .font(.caption2)
+                            .font(.ui(.caption2))
                             // Both translations' words, without the reference.
                             Text(slide.elements.compactMap { element -> String? in
                                 if case .text(let text) = element, text.role == .body { text.text } else { nil }
                             }.joined(separator: "\n\n"))
-                                .font(.caption)
+                                .font(.ui(.caption))
                                 .lineLimit(8)
                         }
                         .padding(Spacing.sm)
@@ -367,7 +367,7 @@ struct ScriptureSheet: View {
     private var buttons: some View {
         HStack {
             Text("Public-domain translations only. Presenter doesn't download or include any.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
             Spacer()
             Button("Cancel", role: .cancel) { dismiss() }

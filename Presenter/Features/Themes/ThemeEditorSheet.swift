@@ -20,7 +20,7 @@ struct ThemeEditorSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             if let theme {
-                Text("Edit Theme").font(.title2.bold())
+                Text("Edit Theme").font(.ui(.title2).bold())
                 TextField("Name", text: Binding(get: { theme.name }, set: { rename(to: $0) }))
                     .textFieldStyle(.roundedBorder)
 
@@ -32,7 +32,7 @@ struct ThemeEditorSheet: View {
 
                 HStack {
                     Text(followersText)
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button("Done") { dismiss() }
@@ -80,7 +80,7 @@ struct ThemeEditorSheet: View {
             }
 
             Divider()
-            Text("Background").font(.subheadline.bold())
+            Text("Background").font(.ui(.subheadline).bold())
             BackgroundInspector(coordinator: coordinator, target: .theme(themeID))
         }
         .controlSize(.small)
@@ -89,7 +89,7 @@ struct ThemeEditorSheet: View {
     /// All three text roles together, as a slide would show them, and each on its own below: click one to edit it.
     private func preview(_ theme: Theme) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Preview").font(.subheadline.bold()).foregroundStyle(.secondary)
+            Text("Preview").font(.ui(.subheadline).bold()).foregroundStyle(.secondary)
             SlideRenderView(scene: .slide(Self.sample(TextRole.allCases, theme: theme)))
                 .aspectRatio(16 / 9, contentMode: .fit)
                 // The column's full width, not whatever height is left over.
@@ -110,7 +110,7 @@ struct ThemeEditorSheet: View {
                                     }
                                 }
                             Text(Self.name(of: each))
-                                .font(.caption)
+                                .font(.ui(.caption))
                                 .fontWeight(each == role ? .semibold : .regular)
                                 .foregroundStyle(each == role ? .primary : .secondary)
                         }
@@ -122,7 +122,7 @@ struct ThemeEditorSheet: View {
                 }
             }
             Text("Text formatted by hand on a slide keeps its own look. In the editor, Revert to Theme makes it follow the theme again.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

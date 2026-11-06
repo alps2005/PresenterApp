@@ -1,3 +1,4 @@
+import PresenterCore
 import SwiftUI
 
 @main
@@ -55,9 +56,16 @@ struct PresenterApp: App {
             TabView {
                 UpdateSettingsView(updater: appDelegate.environment.updater)
                     .tabItem { Label("General", systemImage: "gearshape") }
+                AppearanceSettingsView()
+                    .tabItem { Label("Appearance", systemImage: "paintpalette") }
+                LanguageSettingsView { [environment = appDelegate.environment] in
+                    environment.coordinator.state.isPresenting(outputsShowing: environment.outputManager.isAnyOutputOn)
+                }
+                .tabItem { Label("Language", systemImage: "globe") }
                 AudioSettingsView(output: appDelegate.environment.audioOutput)
                     .tabItem { Label("Audio", systemImage: "speaker.wave.2") }
             }
+            .operatorLook()
         }
     }
 }

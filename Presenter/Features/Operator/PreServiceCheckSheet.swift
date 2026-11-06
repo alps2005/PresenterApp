@@ -26,7 +26,7 @@ struct PreServiceCheckSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Pre-Service Check").font(.title2.bold())
+            Text("Pre-Service Check").font(.ui(.title2).bold())
             Text(problems.isEmpty
                  ? "Everything “\(coordinator.project.playlist.title)” uses is ready."
                  : "Things to look at in “\(coordinator.project.playlist.title)” before the service:")
@@ -34,7 +34,7 @@ struct PreServiceCheckSheet: View {
 
             if problems.isEmpty {
                 Label("No problems found", systemImage: "checkmark.circle.fill")
-                    .font(.title3)
+                    .font(.ui(.title3))
                     .foregroundStyle(.green)
                     .frame(maxWidth: .infinity, minHeight: 120)
             } else {
@@ -55,7 +55,7 @@ struct PreServiceCheckSheet: View {
             HStack {
                 if mode == .launch {
                     Text("Shown at launch because something needs attention. Live › Pre-Service Check… (⌥⌘K) runs it again.")
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -71,7 +71,7 @@ struct PreServiceCheckSheet: View {
 
     private func row(_ problem: PreServiceProblem) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            WarningLabel(problem.message, font: .body)
+            WarningLabel(problem.message, font: .ui(.body))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
             if let itemID = problem.itemID {

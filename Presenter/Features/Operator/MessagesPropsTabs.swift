@@ -23,7 +23,7 @@ struct MessagesTab: View {
                 MessageEditor(coordinator: coordinator, draft: draft) { editing = nil }
             }
             Text("Write {Name} for a blank you fill in when showing the message, or {timer:Sermon} for a live timer.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -39,7 +39,7 @@ struct MessagesTab: View {
         return RowCard(isHighlighted: isShowing) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(message.name).lineLimit(1)
-                Text(message.text).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(message.text).font(.ui(.caption2)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             if isShowing {
@@ -84,7 +84,7 @@ private struct MessageFieldsForm: View {
                     .textFieldStyle(.roundedBorder)
             }
             Text(coordinator.messageText(message, values: values, at: .now))
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
     }
@@ -172,7 +172,7 @@ struct PropsTab: View {
             }
             .buttonStyle(.borderless)
             Text("Click a prop to show or hide it over the slides. Several can be on screen at once.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -186,7 +186,7 @@ struct PropsTab: View {
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .tileFrame(TileState(isLive: isShowing), cornerRadius: Radius.badge)
             HStack(spacing: Spacing.xs) {
-                Text(prop.label ?? "Prop").font(.caption).lineLimit(1)
+                Text(prop.label ?? "Prop").font(.ui(.caption)).lineLimit(1)
                 Spacer()
                 if isEdited { StateBadge(.edited) }
                 if isShowing { StateBadge(.live) }

@@ -50,9 +50,9 @@ struct ShowsSheet: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            Text("Shows").font(.title2.bold())
+            Text("Shows").font(.ui(.title2).bold())
             Text("Each show is a playlist. All of them use the same library, so a change to a song shows in every show that has it.")
-                .font(.callout)
+                .font(.ui(.callout))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button {

@@ -44,6 +44,22 @@ public enum SongSectionKind: Sendable, CaseIterable {
         }
     }
 
+    /// A stable name for the kind ("verse", "preChorus"…): what both apps key a section's colour setting by, and
+    /// what the Windows bridge sends.
+    public var key: String {
+        switch self {
+        case .verse: "verse"
+        case .preChorus: "preChorus"
+        case .chorus: "chorus"
+        case .bridge: "bridge"
+        case .tag: "tag"
+        case .intro: "intro"
+        case .ending: "ending"
+        case .interlude: "interlude"
+        case .other: "other"
+        }
+    }
+
     /// The number a label ends with ("Verse 2" → 2), or nil when it has none.
     public static func number(inLabel label: String) -> Int? {
         guard let range = label.range(of: #"\d+\s*:?\s*$"#, options: .regularExpression) else { return nil }

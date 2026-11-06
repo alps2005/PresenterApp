@@ -32,7 +32,7 @@ struct EditorInspector: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Text(title)
-                    .font(.headline)
+                    .font(.ui(.headline))
                     .frame(maxWidth: .infinity)
                 switch tab {
                 case .format: formatTab
@@ -116,7 +116,7 @@ struct EditorInspector: View {
             }
         }
         Text("Double-click the text on the slide to change the words.")
-            .font(.caption)
+            .font(.ui(.caption))
             .foregroundStyle(.secondary)
         liveValues(text, slide: slide)
         if let theme {
@@ -144,7 +144,7 @@ struct EditorInspector: View {
                 WarningLabel("There's no timer called “\(name)”, so it shows nothing. Make it in the Live panel's Timers tab, or fix the name.")
             }
             Text("The audience and the stage see the time, updating as it runs. Here it shows as typed.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -309,7 +309,7 @@ struct EditorInspector: View {
                 .fixedSize()
             }
             Text("Shown on the slide's thumbnail, like \"Verse 1\" or \"Coro\". The audience never sees it.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
         section("Background") {
@@ -334,7 +334,7 @@ struct EditorInspector: View {
                     coordinator.setSlideActions(actions, slideID: slide.id, inPresentation: presentation.id)
                 }
                 Text("Run when the slide is taken live: start a timer, show a message or prop, change the stage display, run a macro.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -344,7 +344,7 @@ struct EditorInspector: View {
                 get: { slide.notes ?? "" },
                 set: { coordinator.setNotes($0, slideID: slide.id, inPresentation: presentation.id) }
             ))
-            .font(.body)
+            .font(.ui(.body))
             .scrollContentBackground(.hidden)
             .padding(Spacing.sm)
             .frame(height: 110)
@@ -352,7 +352,7 @@ struct EditorInspector: View {
             // The raised fill alone is nearly the inspector's colour in dark mode; the outline shows the field.
             .hairlineBorder(RoundedRectangle(cornerRadius: Radius.card))
             Text("Only you see these. The audience never does.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
     }
@@ -374,11 +374,11 @@ struct EditorInspector: View {
                     }
                 }
                 Text("In slide points (1920 × 1080).")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             } else {
                 Text("Drag the text on the slide to place it freely.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
             HStack(spacing: Spacing.xs) {
@@ -475,7 +475,7 @@ struct EditorInspector: View {
                     ), in: PresenterCore.SlideTransition.durationRange, format: { String(format: "%.1f s", $0) })
                 }
                 Text("Plays on the audience output when this slide goes live. Clear and Blackout are always instant.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Button("Apply to All Slides…") { isConfirmingTransitionForAll = true }
             }
@@ -490,11 +490,11 @@ struct EditorInspector: View {
                     elementTransitionControls("In", phase: .in, element: element, slide: slide)
                     elementTransitionControls("Out", phase: .out, element: element, slide: slide)
                     Text("Play as the slide arrives and as it leaves. Everything else on the slide follows the slide's transition.")
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                 } else {
                     Text("Select a text, shape or image on the slide to give it its own transition, for when the whole slide shouldn't move.")
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -585,14 +585,14 @@ struct EditorInspector: View {
         section("Background") {
             BackgroundInspector(coordinator: coordinator, target: .presentation(presentation.id))
             Text("Used by every slide that doesn't set its own.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
         if presentation.id != coordinator.project.props.id {
             section("Song") {
                 SongDetailsFields(coordinator: coordinator, presentation: presentation)
                 Text("Writers, copyright and CCLI number, for your licence reports. Filled in when a song is imported.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -623,7 +623,7 @@ struct EditorInspector: View {
                 .help("Text formatted by hand on any slide follows the theme again")
             }
             Text("Text follows the theme unless you format it by hand. Make or edit themes in the sidebar.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -657,7 +657,7 @@ struct EditorInspector: View {
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Divider()
-            Text(title).font(.subheadline.bold())
+            Text(title).font(.ui(.subheadline).bold())
             content()
         }
     }

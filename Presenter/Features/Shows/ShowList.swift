@@ -95,15 +95,15 @@ struct ShowList: View {
         let isOpen = show.id == coordinator.project.activePlaylistID
         return HStack(spacing: Spacing.md) {
             Image(systemName: "rectangle.stack")
-                .font(.title2)
+                .font(.ui(.title2))
                 .foregroundStyle(.secondary)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(show.title)
-                    .font(.headline)
+                    .font(.ui(.headline))
                 Text(detail(for: show))
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -111,7 +111,7 @@ struct ShowList: View {
             if isOpen {
                 Label("Open", systemImage: "checkmark.circle")
                     .labelStyle(.titleAndIcon)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
         }

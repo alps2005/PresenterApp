@@ -95,7 +95,7 @@ struct BridgeState: Encodable {
                 return SlideEntry(
                     position: Position(SlidePosition(itemID: itemID, slideID: arranged.slideID, occurrence: arranged.occurrence)),
                     label: slide.label,
-                    section: slide.label.map { SongSectionKind(label: $0).name },
+                    section: slide.label.map { SongSectionKind(label: $0).key },
                     slide: BridgeSlide(rendered, media: media)
                 )
             }
@@ -178,23 +178,6 @@ struct BridgeSlide: Encodable {
                 Element(kind: "image", frame: image.frame, path: media(image.assetID), scaling: image.scaling.rawValue,
                         opacity: image.opacity)
             }
-        }
-    }
-}
-
-extension SongSectionKind {
-    /// The name the app colours a section label by.
-    var name: String {
-        switch self {
-        case .verse: "verse"
-        case .preChorus: "preChorus"
-        case .chorus: "chorus"
-        case .bridge: "bridge"
-        case .tag: "tag"
-        case .intro: "intro"
-        case .ending: "ending"
-        case .interlude: "interlude"
-        case .other: "other"
         }
     }
 }

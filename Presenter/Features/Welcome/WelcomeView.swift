@@ -20,7 +20,6 @@ struct WelcomeView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     @AppStorage(Self.showAtLaunchKey) private var showsAtLaunch = true
-    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
     @State private var selectedID: UUID?
     @State private var isNamingNewShow = false
     /// Set when this window closes because the operator window is taking over, so closing it doesn't quit.
@@ -48,7 +47,7 @@ struct WelcomeView: View {
             HStack {
                 Toggle("Show this window when Presenter opens", isOn: $showsAtLaunch)
                     .toggleStyle(.checkbox)
-                    .font(.callout)
+                    .font(.ui(.callout))
                 Spacer()
                 Button("Open") {
                     if let selectedID, coordinator.openPlaylist(selectedID).isApplied { openOperatorWindow() }
@@ -64,7 +63,7 @@ struct WelcomeView: View {
         .frame(width: Self.size.width, height: Self.size.height)
         .background(Palette.sidebar)
         .background(WelcomeWindowStyler())
-        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
+        .operatorLook()
         .onAppear {
             selectedID = coordinator.project.activePlaylistID
             // With the checkbox off, Presenter starts in the operator window. Only at launch: reopened later
@@ -98,7 +97,7 @@ struct WelcomeView: View {
             Text("Presenter")
                 .font(.system(size: 30, weight: .bold))
             Text(Self.versionText)
-                .font(.callout)
+                .font(.ui(.callout))
                 .foregroundStyle(.secondary)
         }
     }

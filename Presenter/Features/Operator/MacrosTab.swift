@@ -22,7 +22,7 @@ struct MacrosTab: View {
             }
             .buttonStyle(.borderless)
             Text("A macro does several things at one click: show a prop, start a timer, play music, change the stage display. Slides can run them too, in the slide editor.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -73,7 +73,7 @@ struct MacroEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Edit Macro").font(.title2.bold())
+            Text("Edit Macro").font(.ui(.title2).bold())
             if let macro {
                 HStack {
                     TextField("Name", text: Binding(get: { macro.name }, set: { name in update { $0.name = name } }))
@@ -88,7 +88,7 @@ struct MacroEditorSheet: View {
                             .labelsHidden()
                     }
                 }
-                Text("Actions run in this order.").font(.subheadline.bold())
+                Text("Actions run in this order.").font(.ui(.subheadline).bold())
                 ScrollView {
                     ActionListEditor(project: coordinator.project, actions: macro.actions, isForMacro: true, macroID: macro.id) { actions in
                         update { $0.actions = actions }

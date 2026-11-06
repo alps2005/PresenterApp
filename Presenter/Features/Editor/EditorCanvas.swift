@@ -356,7 +356,7 @@ struct EditorCanvas: View {
         let x = min(max(rect.maxX + 10, 4), stageSize.width - tagSize.width - 4)
         let y = min(max(rect.minY, 4), stageSize.height - tagSize.height - 4)
         return Text(text)
-            .font(.caption.monospacedDigit())
+            .font(.ui(.caption).monospacedDigit())
             .foregroundStyle(.white)
             .padding(.horizontal, Spacing.md)
             .frame(height: tagSize.height)

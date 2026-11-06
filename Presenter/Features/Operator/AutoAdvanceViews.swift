@@ -86,7 +86,7 @@ struct AutoAdvanceStatus: View {
                         Label("Next slide when the video ends", systemImage: "film")
                     }
                 }
-                .font(.callout)
+                .font(.ui(.callout))
                 Spacer(minLength: Spacing.sm)
                 Button("Stop") { coordinator.stopAutoAdvance() }
                     .controlSize(.small)
@@ -128,7 +128,7 @@ struct GoToNextControls: View {
                 Text(current.seconds == 0
                      ? "0 moves on as soon as the slide's video ends (with a video that plays once)."
                      : "A video that plays once is waited for first; a looping one isn't.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -153,7 +153,7 @@ struct GoToNextSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            Text("Go To Next Timer").font(.headline)
+            Text("Go To Next Timer").font(.ui(.headline))
             GoToNextControls(timer: $timer)
             HStack {
                 Spacer()
@@ -195,7 +195,7 @@ struct SlideshowIntervalSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            Text("Slideshow").font(.headline)
+            Text("Slideshow").font(.ui(.headline))
             Picker("Slideshow", selection: $choice) {
                 Text("Off").tag(Choice.off)
                 ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
@@ -215,7 +215,7 @@ struct SlideshowIntervalSheet: View {
             .pickerStyle(.radioGroup)
             .labelsHidden()
             Text("Every slide moves on by itself, and after the last it starts again from the first. A slide's own Go To Next Timer comes first.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {

@@ -119,7 +119,7 @@ private struct TimersTab: View {
                             .accessibilityLabel("Shown on the stage display")
                     }
                 }
-                Text(timer.summary).font(.caption2).foregroundStyle(.secondary)
+                Text(timer.summary).font(.ui(.caption2)).foregroundStyle(.secondary)
             }
             Spacer()
             Text(TimerDefinition.format(seconds))
@@ -199,7 +199,7 @@ private struct TimerEditor: View {
             case .countdownTo:
                 DatePicker("Counts down to", selection: $time, displayedComponents: .hourAndMinute)
             case .elapsed:
-                Text("Counts up from zero when started.").font(.caption).foregroundStyle(.secondary)
+                Text("Counts up from zero when started.").font(.ui(.caption)).foregroundStyle(.secondary)
             }
         }
         .onAppear { load() }
@@ -280,7 +280,7 @@ private struct StageTab: View {
             }
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Message to the stage").font(.caption.bold())
+                Text("Message to the stage").font(.ui(.caption).bold())
                 if let message = coordinator.state.stageMessage {
                     HStack {
                         Text(message)
@@ -358,7 +358,7 @@ private struct StageTab: View {
             Text(coordinator.stageLayoutID == nil
                  ? "The stage display shows the live slide's words, the next slide, and these. The audience never sees them."
                  : "The layout decides what the stage display shows; its timer regions use this timer unless set to another. The audience never sees it.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

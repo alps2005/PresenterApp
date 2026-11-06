@@ -390,7 +390,7 @@ struct PlaylistSidebar: View {
             if isDefault {
                 Label("Default", systemImage: "star.fill")
                     .labelStyle(.titleAndIcon)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                     .help("New songs and presentations use this theme")
             }

@@ -29,7 +29,7 @@ struct CCLIReportSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("CCLI Report").font(.title2.bold())
+            Text("CCLI Report").font(.ui(.title2).bold())
 
             Form {
                 TextField("Church CCLI License #", text: $licenseDraft, prompt: Text("e.g. 1234567"))
@@ -69,7 +69,7 @@ struct CCLIReportSheet: View {
 
             HStack {
                 Text("Songs count when they go live, on this Mac. Submit the counts at reporting.ccli.com.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Export CSV…") { exportCSV() }

@@ -28,8 +28,6 @@ struct OperatorView: View {
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
     @AppStorage("audioBinVisible") private var isAudioBinVisible = false
-    /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
-    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
     var body: some View {
         Group {
@@ -39,7 +37,7 @@ struct OperatorView: View {
                 showView
             }
         }
-        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
+        .operatorLook()
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
         #if DEBUG
         .onAppear { openEditorIfAsked() }

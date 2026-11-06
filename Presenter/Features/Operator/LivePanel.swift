@@ -18,7 +18,7 @@ struct LivePanel: View {
                     PanelHeader(title: "Audience") { liveBadge }
                     // In words, here, because the toolbar's output menu shows only a warning icon.
                     ForEach(waitingOutputs, id: \.role) { output in
-                        WarningLabel("\(output.role.title): \(output.message)", font: .callout.bold())
+                        WarningLabel("\(output.role.title): \(output.message)", font: .ui(.callout).bold())
                     }
                     if audioOutput.isChosenMissing {
                         WarningLabel("Sound: \(audioOutput.chosenName ?? "the chosen output") isn't connected, so sound plays through the Mac's output.",
@@ -43,19 +43,19 @@ struct LivePanel: View {
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
                         Label("Background cleared for now. Slides with their own background bring one back. To remove it for good, use the slide's Background button.",
                               systemImage: "info.circle")
-                            .font(.callout)
+                            .font(.ui(.callout))
                             .foregroundStyle(.secondary)
                     }
                     if let notes = coordinator.liveNotes {
                         Label(notes, systemImage: "note.text")
-                            .font(.callout)
+                            .font(.ui(.callout))
                             .foregroundStyle(.secondary)
                             .help("This slide's notes. The audience never sees them.")
                     }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
                               systemImage: "pencil.circle.fill")
-                            .font(.caption)
+                            .font(.ui(.caption))
                             .foregroundStyle(Palette.edited)
                     }
                 }
@@ -107,7 +107,7 @@ struct LivePanel: View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Label("\(overlay.caption) · \(overlay.index + 1) of \(overlay.pages.count) over the slide. Next steps through the verses.",
                   systemImage: "book")
-                .font(.callout)
+                .font(.ui(.callout))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
             Button("Remove Verses") { coordinator.endScripture() }
@@ -163,7 +163,7 @@ struct LivePanel: View {
                 }
             } else {
                 Text(placeholder)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
         }

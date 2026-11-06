@@ -93,7 +93,7 @@ struct MediaBin: View {
                                 Text(TimeText.format(duration)).monospacedDigit()
                             }
                         }
-                        .font(.caption2.bold())
+                        .font(.ui(.caption2).bold())
                         .foregroundStyle(.white)
                         .padding(Spacing.xs)
                         .background(.black.opacity(0.5))
@@ -106,7 +106,7 @@ struct MediaBin: View {
                 if isLive { StateBadge(.live).padding(Spacing.xs) }
             }
             Text(asset.originalFilename)
-                .font(.caption2)
+                .font(.ui(.caption2))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(width: 160, alignment: .leading)

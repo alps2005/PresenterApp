@@ -23,7 +23,7 @@ struct SlideEditor: View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Text("Quick Edit · Cued Slide")
-                    .font(.headline)
+                    .font(.ui(.headline))
                 Spacer()
                 // Up here, not in the tab: the tab's height is fixed and the style controls fill it.
                 if tab == .style { revertToThemeButton }
@@ -43,7 +43,7 @@ struct SlideEditor: View {
                             get: { slide.primaryText },
                             set: { coordinator.updateSlideText($0, slideID: slide.id, inPresentation: presentation.id) }
                         ))
-                        .font(.body)
+                        .font(.ui(.body))
                         .scrollContentBackground(.hidden)
                         .padding(Spacing.sm)
                         .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))

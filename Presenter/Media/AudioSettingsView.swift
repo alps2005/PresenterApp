@@ -22,7 +22,7 @@ struct AudioSettingsView: View {
             Text(output.isChosenMissing
                  ? "That output isn't connected, so sound plays through the Mac's output until it's back."
                  : "Music, audio cues, soundtracks and video sound. Choose the interface that feeds the sound desk, so a Bluetooth headset or a change to the Mac's sound settings can't take the service's sound elsewhere. Kept on this Mac.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(output.isChosenMissing ? Palette.warning : .secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

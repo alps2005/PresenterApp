@@ -17,7 +17,7 @@ struct ReflowSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
-                Text("Reflow · \(presentation?.title ?? "")").font(.title2.bold())
+                Text("Reflow · \(presentation?.title ?? "")").font(.ui(.title2).bold())
                 Spacer()
                 Text(presentation.map { $0.slides.count == 1 ? "1 slide" : "\($0.slides.count) slides" } ?? "")
                     .foregroundStyle(.secondary)
@@ -25,7 +25,7 @@ struct ReflowSheet: View {
 
             HStack(alignment: .top, spacing: Spacing.lg) {
                 TextEditor(text: $text)
-                    .font(.body.monospaced())
+                    .font(.ui(.body).monospaced())
                     .scrollContentBackground(.hidden)
                     .padding(Spacing.sm)
                     .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
@@ -46,7 +46,7 @@ struct ReflowSheet: View {
                                         Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
                                         if let label = slide.label { GroupLabelTag(label: label) }
                                     }
-                                    .font(.caption2)
+                                    .font(.ui(.caption2))
                                 }
                             }
                         }
@@ -56,13 +56,13 @@ struct ReflowSheet: View {
             }
 
             Text("A blank line starts a new slide. A line with only a section name (Verse 1, Chorus, Coro, Puente…) labels the slides after it. \(LyricsParser.blankSlideMarker) keeps a slide without words. Slides keep their style; new ones copy the slide before them.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Text("Changes apply as you type. ⌘Z undoes them.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Done") { dismiss() }

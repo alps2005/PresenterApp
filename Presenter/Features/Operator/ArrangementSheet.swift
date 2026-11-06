@@ -18,15 +18,15 @@ struct ArrangementSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            Text(draft.arrangement == nil ? "New Arrangement" : "Edit Arrangement").font(.title2.bold())
+            Text(draft.arrangement == nil ? "New Arrangement" : "Edit Arrangement").font(.ui(.title2).bold())
 
             TextField("Name, e.g. Sunday Morning", text: $name)
                 .textFieldStyle(.roundedBorder)
 
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Groups").font(.subheadline.bold())
+                Text("Groups").font(.ui(.subheadline).bold())
                 Text("Click a group to add it to the end. A group can play more than once.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.ui(.caption)).foregroundStyle(.secondary)
                 FlowRow(items: presentation?.groupNames ?? []) { group in
                     Button {
                         groups.append(group)
@@ -39,10 +39,10 @@ struct ArrangementSheet: View {
             }
 
             VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("Play order").font(.subheadline.bold())
+                Text("Play order").font(.ui(.subheadline).bold())
                 if groups.isEmpty {
                     Text("Empty: the presentation plays in slide order.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.ui(.caption)).foregroundStyle(.secondary)
                 } else {
                     FlowRow(items: Array(groups.enumerated()).map { IndexedGroup(index: $0.offset, name: $0.element) }) { entry in
                         Button {
@@ -50,7 +50,7 @@ struct ArrangementSheet: View {
                         } label: {
                             HStack(spacing: Spacing.xs) {
                                 GroupLabelTag(label: entry.name)
-                                Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.secondary)
+                                Image(systemName: "xmark.circle.fill").font(.ui(.caption2)).foregroundStyle(.secondary)
                             }
                         }
                         .buttonStyle(.plain)

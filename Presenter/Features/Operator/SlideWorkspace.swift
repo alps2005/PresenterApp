@@ -134,12 +134,12 @@ struct SlideWorkspace: View {
     /// Like ProPresenter's slide size slider, bottom right of the slide view.
     private var sizeSlider: some View {
         HStack(spacing: Spacing.sm) {
-            Image(systemName: "square.grid.3x3").font(.caption).accessibilityHidden(true)
+            Image(systemName: "square.grid.3x3").font(.ui(.caption)).accessibilityHidden(true)
             Slider(value: $thumbnailWidth, in: Self.thumbnailWidths)
                 .frame(width: 110)
                 .controlSize(.mini)
                 .accessibilityLabel("Thumbnail size")
-            Image(systemName: "square.grid.2x2").font(.caption).accessibilityHidden(true)
+            Image(systemName: "square.grid.2x2").font(.ui(.caption)).accessibilityHidden(true)
         }
         .foregroundStyle(.secondary)
         .padding(.horizontal, Spacing.md)
@@ -283,7 +283,7 @@ struct SlideWorkspace: View {
                 grid(presentation: presentation, itemID: item.id)
             } else {
                 WarningLabel("Missing presentation")
-                    .font(.body)
+                    .font(.ui(.body))
                     .padding(Spacing.lg)
             }
             Divider()
@@ -336,7 +336,7 @@ struct SlideWorkspace: View {
                 set: { coordinator.renamePresentation(presentation.id, to: $0) }
             ))
             .textFieldStyle(.plain)
-            .font(.title2.bold())
+            .font(.ui(.title2).bold())
             .focused($editingTitle, equals: presentation.id)
             .onAppear { editingTitle = presentation.id }
             .onSubmit { finishRenaming() }
@@ -345,7 +345,7 @@ struct SlideWorkspace: View {
             }
         } else {
             Text(presentation.title.isEmpty ? "Untitled" : presentation.title)
-                .font(.title2.bold())
+                .font(.ui(.title2).bold())
                 .lineLimit(1)
                 .foregroundStyle(presentation.title.isEmpty ? .secondary : .primary)
                 .contentShape(Rectangle())
@@ -374,7 +374,7 @@ struct SlideWorkspace: View {
                 set: { if !$0 { presentationEditingBackground = nil } }
             ), arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: Spacing.md) {
-                    Text("Presentation Background").font(.headline)
+                    Text("Presentation Background").font(.ui(.headline))
                     BackgroundInspector(coordinator: coordinator, target: .presentation(presentation.id))
                 }
                 .padding(Spacing.lg)
@@ -501,7 +501,7 @@ struct SlideWorkspace: View {
             set: { if !$0 { slideshowPopoverID = nil } }
         ), arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("Slideshow").font(.headline)
+                Text("Slideshow").font(.ui(.headline))
                 Picker("Slideshow", selection: Binding(
                     get: { presentation.slideshowInterval },
                     set: {
@@ -525,7 +525,7 @@ struct SlideWorkspace: View {
                     slideshowCustomID = presentation.id
                 }
                 Text("Every slide moves on by itself and loops. A slide's own Go To Next Timer comes first.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -629,7 +629,7 @@ struct SlideThumbnail: View {
                 if isCued { StateBadge(.cued) }
                 if isLive { StateBadge(.live) }
             }
-            .font(.caption)
+            .font(.ui(.caption))
         }
         .contentShape(Rectangle())
     }

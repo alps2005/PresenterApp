@@ -163,9 +163,10 @@ private struct HairlineBorder<S: InsettableShape>: ViewModifier {
 struct WarningLabel: View {
     let text: String
     var systemImage = "exclamationmark.triangle.fill"
-    var font = Font.caption
+    /// Nil for the caption style at the operator's text size.
+    var font: Font?
 
-    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill", font: Font = .caption) {
+    init(_ text: String, systemImage: String = "exclamationmark.triangle.fill", font: Font? = nil) {
         self.text = text
         self.systemImage = systemImage
         self.font = font
@@ -173,7 +174,7 @@ struct WarningLabel: View {
 
     var body: some View {
         Label(text, systemImage: systemImage)
-            .font(font)
+            .font(font ?? .ui(.caption))
             .foregroundStyle(Palette.warning)
     }
 }
@@ -222,7 +223,7 @@ struct PanelHeader<Trailing: View>: View {
 
     var body: some View {
         HStack {
-            Text(title).font(.headline)
+            Text(title).font(.ui(.headline))
             Spacer()
             trailing
         }
@@ -266,7 +267,7 @@ struct PopoverForm<Fields: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            if let title { Text(title).font(.headline) }
+            if let title { Text(title).font(.ui(.headline)) }
             fields
                 .onSubmit { if canSubmit { onSubmit() } }
             HStack {

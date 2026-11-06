@@ -16,7 +16,7 @@ struct StageLayoutEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Stage Layouts").font(.title2.bold())
+            Text("Stage Layouts").font(.ui(.title2).bold())
             HStack(alignment: .top, spacing: Spacing.lg) {
                 layoutList
                     .frame(width: 190)
@@ -26,7 +26,7 @@ struct StageLayoutEditor: View {
                         StageLayoutCanvas(coordinator: coordinator, layout: layout, selection: $regionID)
                             .aspectRatio(16 / 9, contentMode: .fit)
                         Text("Point at a region to see its name. Drag it to move it and its handles to resize it. Hold ⌘ to place it freely. The preview shows what's live now.")
-                            .font(.caption)
+                            .font(.ui(.caption))
                             .foregroundStyle(.secondary)
                     }
                     .frame(minWidth: 0, maxWidth: .infinity)
@@ -40,7 +40,7 @@ struct StageLayoutEditor: View {
             }
             HStack {
                 Text("The standard look isn't a layout; its clock, timer and notes are set in the Stage tab.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Done") { dismiss() }
@@ -124,7 +124,7 @@ struct StageLayoutEditor: View {
             }
             .fixedSize()
             if coordinator.project.stage.layoutID == layout.id {
-                Text("On Stage").font(.caption.bold()).foregroundStyle(.secondary)
+                Text("On Stage").font(.ui(.caption).bold()).foregroundStyle(.secondary)
             } else {
                 Button("Use on Stage") { coordinator.setStageLayout(layout.id) }
             }
@@ -198,7 +198,7 @@ private struct StageLayoutCanvas: View {
                         .background(Color.white.opacity(0.001))
                         .overlay(alignment: .bottomLeading) {
                             Text(region.kind.title)
-                                .font(.caption2)
+                                .font(.ui(.caption2))
                                 .padding(.horizontal, 3)
                                 .background(Color.black.opacity(0.6))
                                 .foregroundStyle(.white)
@@ -335,7 +335,7 @@ private struct StageRegionInspector: View {
         if let region = layout.regions.first(where: { $0.id == regionID }) {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.md) {
-                    Text(region.kind.title).font(.headline)
+                    Text(region.kind.title).font(.ui(.headline))
                     kindControls(region)
                     if region.kind.hasText {
                         HStack {
@@ -377,7 +377,7 @@ private struct StageRegionInspector: View {
                                                                   background: layout.background))
                     }
                     Text(region.kind.caption)
-                        .font(.caption)
+                        .font(.ui(.caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

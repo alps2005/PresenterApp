@@ -32,7 +32,7 @@ struct UpdateSettingsView: View {
                         if sparkle.automaticallyChecksForUpdates != isOn { sparkle.automaticallyChecksForUpdates = isOn }
                     }
                 Text("Presenter asks before installing, and never while a service is under way.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Button("Check Now") { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates)

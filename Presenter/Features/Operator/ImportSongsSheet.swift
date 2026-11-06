@@ -38,13 +38,13 @@ struct ImportSongsSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Import Songs").font(.title2.bold())
+            Text("Import Songs").font(.ui(.title2).bold())
 
             list
                 .frame(minHeight: 240)
 
             Text("Reads ProPresenter 7 (.pro), OpenLyrics (.xml), ChordPro (.cho, .chordpro, .pro), SongSelect lyrics (.txt) and SongPro (.usr) files, and plain lyrics in text files. Chords are left out. Writers, copyright and CCLI numbers are kept with each song.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -133,16 +133,16 @@ struct ImportSongsSheet: View {
                 Toggle(song.title, isOn: file.isIncluded)
                     .labelsHidden()
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(song.title).font(.headline)
-                    Text(detail(song)).font(.caption).foregroundStyle(.secondary)
+                    Text(song.title).font(.ui(.headline))
+                    Text(detail(song)).font(.ui(.caption)).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(file.wrappedValue.fileName).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                Text(file.wrappedValue.fileName).font(.ui(.caption)).foregroundStyle(.tertiary).lineLimit(1)
             case .failure(let error):
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Palette.warning)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(file.wrappedValue.fileName).font(.headline)
-                    Text(message(error)).font(.caption).foregroundStyle(.secondary)
+                    Text(file.wrappedValue.fileName).font(.ui(.headline))
+                    Text(message(error)).font(.ui(.caption)).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
