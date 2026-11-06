@@ -24,14 +24,19 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(Localization.placeholders(in: "{0} and {1}, not {x} or {}"), ["{0}", "{1}"])
     }
 
-    /// Every word the engine sends through `Localization.text`, or names an undo step with, has a Spanish
+    /// Every word the engine and the bridge send through `Localization.text`, or name an undo step with, has a Spanish
     /// translation that keeps its placeholders.
     func testEveryEngineTextHasASpanishTranslation() throws {
-        let sources = URL(fileURLWithPath: #filePath)
+        // The engine, and the Windows bridge beside it, which sends its own messages through the same table.
+        let package = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Sources/PresenterCore")
-        let files = try XCTUnwrap(FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil))
-            .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }
+        let folders = [package.appendingPathComponent("Sources/PresenterCore"),
+                       package.deletingLastPathComponent().appendingPathComponent("PresenterBridge/Sources/PresenterBridge")]
+        let files = try folders.flatMap { folder in
+            try XCTUnwrap(FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil))
+                .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }
+        }
+        XCTAssertTrue(files.contains { $0.lastPathComponent == "BridgeSession.swift" }, "The bridge is scanned too")
         XCTAssertFalse(files.isEmpty)
 
         // The first argument when it's a literal, or both sides of a `condition ? "A" : "B"` choice.

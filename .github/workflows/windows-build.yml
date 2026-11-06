@@ -35,6 +35,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Check the Spanish translation
+        run: python scripts/check-windows-strings.py
+
       - name: Test the bridge
         working-directory: Packages/PresenterBridge
         run: swift test

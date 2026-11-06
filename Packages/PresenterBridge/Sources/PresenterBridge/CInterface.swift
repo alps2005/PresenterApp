@@ -7,6 +7,14 @@ import PresenterCore
 // The engine runs on the main actor, which isn't thread-safe. The app makes every call from its UI thread (it checks
 // before each call), so one thread uses the engine at a time and the calls run it directly, as the Mac app's views do.
 
+/// The language the engine's messages, undo names and new things' names are in: "en" or "es" (anything else is
+/// English). Called before `presenter_open`, so a new project's first show is named in it too.
+@_cdecl("presenter_set_language")
+public func presenter_set_language(_ code: UnsafePointer<CChar>?) {
+    let text = code.map { String(cString: $0) } ?? ""
+    Localization.language = AppLanguage.preferred(from: [text])
+}
+
 /// Opens the project in a data folder (created if needed) and returns a handle for the other calls.
 @_cdecl("presenter_open")
 public func presenter_open(_ dataDirectory: UnsafePointer<CChar>?) -> UnsafeMutableRawPointer? {

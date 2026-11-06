@@ -33,6 +33,9 @@ public sealed class Engine : IDisposable
     [DllImport(Library, EntryPoint = "presenter_free", CallingConvention = CallingConvention.Cdecl)]
     private static extern void NativeFree(IntPtr text);
 
+    [DllImport(Library, EntryPoint = "presenter_set_language", CallingConvention = CallingConvention.Cdecl)]
+    private static extern void NativeSetLanguage([MarshalAs(UnmanagedType.LPUTF8Str)] string code);
+
     [DllImport(Library, EntryPoint = "presenter_schema_version", CallingConvention = CallingConvention.Cdecl)]
     private static extern int NativeSchemaVersion();
 
@@ -56,6 +59,12 @@ public sealed class Engine : IDisposable
 
     /// <summary>The project format the engine reads and writes (the Mac app's ProjectDocument.currentSchemaVersion).</summary>
     public static int SchemaVersion => NativeSchemaVersion();
+
+    /// <summary>
+    /// The language the engine's messages, undo names and new things' names are in ("en" or "es"). Set before
+    /// <see cref="Open"/>, so a new project's first show is named in it too.
+    /// </summary>
+    public static void SetLanguage(string code) => NativeSetLanguage(code);
 
     /// <summary>
     /// Opens the project in <paramref name="dataDirectory"/>, creating the folder if needed. Throws

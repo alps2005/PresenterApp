@@ -87,6 +87,25 @@ enum SpanishText {
         "Message": "Mensaje",
         "Prop": "Accesorio",
 
+        // The Windows bridge's own messages.
+        "The app sent a command the engine doesn't understand.": "La app envió una orden que el motor no entiende.",
+        "The app sent a command the engine doesn't know: {0}.": "La app envió una orden que el motor no conoce: {0}.",
+        "The app left out part of a {0} command.": "La app omitió parte de una orden {0}.",
+        "That key doesn't name a section.": "Esa tecla no corresponde a ninguna sección.",
+        "Type or paste the song's words first.": "Primero escribe o pega la letra de la canción.",
+        "A presentation needs at least one slide. Type some words first.":
+            "Una presentación necesita al menos una diapositiva. Escribe algo de texto primero.",
+        "There's nothing to undo.": "No hay nada que deshacer.",
+        "There's nothing to redo.": "No hay nada que rehacer.",
+        "Not a song file Presenter can read.": "No es un archivo de canción que Presenter pueda leer.",
+        "The file is damaged or incomplete.": "El archivo está dañado o incompleto.",
+        "No words found.": "No se encontró letra.",
+        "The file couldn't be read.": "No se pudo leer el archivo.",
+        "The file couldn't be read. {0}": "No se pudo leer el archivo. {0}",
+        "The current project couldn't be backed up, so it wasn't replaced. {0}":
+            "No se pudo hacer una copia de seguridad del proyecto actual, así que no se reemplazó. {0}",
+        "The project couldn't be exported. {0}": "No se pudo exportar el proyecto. {0}",
+
         // What Undo and Redo name.
         "Add": "Agregar",
         "Add Arrangement": "Agregar arreglo",

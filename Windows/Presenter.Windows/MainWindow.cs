@@ -9,6 +9,7 @@ using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Presenter.Windows.Core;
+using static Presenter.Windows.Strings;
 
 namespace Presenter.Windows;
 
@@ -22,9 +23,8 @@ public sealed class MainWindow : Window
     private const double TileWidth = 224;
     private const double TileHeight = TileWidth * 9 / 16;
 
-    private static readonly IBrush LiveBrush = new SolidColorBrush(Color.FromRgb(255, 149, 0));
-    private static readonly IBrush PanelBrush = new SolidColorBrush(Color.FromRgb(28, 28, 32));
-    private static readonly IBrush HeaderBrush = new SolidColorBrush(Color.FromRgb(150, 150, 160));
+    /// <summary>LIVE's colour, from Settings.</summary>
+    private static IBrush LiveBrush => new SolidColorBrush(Settings.Current.Live);
 
     private readonly Engine engine;
     private EngineState state;
@@ -40,12 +40,12 @@ public sealed class MainWindow : Window
     private readonly ComboBox showPicker = new() { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ListBox itemList = new();
     private readonly ListBox libraryList = new();
-    private readonly TextBlock itemHeading = new() { FontSize = 18, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-    private readonly Button editWordsButton = new() { Content = "Edit Words…" };
+    private readonly TextBlock itemHeading = new() { FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Classes = { "title" } };
+    private readonly Button editWordsButton = new() { Content = T("Edit Words…") };
     private readonly WrapPanel slideGrid = new() { Margin = new Thickness(12) };
     private readonly TextBlock emptyHint = new()
     {
-        Text = "Add a song with Show › New Song… (Ctrl+N), or import song files with Show › Import Songs… (Ctrl+I).",
+        Text = T("Add a song with Show › New Song… (Ctrl+N), or import song files with Show › Import Songs… (Ctrl+I)."),
         TextWrapping = TextWrapping.Wrap,
         Margin = new Thickness(24),
         Opacity = 0.7,
@@ -54,13 +54,14 @@ public sealed class MainWindow : Window
     private readonly Border audiencePreview = new() { Height = 396 * 9 / 16, Background = Brushes.Black };
     private readonly ComboBox displayPicker = new() { HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Button outputButton = new() { HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center };
-    private readonly Button blackoutButton = LiveButton("Blackout", "F4");
-    private readonly Button restoreButton = LiveButton("Restore", "F5");
-    private readonly Border problemBar = new() { Background = new SolidColorBrush(Color.FromRgb(92, 74, 0)), Padding = new Thickness(12, 8), IsVisible = false };
+    private readonly Button blackoutButton = LiveButton(T("Blackout"), "F4");
+    private readonly Button restoreButton = LiveButton(T("Restore"), "F5");
+    private readonly Border problemBar = new() { Padding = new Thickness(12, 8), IsVisible = false };
     private readonly TextBlock problemText = new() { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock status = new() { Margin = new Thickness(12, 4), Opacity = 0.8, TextTrimming = TextTrimming.CharacterEllipsis };
-    private readonly MenuItem undoItem = new() { Header = "_Undo", InputGesture = new KeyGesture(Key.Z, KeyModifiers.Control) };
-    private readonly MenuItem redoItem = new() { Header = "_Redo", InputGesture = new KeyGesture(Key.Y, KeyModifiers.Control) };
+    private readonly MenuItem undoItem = new() { Header = T("_Undo"), InputGesture = new KeyGesture(Key.Z, KeyModifiers.Control) };
+    private readonly MenuItem redoItem = new() { Header = T("_Redo"), InputGesture = new KeyGesture(Key.Y, KeyModifiers.Control) };
+    private SettingsWindow? settingsWindow;
 
     public MainWindow(Engine engine)
     {
@@ -78,23 +79,35 @@ public sealed class MainWindow : Window
         DockPanel.SetDock(menu, Dock.Top);
         root.Children.Add(menu);
         problemBar.Child = ProblemContent();
+        App.UseBrush(problemBar, Border.BackgroundProperty, App.ProblemBrushKey);
         DockPanel.SetDock(problemBar, Dock.Top);
         root.Children.Add(problemBar);
-        var statusBar = new Border { Background = PanelBrush, Child = status };
+        var statusBar = new Border { Child = status };
+        App.UseBrush(statusBar, Border.BackgroundProperty, App.PanelBrushKey);
         DockPanel.SetDock(statusBar, Dock.Bottom);
         root.Children.Add(statusBar);
 
         var columns = new Grid { ColumnDefinitions = new ColumnDefinitions("280,4,*,4,420") };
         AddColumn(columns, LeftColumn(), 0);
-        AddColumn(columns, new GridSplitter { Background = PanelBrush }, 1);
+        AddColumn(columns, Splitter(), 1);
         AddColumn(columns, MiddleColumn(), 2);
-        AddColumn(columns, new GridSplitter { Background = PanelBrush }, 3);
+        AddColumn(columns, Splitter(), 3);
         AddColumn(columns, RightColumn(), 4);
         root.Children.Add(columns);
         Content = root;
 
         // Live keys work wherever the focus is, except while typing.
         AddHandler(KeyDownEvent, OnKey, RoutingStrategies.Tunnel);
+        // A button clicks when Space comes up, so after clicking one, Space would press it again as well as moving
+        // on (closing the audience output mid-song, say). Space is the Next key: its key-up stops here.
+        AddHandler(KeyUpEvent, (_, e) =>
+        {
+            if (e.Key == Key.Space && e.KeyModifiers == KeyModifiers.None && !IsTyping()) e.Handled = true;
+        }, RoutingStrategies.Tunnel);
+
+        // A change in Settings, or Windows switching between light and dark, redraws the colours.
+        Settings.Changed += OnLookChanged;
+        if (Application.Current is { } app) app.ActualThemeVariantChanged += OnThemeChanged;
 
         var ticker = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         ticker.Tick += (_, _) =>
@@ -112,11 +125,33 @@ public sealed class MainWindow : Window
         };
         Closed += (_, _) =>
         {
+            Settings.Changed -= OnLookChanged;
+            if (Application.Current is { } app) app.ActualThemeVariantChanged -= OnThemeChanged;
+            settingsWindow?.Close();
             ticker.Stop();
             output?.Close();
             engine.Dispose();
         };
         Refresh();
+    }
+
+    private void OnLookChanged() => Redraw();
+
+    private void OnThemeChanged(object? sender, EventArgs e) => Redraw();
+
+    /// <summary>Draws everything again, for new colours or a new theme.</summary>
+    private void Redraw()
+    {
+        shownRevision = -1;
+        shownAudience = null;
+        Refresh();
+    }
+
+    private static GridSplitter Splitter()
+    {
+        var splitter = new GridSplitter();
+        App.UseBrush(splitter, BackgroundProperty, App.PanelBrushKey);
+        return splitter;
     }
 
     private static void AddColumn(Grid grid, Control control, int column)
@@ -135,42 +170,44 @@ public sealed class MainWindow : Window
         {
             Items =
             {
-                Submenu("_File",
-                    Item("_Open Project File…", OpenProjectFile, new KeyGesture(Key.O, KeyModifiers.Control)),
-                    Item("_Export Project…", ExportProject, new KeyGesture(Key.E, KeyModifiers.Control)),
+                Submenu(T("_File"),
+                    Item(T("_Open Project File…"), OpenProjectFile, new KeyGesture(Key.O, KeyModifiers.Control)),
+                    Item(T("_Export Project…"), ExportProject, new KeyGesture(Key.E, KeyModifiers.Control)),
                     new Separator(),
-                    Item("Open the _Project Folder", () => App.OpenInShell(engine.DataDirectory)),
+                    Item(T("Open the _Project Folder"), () => App.OpenInShell(engine.DataDirectory)),
                     new Separator(),
-                    Item("E_xit", Close)),
-                Submenu("_Edit", undoItem, redoItem),
-                Submenu("_Show",
-                    Item("_New Song…", NewSong, new KeyGesture(Key.N, KeyModifiers.Control)),
-                    Item("_Import Songs…", ImportSongs, new KeyGesture(Key.I, KeyModifiers.Control)),
+                    Item(T("_Settings…"), ShowSettings, new KeyGesture(Key.OemComma, KeyModifiers.Control)),
                     new Separator(),
-                    Item("New _Show…", NewShow),
-                    Item("_Rename Show…", RenameShow),
-                    Item("_Delete Show…", DeleteShow)),
-                Submenu("_Live",
-                    Item("_Next Slide", () => Run(new { type = "next" }), new KeyGesture(Key.Right)),
-                    Item("_Previous Slide", () => Run(new { type = "previous" }), new KeyGesture(Key.Left)),
+                    Item(T("E_xit"), Close)),
+                Submenu(T("_Edit"), undoItem, redoItem),
+                Submenu(T("_Show"),
+                    Item(T("_New Song…"), NewSong, new KeyGesture(Key.N, KeyModifiers.Control)),
+                    Item(T("_Import Songs…"), ImportSongs, new KeyGesture(Key.I, KeyModifiers.Control)),
                     new Separator(),
-                    Item("Clear _All", () => Run(new { type = "clearAll" }), new KeyGesture(Key.F1)),
-                    Item("Clear _Slide", () => Run(new { type = "clearSlide" }), new KeyGesture(Key.F2)),
-                    Item("Clear _Background", () => Run(new { type = "clearBackground" }), new KeyGesture(Key.F3)),
-                    Item("Blac_kout", () => Run(new { type = "blackout" }), new KeyGesture(Key.F4)),
-                    Item("_Restore Output", () => Run(new { type = "restore" }), new KeyGesture(Key.F5)),
+                    Item(T("New _Show…"), NewShow),
+                    Item(T("_Rename Show…"), RenameShow),
+                    Item(T("_Delete Show…"), DeleteShow)),
+                Submenu(T("_Live"),
+                    Item(T("_Next Slide"), () => Run(new { type = "next" }), new KeyGesture(Key.Right)),
+                    Item(T("_Previous Slide"), () => Run(new { type = "previous" }), new KeyGesture(Key.Left)),
                     new Separator(),
-                    Item("Show or Hide the Audience _Output", ToggleOutput, new KeyGesture(Key.F11))),
-                Submenu("_Help",
-                    Item("_Keyboard Shortcuts", ShowShortcuts),
-                    Item("_Report a Problem or Idea…", () => App.OpenInShell(App.IssuesURL)),
-                    Item("Open the Problem _Logs Folder", () =>
+                    Item(T("Clear _All"), () => Run(new { type = "clearAll" }), new KeyGesture(Key.F1)),
+                    Item(T("Clear _Slide"), () => Run(new { type = "clearSlide" }), new KeyGesture(Key.F2)),
+                    Item(T("Clear _Background"), () => Run(new { type = "clearBackground" }), new KeyGesture(Key.F3)),
+                    Item(T("Blac_kout"), () => Run(new { type = "blackout" }), new KeyGesture(Key.F4)),
+                    Item(T("_Restore Output"), () => Run(new { type = "restore" }), new KeyGesture(Key.F5)),
+                    new Separator(),
+                    Item(T("Show or Hide the Audience _Output"), ToggleOutput, new KeyGesture(Key.F11))),
+                Submenu(T("_Help"),
+                    Item(T("_Keyboard Shortcuts"), ShowShortcuts),
+                    Item(T("_Report a Problem or Idea…"), () => App.OpenInShell(App.IssuesURL)),
+                    Item(T("Open the Problem _Logs Folder"), () =>
                     {
                         Directory.CreateDirectory(CrashLog.Directory);
                         App.OpenInShell(CrashLog.Directory);
                     }),
                     new Separator(),
-                    Item("_About Presenter", ShowAbout)),
+                    Item(T("_About Presenter"), ShowAbout)),
             },
         };
     }
@@ -191,7 +228,7 @@ public sealed class MainWindow : Window
 
     private Control ProblemContent()
     {
-        var dismiss = new Button { Content = "Dismiss", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        var dismiss = new Button { Content = T("Dismiss"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
         dismiss.Click += (_, _) => Run(new { type = "dismissProblem" });
         var row = new DockPanel();
         DockPanel.SetDock(dismiss, Dock.Right);
@@ -208,7 +245,7 @@ public sealed class MainWindow : Window
             if (!updating && showPicker.SelectedItem is ComboBoxItem { Tag: Guid id } && id != state.ActiveShowID)
                 Run(new { type = "openShow", showID = id });
         };
-        AddRow(grid, Heading("SHOW"), 0);
+        AddRow(grid, Heading(T("SHOW")), 0);
         AddRow(grid, showPicker, 1);
         itemList.Margin = new Thickness(0, 8, 0, 0);
         itemList.SelectionChanged += (_, _) =>
@@ -217,7 +254,7 @@ public sealed class MainWindow : Window
                 Run(new { type = "selectItem", itemID = item.ID });
         };
         AddRow(grid, itemList, 2);
-        var libraryHeading = Heading("LIBRARY  ·  double-click to add to the show");
+        var libraryHeading = Heading(T("LIBRARY  ·  double-click to add to the show"));
         libraryHeading.Margin = new Thickness(0, 16, 0, 0);
         AddRow(grid, libraryHeading, 3);
         libraryList.Margin = new Thickness(0, 8, 0, 0);
@@ -249,20 +286,20 @@ public sealed class MainWindow : Window
     private Control RightColumn()
     {
         var panel = new StackPanel { Spacing = 10, Margin = new Thickness(12) };
-        panel.Children.Add(Heading("AUDIENCE"));
+        panel.Children.Add(Heading(T("AUDIENCE")));
         panel.Children.Add(audiencePreview);
 
-        panel.Children.Add(Heading("OUTPUT"));
+        panel.Children.Add(Heading(T("OUTPUT")));
         displayPicker.DropDownOpened += (_, _) => FillDisplays();
         panel.Children.Add(displayPicker);
         outputButton.Click += (_, _) => ToggleOutput();
         panel.Children.Add(outputButton);
 
-        panel.Children.Add(Heading("LIVE"));
+        panel.Children.Add(Heading(T("LIVE")));
         var steps = new Grid { ColumnDefinitions = new ColumnDefinitions("*,8,*") };
-        var previous = LiveButton("◀ Previous", "←");
+        var previous = LiveButton(T("◀ Previous"), "←");
         previous.Click += (_, _) => Run(new { type = "previous" });
-        var next = LiveButton("Next ▶", "→ or Space");
+        var next = LiveButton(T("Next ▶"), T("→ or Space"));
         next.Click += (_, _) => Run(new { type = "next" });
         AddColumn(steps, previous, 0);
         AddColumn(steps, next, 2);
@@ -271,8 +308,8 @@ public sealed class MainWindow : Window
         var clears = new UniformGrid { Columns = 2 };
         foreach (var (label, key, type) in new[]
                  {
-                     ("Clear All", "F1", "clearAll"), ("Clear Slide", "F2", "clearSlide"),
-                     ("Clear Background", "F3", "clearBackground"),
+                     (T("Clear All"), "F1", "clearAll"), (T("Clear Slide"), "F2", "clearSlide"),
+                     (T("Clear Background"), "F3", "clearBackground"),
                  })
         {
             var button = LiveButton(label, key);
@@ -290,11 +327,11 @@ public sealed class MainWindow : Window
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Click a slide to show it. Section keys jump within the song: V verse, C chorus, P pre-chorus, " +
-                   "B bridge, T tag, I intro, E ending, N interlude (press again for the next one).",
+            Text = T("Click a slide to show it. Section keys jump within the song: V verse, C chorus, P pre-chorus, " +
+                     "B bridge, T tag, I intro, E ending, N interlude (press again for the next one)."),
             TextWrapping = TextWrapping.Wrap,
             Opacity = 0.6,
-            FontSize = 12,
+            Classes = { "small" },
         });
         return new ScrollViewer { Content = panel };
     }
@@ -303,8 +340,8 @@ public sealed class MainWindow : Window
     {
         var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
         content.Children.Add(new TextBlock { Text = label, HorizontalAlignment = HorizontalAlignment.Center });
-        content.Children.Add(new TextBlock { Text = key, FontSize = 11, Opacity = 0.55, HorizontalAlignment = HorizontalAlignment.Center });
-        return new Button
+        content.Children.Add(new TextBlock { Text = key, Opacity = 0.55, HorizontalAlignment = HorizontalAlignment.Center, Classes = { "tiny" } });
+        var button = new Button
         {
             Content = content,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -312,15 +349,17 @@ public sealed class MainWindow : Window
             Padding = new Thickness(8, 6),
             Focusable = false,
         };
+        // Screen readers say the label, not the panel it's drawn in.
+        Avalonia.Automation.AutomationProperties.SetName(button, label);
+        return button;
     }
 
-    private static TextBlock Heading(string text) => new()
+    private static TextBlock Heading(string text)
     {
-        Text = text,
-        FontSize = 11,
-        FontWeight = FontWeight.SemiBold,
-        Foreground = HeaderBrush,
-    };
+        var heading = new TextBlock { Text = text, FontWeight = FontWeight.SemiBold, Classes = { "heading" } };
+        App.UseBrush(heading, TextBlock.ForegroundProperty, App.HeaderBrushKey);
+        return heading;
+    }
 
     private static void AddRow(Grid grid, Control control, int row)
     {
@@ -341,11 +380,13 @@ public sealed class MainWindow : Window
 
     private void OnKey(object? sender, KeyEventArgs e)
     {
-        // Typing, and moving around an open menu or list of choices, keep their keys.
-        var focused = FocusManager?.GetFocusedElement();
-        if (focused is TextBox or MenuItem or ComboBoxItem or ComboBox { IsDropDownOpen: true }) return;
+        if (IsTyping()) return;
         HandleKey(e);
     }
+
+    /// <summary>Typing, and moving around an open menu or list of choices, keep their keys.</summary>
+    private bool IsTyping() =>
+        FocusManager?.GetFocusedElement() is TextBox or MenuItem or ComboBoxItem or ComboBox { IsDropDownOpen: true };
 
     /// <summary>The live keys, also used by the audience window.</summary>
     private void HandleKey(KeyEventArgs e)
@@ -378,6 +419,7 @@ public sealed class MainWindow : Window
             (Key.O, KeyModifiers.Control) => OpenProjectFile,
             (Key.E, KeyModifiers.Control) => ExportProject,
             (Key.F11, KeyModifiers.None) => ToggleOutput,
+            (Key.OemComma, KeyModifiers.Control) => ShowSettings,
             _ => null,
         };
         if (action is null) return;
@@ -387,10 +429,10 @@ public sealed class MainWindow : Window
 
     private async void NewSong()
     {
-        var words = await Dialogs.Words(this, "New Song", "", "", "Add Song");
+        var words = await Dialogs.Words(this, T("New Song"), "", "", T("Add Song"));
         if (words is not { } song) return;
         var reply = Run(new { type = "addSong", title = song.Title, text = song.Text });
-        if (!reply.Ok) await Dialogs.Inform(this, "The song wasn't added", reply.Error ?? "");
+        if (!reply.Ok) await Dialogs.Inform(this, T("The song wasn't added"), reply.Error ?? "");
     }
 
     private async void EditWords(Guid presentationID)
@@ -401,21 +443,21 @@ public sealed class MainWindow : Window
             status.Text = words.Error;
             return;
         }
-        var edited = await Dialogs.Words(this, "Edit Words", words.GetString("title") ?? "", words.GetString("text") ?? "", "Save");
+        var edited = await Dialogs.Words(this, T("Edit Words"), words.GetString("title") ?? "", words.GetString("text") ?? "", T("Save"));
         if (edited is not { } song) return;
         var reply = Run(new { type = "editWords", presentationID, title = song.Title, text = song.Text });
-        if (!reply.Ok) await Dialogs.Inform(this, "The words weren't changed", reply.Error ?? "");
+        if (!reply.Ok) await Dialogs.Inform(this, T("The words weren't changed"), reply.Error ?? "");
     }
 
     private async void ImportSongs()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Import Songs",
+            Title = T("Import Songs"),
             AllowMultiple = true,
             FileTypeFilter =
             [
-                new FilePickerFileType("Song files (OpenLyrics, ProPresenter, ChordPro, SongSelect, text)")
+                new FilePickerFileType(T("Song files (OpenLyrics, ProPresenter, ChordPro, SongSelect, text)"))
                 {
                     Patterns = ["*.xml", "*.pro", "*.cho", "*.chordpro", "*.chopro", "*.crd", "*.txt", "*.usr"],
                 },
@@ -429,41 +471,41 @@ public sealed class MainWindow : Window
         if (failures.Count == 0) return;
         var added = reply.GetInt("added");
         var lines = string.Join("\n", failures.Select(f => $"• {f.File}: {f.Reason}"));
-        await Dialogs.Inform(this, "Some files weren't imported",
-            (added == 1 ? "1 song was added." : $"{added} songs were added.") + " These files weren't:\n\n" + lines);
+        await Dialogs.Inform(this, T("Some files weren't imported"),
+            (added == 1 ? T("1 song was added.") : T("{0} songs were added.", added)) + " " + T("These files weren't:") + "\n\n" + lines);
     }
 
     private async void RenamePresentation(Guid presentationID, string title)
     {
-        var name = await Dialogs.Prompt(this, "Rename", "Name", title, "Rename");
+        var name = await Dialogs.Prompt(this, T("Rename"), T("Name"), title, T("Rename"));
         if (!string.IsNullOrWhiteSpace(name)) Run(new { type = "renamePresentation", presentationID, title = name });
     }
 
     private async void DeletePresentation(LibraryEntry entry)
     {
-        var sure = await Dialogs.Confirm(this, "Delete from the library?",
-            $"“{entry.Title}” is removed from the library and from every show. Edit › Undo brings it back.", "Delete");
+        var sure = await Dialogs.Confirm(this, T("Delete from the library?"),
+            T("“{0}” is removed from the library and from every show. Edit › Undo brings it back.", entry.Title), T("Delete"));
         if (sure) Run(new { type = "deletePresentation", presentationID = entry.ID });
     }
 
     private async void NewShow()
     {
-        var name = await Dialogs.Prompt(this, "New Show", "Name", "", "Add Show");
+        var name = await Dialogs.Prompt(this, T("New Show"), T("Name"), "", T("Add Show"));
         if (name is not null) Run(new { type = "addShow", title = name });
     }
 
     private async void RenameShow()
     {
         var current = state.Shows.FirstOrDefault(s => s.ID == state.ActiveShowID)?.Title ?? "";
-        var name = await Dialogs.Prompt(this, "Rename Show", "Name", current, "Rename");
+        var name = await Dialogs.Prompt(this, T("Rename Show"), T("Name"), current, T("Rename"));
         if (!string.IsNullOrWhiteSpace(name)) Run(new { type = "renameShow", showID = state.ActiveShowID, title = name });
     }
 
     private async void DeleteShow()
     {
-        var current = state.Shows.FirstOrDefault(s => s.ID == state.ActiveShowID)?.Title ?? "this show";
-        var sure = await Dialogs.Confirm(this, "Delete the show?",
-            $"“{current}” is deleted. Its songs stay in the library. Edit › Undo brings it back.", "Delete");
+        var current = state.Shows.FirstOrDefault(s => s.ID == state.ActiveShowID)?.Title ?? T("this show");
+        var sure = await Dialogs.Confirm(this, T("Delete the show?"),
+            T("“{0}” is deleted. Its songs stay in the library. Edit › Undo brings it back.", current), T("Delete"));
         if (sure) Run(new { type = "deleteShow", showID = state.ActiveShowID });
     }
 
@@ -471,13 +513,13 @@ public sealed class MainWindow : Window
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open Project File",
-            FileTypeFilter = [new FilePickerFileType("Presenter projects") { Patterns = ["*.json"] }],
+            Title = T("Open Project File"),
+            FileTypeFilter = [new FilePickerFileType(T("Presenter projects")) { Patterns = ["*.json"] }],
         });
         if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path) return;
-        var sure = await Dialogs.Confirm(this, "Open this project?",
-            $"It replaces “{state.ProjectName}”, which is backed up first. What's on the audience output stays until you " +
-            "take another slide live.", "Open");
+        var sure = await Dialogs.Confirm(this, T("Open this project?"),
+            T("It replaces “{0}”, which is backed up first. What's on the audience output stays until you take another slide live.",
+                state.ProjectName), T("Open"));
         if (!sure) return;
         var reply = Run(new { type = "openProject", path });
         if (reply.Ok)
@@ -485,11 +527,11 @@ public sealed class MainWindow : Window
             Pictures.Forget();
             shownRevision = -1;
             Refresh();
-            status.Text = $"Opened. The previous project was backed up to {reply.GetString("backup")}";
+            status.Text = T("Opened. The previous project was backed up to {0}", reply.GetString("backup"));
         }
         else
         {
-            await Dialogs.Inform(this, "The project wasn't opened", reply.Error ?? "");
+            await Dialogs.Inform(this, T("The project wasn't opened"), reply.Error ?? "");
         }
     }
 
@@ -497,43 +539,57 @@ public sealed class MainWindow : Window
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Export Project",
+            Title = T("Export Project"),
             SuggestedFileName = $"{state.ProjectName}.json",
             DefaultExtension = "json",
-            FileTypeChoices = [new FilePickerFileType("Presenter project") { Patterns = ["*.json"] }],
+            FileTypeChoices = [new FilePickerFileType(T("Presenter project")) { Patterns = ["*.json"] }],
         });
         if (file?.TryGetLocalPath() is not { } path) return;
         var reply = Run(new { type = "exportProject", path });
-        if (reply.Ok) status.Text = $"Exported to {path}. It opens in Presenter on a Mac or another PC, with its pictures.";
-        else await Dialogs.Inform(this, "The project wasn't exported", reply.Error ?? "");
+        if (reply.Ok) status.Text = T("Exported to {0}. It opens in Presenter on a Mac or another PC, with its pictures.", path);
+        else await Dialogs.Inform(this, T("The project wasn't exported"), reply.Error ?? "");
     }
 
     private async void ShowShortcuts()
     {
-        await Dialogs.Inform(this, "Keyboard Shortcuts", string.Join("\n",
-            "→  ↓  Space  Page Down — next slide",
-            "←  ↑  Page Up — previous slide",
-            "V C P B T I E N — verse, chorus, pre-chorus, bridge, tag, intro, ending, interlude",
-            "F1 — clear all",
-            "F2 — clear slide",
-            "F3 — clear background",
-            "F4 — blackout",
-            "F5 — restore output",
-            "F11 — show or hide the audience output",
-            "Ctrl+N — new song",
-            "Ctrl+I — import songs",
-            "Ctrl+Z / Ctrl+Y — undo / redo",
-            "Ctrl+O / Ctrl+E — open / export a project file"));
+        await Dialogs.Inform(this, T("Keyboard Shortcuts"), string.Join("\n",
+            T("→  ↓  Space  Page Down — next slide"),
+            T("←  ↑  Page Up — previous slide"),
+            T("V C P B T I E N — verse, chorus, pre-chorus, bridge, tag, intro, ending, interlude"),
+            T("F1 — clear all"),
+            T("F2 — clear slide"),
+            T("F3 — clear background"),
+            T("F4 — blackout"),
+            T("F5 — restore output"),
+            T("F11 — show or hide the audience output"),
+            T("Ctrl+N — new song"),
+            T("Ctrl+I — import songs"),
+            T("Ctrl+Z / Ctrl+Y — undo / redo"),
+            T("Ctrl+O / Ctrl+E — open / export a project file"),
+            T("Ctrl+, — settings")));
     }
 
     private async void ShowAbout()
     {
-        await Dialogs.Inform(this, "About Presenter",
-            $"Presenter for Windows {App.Version} (beta)\n" +
-            $"Project format {Engine.SchemaVersion}, the same as Presenter 1.5 for Mac.\n\n" +
-            $"Your project is kept in {engine.DataDirectory}\n\n" +
-            "Free and open source under the GPL-3.0 licence.\n" +
-            "Problems and ideas: " + App.IssuesURL);
+        await Dialogs.Inform(this, T("About Presenter"),
+            T("Presenter for Windows {0} (beta)", App.Version) + "\n" +
+            T("Project format {0}, the same as Presenter 1.5 for Mac.", Engine.SchemaVersion) + "\n\n" +
+            T("Your project is kept in {0}", engine.DataDirectory) + "\n\n" +
+            T("Free and open source under the GPL-3.0 licence.") + "\n" +
+            T("Problems and ideas: {0}", App.IssuesURL));
+    }
+
+    private void ShowSettings()
+    {
+        if (settingsWindow is not null)
+        {
+            settingsWindow.Activate();
+            return;
+        }
+        // Restarting while something is on the audience output would take it off mid-service.
+        settingsWindow = new SettingsWindow(() => output is not null && state.Audience is not null);
+        settingsWindow.Closed += (_, _) => settingsWindow = null;
+        settingsWindow.Show(this);
     }
 
     // MARK: - The audience output
@@ -547,10 +603,10 @@ public sealed class MainWindow : Window
         for (var index = 0; index < screens.Count; index++)
         {
             var screen = screens[index];
-            var name = $"Display {index + 1} — {screen.Bounds.Width}×{screen.Bounds.Height}{(screen.IsPrimary ? " (main)" : "")}";
+            var name = T("Display {0} — {1}×{2}", index + 1, screen.Bounds.Width, screen.Bounds.Height) + (screen.IsPrimary ? " " + T("(main)") : "");
             displayPicker.Items.Add(new ComboBoxItem { Content = name, Tag = screen });
         }
-        displayPicker.Items.Add(new ComboBoxItem { Content = "A window on this screen (to try things out)", Tag = null });
+        displayPicker.Items.Add(new ComboBoxItem { Content = T("A window on this screen (to try things out)"), Tag = null });
         if (chosen < 0 || chosen >= displayPicker.Items.Count)
         {
             // The first display that isn't the main one, else the test window.
@@ -586,7 +642,7 @@ public sealed class MainWindow : Window
 
     private void UpdateOutputButton()
     {
-        outputButton.Content = output is null ? "Show Audience Output (F11)" : "Hide Audience Output (F11)";
+        outputButton.Content = output is null ? T("Show Audience Output (F11)") : T("Hide Audience Output (F11)");
         displayPicker.IsEnabled = output is null;
     }
 
@@ -604,9 +660,9 @@ public sealed class MainWindow : Window
             Title = $"Presenter (beta) — {state.ProjectName}";
             problemBar.IsVisible = state.Problem is not null;
             problemText.Text = state.Problem;
-            undoItem.Header = state.UndoName is { } undo ? $"_Undo {undo}" : "_Undo";
+            undoItem.Header = state.UndoName is { } undo ? T("_Undo {0}", undo) : T("_Undo");
             undoItem.IsEnabled = state.UndoName is not null;
-            redoItem.Header = state.RedoName is { } redo ? $"_Redo {redo}" : "_Redo";
+            redoItem.Header = state.RedoName is { } redo ? T("_Redo {0}", redo) : T("_Redo");
             redoItem.IsEnabled = state.RedoName is not null;
 
             var projectChanged = state.ProjectRevision != shownRevision || state.ActiveShowID != shownShow;
@@ -662,13 +718,13 @@ public sealed class MainWindow : Window
             var position = index;
             var listItem = new ListBoxItem { Content = row, Tag = item };
             listItem.ContextMenu = PopupMenu(
-                Item("Edit Words…", () => EditWords(item.PresentationID)),
-                Item("Rename…", () => RenamePresentation(item.PresentationID, item.Title)),
+                Item(T("Edit Words…"), () => EditWords(item.PresentationID)),
+                Item(T("Rename…"), () => RenamePresentation(item.PresentationID, item.Title)),
                 new Separator(),
-                Item("Move Up", () => Run(new { type = "moveItem", itemID = item.ID, index = Math.Max(0, position - 1) })),
-                Item("Move Down", () => Run(new { type = "moveItem", itemID = item.ID, index = Math.Min(state.Items.Count - 1, position + 1) })),
+                Item(T("Move Up"), () => Run(new { type = "moveItem", itemID = item.ID, index = Math.Max(0, position - 1) })),
+                Item(T("Move Down"), () => Run(new { type = "moveItem", itemID = item.ID, index = Math.Min(state.Items.Count - 1, position + 1) })),
                 new Separator(),
-                Item("Remove from Show", () => Run(new { type = "removeItem", itemID = item.ID })));
+                Item(T("Remove from Show"), () => Run(new { type = "removeItem", itemID = item.ID })));
             itemList.Items.Add(listItem);
         }
     }
@@ -682,11 +738,11 @@ public sealed class MainWindow : Window
             var listItem = new ListBoxItem { Content = row, Tag = entry };
             listItem.DoubleTapped += (_, _) => Run(new { type = "addToShow", presentationID = entry.ID });
             listItem.ContextMenu = PopupMenu(
-                Item("Add to Show", () => Run(new { type = "addToShow", presentationID = entry.ID })),
-                Item("Edit Words…", () => EditWords(entry.ID)),
-                Item("Rename…", () => RenamePresentation(entry.ID, entry.Title)),
+                Item(T("Add to Show"), () => Run(new { type = "addToShow", presentationID = entry.ID })),
+                Item(T("Edit Words…"), () => EditWords(entry.ID)),
+                Item(T("Rename…"), () => RenamePresentation(entry.ID, entry.Title)),
                 new Separator(),
-                Item("Delete from Library…", () => DeletePresentation(entry)));
+                Item(T("Delete from Library…"), () => DeletePresentation(entry)));
             libraryList.Items.Add(listItem);
         }
     }
@@ -712,17 +768,10 @@ public sealed class MainWindow : Window
             number++;
             var thumbnail = new SlideView(entry.Slide, thumbnail: true) { Width = TileWidth, Height = TileHeight };
             var caption = new DockPanel { Margin = new Thickness(4, 4, 4, 2) };
-            var index = new TextBlock { Text = number.ToString(), Opacity = 0.5, FontSize = 12 };
+            var index = new TextBlock { Text = number.ToString(), Opacity = 0.5, Classes = { "small" } };
             DockPanel.SetDock(index, Dock.Right);
             caption.Children.Add(index);
-            caption.Children.Add(new TextBlock
-            {
-                Text = entry.Label ?? "",
-                FontSize = 12,
-                FontWeight = FontWeight.SemiBold,
-                Foreground = SectionBrush(entry.Section),
-                TextTrimming = TextTrimming.CharacterEllipsis,
-            });
+            if (!string.IsNullOrEmpty(entry.Label)) caption.Children.Add(SectionTag(entry.Label, entry.Section));
             var stack = new StackPanel();
             stack.Children.Add(thumbnail);
             stack.Children.Add(caption);
@@ -733,9 +782,9 @@ public sealed class MainWindow : Window
                 Margin = new Thickness(0, 0, 10, 10),
                 BorderThickness = new Thickness(3),
                 CornerRadius = new CornerRadius(4),
-                Background = PanelBrush,
                 Cursor = new Cursor(StandardCursorType.Hand),
             };
+            App.UseBrush(tile, Border.BackgroundProperty, App.PanelBrushKey);
             var position = entry.Position;
             tile.PointerPressed += (_, e) =>
             {
@@ -754,15 +803,23 @@ public sealed class MainWindow : Window
             tile.BorderBrush = position == state.Live ? LiveBrush : Brushes.Transparent;
     }
 
-    /// <summary>Section label colours, close to the Mac app's.</summary>
-    private static IBrush SectionBrush(string? section) => new SolidColorBrush(section switch
+    /// <summary>
+    /// A slide's group label ("Verse 1", "Coro") on a capsule in its section's colour, as on the Mac. The colours come
+    /// from Settings, in the variant for the theme on screen.
+    /// </summary>
+    public static Control SectionTag(string label, string? section) => new Border
     {
-        "verse" => Color.FromRgb(90, 160, 255),
-        "chorus" => Color.FromRgb(255, 110, 140),
-        "preChorus" => Color.FromRgb(255, 170, 90),
-        "bridge" => Color.FromRgb(170, 130, 255),
-        "tag" or "ending" => Color.FromRgb(120, 210, 160),
-        "intro" or "interlude" => Color.FromRgb(200, 200, 120),
-        _ => Color.FromRgb(180, 180, 190),
-    });
+        Background = new SolidColorBrush(Settings.Current.SectionColor(section, App.IsDark)),
+        CornerRadius = new CornerRadius(9),
+        Padding = new Thickness(7, 1),
+        HorizontalAlignment = HorizontalAlignment.Left,
+        Child = new TextBlock
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brushes.White,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Classes = { "small" },
+        },
+    };
 }

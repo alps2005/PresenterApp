@@ -63,6 +63,16 @@ try
         Check(engine.State().Items.Count == 2, "the project is saved and opens again");
     }
 
+    Engine.SetLanguage("es");
+    using (var engine = Engine.Open(Path.Combine(root, "spanish")))
+    {
+        var state = engine.State();
+        Check(state.Shows.FirstOrDefault()?.Title == "Culto", $"in Spanish, a new project's show is named in Spanish ({state.Shows.FirstOrDefault()?.Title})");
+        var nothing = engine.Send(new { type = "next" });
+        Check(nothing.Error == "No hay nada en vivo.", $"in Spanish, the engine explains itself in Spanish ({nothing.Error})");
+    }
+    Engine.SetLanguage("en");
+
     using (var engine = Engine.Open(Path.Combine(root, "second")))
     {
         var opened = engine.Send(new { type = "openProject", path = Path.Combine(root, "export.json") });

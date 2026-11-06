@@ -45,7 +45,7 @@ public final class BridgeSession {
         } catch let error as BridgeError {
             reply = .failure(error.message)
         } catch is DecodingError {
-            reply = .failure("The app sent a command the engine doesn't understand.")
+            reply = .failure(Localization.text("The app sent a command the engine doesn't understand."))
         } catch {
             reply = .failure(error.localizedDescription)
         }
@@ -97,14 +97,14 @@ public final class BridgeSession {
         case "restore": return result(coordinator.restoreOutput())
         case "section":
             guard let key = try command.require(\.key).first, let kind = SongSectionKind(hotkey: key) else {
-                throw BridgeError("That key doesn't name a section.")
+                throw BridgeError(Localization.text("That key doesn't name a section."))
             }
             return result(coordinator.takeLiveSection(kind, number: command.number))
 
         // Songs and the library
         case "addSong":
             guard let item = coordinator.addSong(title: command.title ?? "", lyrics: try command.require(\.text)) else {
-                throw BridgeError("Type or paste the song's words first.")
+                throw BridgeError(Localization.text("Type or paste the song's words first."))
             }
             return .success(["itemID": item.id.uuidString])
         case "importSongs": return try importSongs(at: command.require(\.paths))
@@ -118,7 +118,7 @@ public final class BridgeSession {
             let presentationID = try command.require(\.presentationID)
             let text = try command.require(\.text)
             guard !LyricsParser.slides(from: text).isEmpty else {
-                throw BridgeError("A presentation needs at least one slide. Type some words first.")
+                throw BridgeError(Localization.text("A presentation needs at least one slide. Type some words first."))
             }
             if let title = command.title?.trimmingCharacters(in: .whitespaces), !title.isEmpty {
                 _ = coordinator.renamePresentation(presentationID, to: title)
@@ -153,11 +153,11 @@ public final class BridgeSession {
 
         // The project
         case "undo":
-            guard coordinator.canUndo else { throw BridgeError("There's nothing to undo.") }
+            guard coordinator.canUndo else { throw BridgeError(Localization.text("There's nothing to undo.")) }
             coordinator.undo()
             return .success()
         case "redo":
-            guard coordinator.canRedo else { throw BridgeError("There's nothing to redo.") }
+            guard coordinator.canRedo else { throw BridgeError(Localization.text("There's nothing to redo.")) }
             coordinator.redo()
             return .success()
         case "openProject": return try openProject(at: command.require(\.path))
@@ -166,7 +166,7 @@ public final class BridgeSession {
             problem = nil
             return .success()
         default:
-            throw BridgeError("The app sent a command the engine doesn't know: \(command.type).")
+            throw BridgeError(Localization.text("The app sent a command the engine doesn't know: {0}.", command.type))
         }
     }
 
@@ -193,12 +193,12 @@ public final class BridgeSession {
                 continue
             } catch let error as SongImporter.ImportError {
                 reason = switch error {
-                case .unreadable: "Not a song file Presenter can read."
-                case .malformed: "The file is damaged or incomplete."
-                case .noLyrics: "No words found."
+                case .unreadable: Localization.text("Not a song file Presenter can read.")
+                case .malformed: Localization.text("The file is damaged or incomplete.")
+                case .noLyrics: Localization.text("No words found.")
                 }
             } catch {
-                reason = "The file couldn't be read."
+                reason = Localization.text("The file couldn't be read.")
             }
             failures.append(["file": url.lastPathComponent, "reason": reason])
         }
@@ -216,14 +216,14 @@ public final class BridgeSession {
         } catch let error as ProjectStoreError {
             throw BridgeError(error.message)
         } catch {
-            throw BridgeError("The file couldn't be read. \(error.localizedDescription)")
+            throw BridgeError(Localization.text("The file couldn't be read. {0}", error.localizedDescription))
         }
         saveIfChanged()
         let backup: URL
         do {
             backup = try backups.save(coordinator.project)
         } catch {
-            throw BridgeError("The current project couldn't be backed up, so it wasn't replaced. \(error.localizedDescription)")
+            throw BridgeError(Localization.text("The current project couldn't be backed up, so it wasn't replaced. {0}", error.localizedDescription))
         }
         coordinator.replaceProject(opened)
         return .success(["backup": BridgeJSON.path(backup)])
@@ -237,7 +237,7 @@ public final class BridgeSession {
         } catch let error as ProjectStoreError {
             throw BridgeError(error.message)
         } catch {
-            throw BridgeError("The project couldn't be exported. \(error.localizedDescription)")
+            throw BridgeError(Localization.text("The project couldn't be exported. {0}", error.localizedDescription))
         }
         return .success()
     }
@@ -274,7 +274,7 @@ struct BridgeCommand: Decodable {
 
     func require<Value>(_ field: KeyPath<BridgeCommand, Value?>) throws -> Value {
         guard let value = self[keyPath: field] else {
-            throw BridgeError("The app left out part of a \(type) command.")
+            throw BridgeError(Localization.text("The app left out part of a {0} command.", type))
         }
         return value
     }

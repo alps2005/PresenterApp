@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Presenter.Windows.Core;
+using static Presenter.Windows.Strings;
 
 namespace Presenter.Windows;
 
@@ -20,12 +21,12 @@ public sealed class OutputWindow : Window
         KeyDown += (_, e) => keys(e);
         if (screen is null)
         {
-            Title = "Presenter — Audience (test window)";
+            Title = T("Presenter — Audience (test window)");
             Width = 960;
             Height = 540;
             return;
         }
-        Title = "Presenter — Audience";
+        Title = T("Presenter — Audience");
         ShowInTaskbar = false;
         SystemDecorations = SystemDecorations.None;
         WindowStartupLocation = WindowStartupLocation.Manual;
