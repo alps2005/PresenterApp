@@ -25,6 +25,8 @@ What it does
   so you can try things out (F11 shows or hides it).
 - Open a project exported from Presenter on a Mac (File > Open Project File), with its pictures, and export yours
   to take to another computer.
+- Settings (File > Settings, Ctrl+,): dark or light, text size, English or Spanish (Español), and the colours for
+  LIVE and each kind of song section.
 
 Not in this beta yet: playing videos and audio, Bibles, editing slide styles, themes, stage display, timers and
 messages. Slides made on a Mac with those still show their words and pictures.
