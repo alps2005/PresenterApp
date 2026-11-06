@@ -60,7 +60,7 @@ struct ImportSongsSheet: View {
                     Text("None").tag(UUID?.none)
                     Divider()
                     ForEach(coordinator.project.themes) { theme in
-                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                        Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                     }
                 }
                 .fixedSize()
@@ -160,15 +160,15 @@ struct ImportSongsSheet: View {
 
     private func message(_ error: SongImporter.ImportError) -> String {
         switch error {
-        case .unreadable: "Not a song file Presenter can read."
-        case .malformed: "The file is damaged or incomplete."
-        case .noLyrics: "No words found."
+        case .unreadable: String(localized: "Not a song file Presenter can read.")
+        case .malformed: String(localized: "The file is damaged or incomplete.")
+        case .noLyrics: String(localized: "No words found.")
         }
     }
 
     private func chooseFiles() {
         let types = SongImporter.fileExtensions.compactMap { UTType(filenameExtension: $0) }
-        let urls = MediaPanel.choose(types, multiple: true, message: "Choose song files to import.")
+        let urls = MediaPanel.choose(types, multiple: true, message: String(localized: "Choose song files to import."))
         read(urls)
     }
 

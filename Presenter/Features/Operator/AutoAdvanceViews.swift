@@ -39,9 +39,9 @@ struct AdvanceBadge: View {
             Text(AdvanceTime.label(seconds)).monospacedDigit()
         }
         .foregroundStyle(advance == nil ? Color.secondary : Palette.live)
-        .help(advance == nil ? "Moves on by itself after \(AdvanceTime.label(seconds))" : "Moving on by itself")
+        .help(advance == nil ? String(localized: "Moves on by itself after \(AdvanceTime.label(seconds))") : String(localized: "Moving on by itself"))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Moves on after \(AdvanceTime.label(seconds))")
+        .accessibilityLabel(String(localized: "Moves on after \(AdvanceTime.label(seconds))"))
     }
 }
 
@@ -199,7 +199,7 @@ struct SlideshowIntervalSheet: View {
             Picker("Slideshow", selection: $choice) {
                 Text("Off").tag(Choice.off)
                 ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
-                    Text("Every \(AdvanceTime.label(seconds))").tag(Choice.preset(seconds))
+                    Text(String(localized: "Every \(AdvanceTime.label(seconds))")).tag(Choice.preset(seconds))
                 }
                 HStack(spacing: Spacing.sm) {
                     Text("Every")

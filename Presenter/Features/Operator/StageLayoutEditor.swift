@@ -51,7 +51,7 @@ struct StageLayoutEditor: View {
         .frame(width: 1040, height: 600)
         .onAppear { layoutID = coordinator.project.stage.layoutID ?? coordinator.project.stageLayouts.first?.id }
         .onChange(of: layoutID) { regionID = nil }
-        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.name ?? "")”?"),
                          message: pendingDeletion.map(deletionMessage) ?? "",
                          of: $pendingDeletion) { layout in
             coordinator.deleteStageLayout(layout.id)
@@ -64,7 +64,7 @@ struct StageLayoutEditor: View {
             List(selection: $layoutID) {
                 ForEach(coordinator.project.stageLayouts) { layout in
                     HStack {
-                        Text(layout.name.isEmpty ? "Untitled" : layout.name)
+                        Text(layout.name.isEmpty ? String(localized: "Untitled") : layout.name)
                             .lineLimit(1)
                         Spacer()
                         if coordinator.project.stage.layoutID == layout.id {
@@ -138,7 +138,7 @@ struct StageLayoutEditor: View {
     }
 
     private func add(basedOn source: UUID?) {
-        if let layout = coordinator.addStageLayout(named: "New Layout", basedOn: source) { layoutID = layout.id }
+        if let layout = coordinator.addStageLayout(named: String(localized: "New Layout"), basedOn: source) { layoutID = layout.id }
     }
 
     private func duplicate(_ layout: StageLayout) {
@@ -154,8 +154,8 @@ struct StageLayoutEditor: View {
 
     private func deletionMessage(_ layout: StageLayout) -> String {
         coordinator.project.stage.layoutID == layout.id
-            ? "The stage display is using it, so it goes back to the standard look. You can undo this."
-            : "You can undo this."
+            ? String(localized: "The stage display is using it, so it goes back to the standard look. You can undo this.")
+            : String(localized: "You can undo this.")
     }
 }
 
@@ -434,15 +434,15 @@ extension StageRegion.Kind {
     /// What the region shows, for the inspector.
     var caption: String {
         switch self {
-        case .liveText: "The live slide's words, shrinking to fit."
-        case .nextText: "The next slide's words, so singers see what's coming."
-        case .liveSlide: "The live slide as the audience sees it."
-        case .nextSlide: "The next slide as the audience will see it."
-        case .clock: "The time of day."
-        case .timer: "A timer's value. Countdowns turn red when they run over."
-        case .notes: "The live slide's notes. Edits show straight away."
-        case .message: "The message sent from the Stage tab, on a yellow bar. Empty while there's no message."
-        case .text: "Fixed words, such as a reminder for the band."
+        case .liveText: String(localized: "The live slide's words, shrinking to fit.")
+        case .nextText: String(localized: "The next slide's words, so singers see what's coming.")
+        case .liveSlide: String(localized: "The live slide as the audience sees it.")
+        case .nextSlide: String(localized: "The next slide as the audience will see it.")
+        case .clock: String(localized: "The time of day.")
+        case .timer: String(localized: "A timer's value. Countdowns turn red when they run over.")
+        case .notes: String(localized: "The live slide's notes. Edits show straight away.")
+        case .message: String(localized: "The message sent from the Stage tab, on a yellow bar. Empty while there's no message.")
+        case .text: String(localized: "Fixed words, such as a reminder for the band.")
         }
     }
 }

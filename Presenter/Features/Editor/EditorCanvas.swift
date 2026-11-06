@@ -540,9 +540,9 @@ struct SelectionChrome: View {
 private extension SlideElement {
     var helpText: String {
         switch self {
-        case .text: "Text: drag to move, double-click to edit"
-        case .shape: "Shape: drag to move"
-        case .image: "Image: drag to move"
+        case .text: String(localized: "Text: drag to move, double-click to edit")
+        case .shape: String(localized: "Shape: drag to move")
+        case .image: String(localized: "Image: drag to move")
         }
     }
 }

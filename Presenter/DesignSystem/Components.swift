@@ -21,13 +21,13 @@ enum ShowState {
 
     var title: String {
         switch self {
-        case .live: "LIVE"
-        case .cued: "CUED"
-        case .blackout: "BLACKOUT"
-        case .backgroundOnly: "BACKGROUND ONLY"
-        case .cleared: "CLEARED"
-        case .nothingLive: "NOTHING LIVE"
-        case .edited: "EDITED"
+        case .live: String(localized: "LIVE")
+        case .cued: String(localized: "CUED")
+        case .blackout: String(localized: "BLACKOUT")
+        case .backgroundOnly: String(localized: "BACKGROUND ONLY")
+        case .cleared: String(localized: "CLEARED")
+        case .nothingLive: String(localized: "NOTHING LIVE")
+        case .edited: String(localized: "EDITED")
         }
     }
 
@@ -45,13 +45,13 @@ enum ShowState {
 
     var accessibilityLabel: String {
         switch self {
-        case .live: "Live"
-        case .cued: "Cued"
-        case .blackout: "Blackout"
-        case .backgroundOnly: "Background only"
-        case .cleared: "Cleared"
-        case .nothingLive: "Nothing live"
-        case .edited: "Edited"
+        case .live: String(localized: "Live")
+        case .cued: String(localized: "Cued")
+        case .blackout: String(localized: "Blackout")
+        case .backgroundOnly: String(localized: "Background only")
+        case .cleared: String(localized: "Cleared")
+        case .nothingLive: String(localized: "Nothing live")
+        case .edited: String(localized: "Edited")
         }
     }
 }
@@ -321,8 +321,8 @@ extension View {
     /// Asks before deleting a slide, explaining that a live slide stays on the output.
     func confirmSlideDeletion<Item>(of item: Binding<Item?>, onDelete: @escaping (Item) -> Void) -> some View {
         confirmDeletion(
-            "Delete this slide?",
-            message: "If this slide is live, it stays on the audience output until you take another slide live.",
+            String(localized: "Delete this slide?"),
+            message: String(localized: "If this slide is live, it stays on the audience output until you take another slide live."),
             of: item,
             onDelete: onDelete
         )

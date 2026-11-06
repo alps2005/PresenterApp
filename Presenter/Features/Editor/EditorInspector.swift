@@ -58,13 +58,13 @@ struct EditorInspector: View {
         switch tab {
         case .format:
             switch element {
-            case .text: "Text"
-            case .shape: "Shape"
-            case .image: "Image"
-            case nil: "Slide"
+            case .text: String(localized: "Text")
+            case .shape: String(localized: "Shape")
+            case .image: String(localized: "Image")
+            case nil: String(localized: "Slide")
             }
-        case .animate: "Animate"
-        case .document: "Document"
+        case .animate: String(localized: "Animate")
+        case .document: String(localized: "Document")
         }
     }
 
@@ -80,7 +80,7 @@ struct EditorInspector: View {
             case nil: slideFormat(slide)
             }
         } else {
-            placeholder("Select a slide to format it.")
+            placeholder(String(localized: "Select a slide to format it."))
         }
     }
 
@@ -129,7 +129,7 @@ struct EditorInspector: View {
     private func liveValues(_ text: TextElement, slide: SlideDocument) -> some View {
         let known = Set(coordinator.project.timers.map { $0.name.lowercased() })
         let missing = LiveText.timerNames(in: text.text).filter { !known.contains($0.lowercased()) }
-        return section("Live Values") {
+        return section(String(localized: "Live Values")) {
             Menu("Insert") {
                 ForEach(coordinator.project.timers) { timer in
                     Button("Timer: \(timer.name)") { insert("{timer:\(timer.name)}", into: text, on: slide) }
@@ -141,7 +141,7 @@ struct EditorInspector: View {
             .fixedSize()
             .help("Add a timer or the clock at the end of the text")
             ForEach(missing, id: \.self) { name in
-                WarningLabel("There's no timer called “\(name)”, so it shows nothing. Make it in the Live panel's Timers tab, or fix the name.")
+                WarningLabel(String(localized: "There's no timer called “\(name)”, so it shows nothing. Make it in the Live panel's Timers tab, or fix the name."))
             }
             Text("The audience and the stage see the time, updating as it runs. Here it shows as typed.")
                 .font(.ui(.caption))
@@ -186,9 +186,9 @@ struct EditorInspector: View {
 
     private static func overrideText(_ overrides: Set<ThemedProperty>) -> String {
         switch (overrides.contains(.style), overrides.contains(.box)) {
-        case (true, true): "Own style and position"
-        case (true, false): "Own style; position from the theme"
-        default: "Own position; style from the theme"
+        case (true, true): String(localized: "Own style and position")
+        case (true, false): String(localized: "Own style; position from the theme")
+        default: String(localized: "Own position; style from the theme")
         }
     }
 
@@ -211,7 +211,7 @@ struct EditorInspector: View {
             .labelsHidden()
             .fixedSize()
             if shape.kind == .roundedRectangle {
-                labeledSlider("Corners", value: Binding(
+                labeledSlider(String(localized: "Corners"), value: Binding(
                     get: { shape.cornerRadius },
                     set: { radius in
                         var updated = shape
@@ -228,14 +228,14 @@ struct EditorInspector: View {
                 update(.shape(updated), on: slide)
             }
         }
-        section("Border") {
-            optionalColor("Border", color: shape.stroke, defaultColor: .white) { stroke in
+        section(String(localized: "Border")) {
+            optionalColor(String(localized: "Border"), color: shape.stroke, defaultColor: .white) { stroke in
                 var updated = shape
                 updated.stroke = stroke
                 update(.shape(updated), on: slide)
             }
             if shape.stroke != nil {
-                labeledSlider("Width", value: Binding(
+                labeledSlider(String(localized: "Width"), value: Binding(
                     get: { shape.strokeWidth },
                     set: { width in
                         var updated = shape
@@ -255,7 +255,7 @@ struct EditorInspector: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             if mediaLibrary.isMissing(image.assetID) {
-                WarningLabel("The image file is missing or unreadable.")
+                WarningLabel(String(localized: "The image file is missing or unreadable."))
             }
             Button("Replace Image…") { replaceImage(image, slide: slide) }
             if let importError {
@@ -278,7 +278,7 @@ struct EditorInspector: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
-            labeledSlider("Opacity", value: Binding(
+            labeledSlider(String(localized: "Opacity"), value: Binding(
                 get: { image.opacity },
                 set: { opacity in
                     var updated = image
@@ -292,7 +292,7 @@ struct EditorInspector: View {
 
     @ViewBuilder
     private func slideFormat(_ slide: SlideDocument) -> some View {
-        section("Group") {
+        section(String(localized: "Group")) {
             HStack {
                 TextField("None", text: Binding(
                     get: { slide.label ?? "" },
@@ -300,7 +300,7 @@ struct EditorInspector: View {
                 ))
                 .textFieldStyle(.roundedBorder)
                 Menu("Choose") {
-                    ForEach(["Verse 1", "Verse 2", "Verse 3", "Pre-Chorus", "Chorus", "Bridge", "Tag", "Intro", "Outro"], id: \.self) { name in
+                    ForEach([String(localized: "Verse 1"), String(localized: "Verse 2"), String(localized: "Verse 3"), String(localized: "Pre-Chorus"), String(localized: "Chorus"), String(localized: "Bridge"), String(localized: "Tag"), String(localized: "Intro"), String(localized: "Outro")], id: \.self) { name in
                         Button(name) { coordinator.setLabel(name, slideID: slide.id, inPresentation: presentation.id) }
                     }
                     Divider()
@@ -308,14 +308,14 @@ struct EditorInspector: View {
                 }
                 .fixedSize()
             }
-            Text("Shown on the slide's thumbnail, like \"Verse 1\" or \"Coro\". The audience never sees it.")
+            Text(String(localized: "Shown on the slide's thumbnail, like \"Verse 1\" or \"Coro\". The audience never sees it."))
                 .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
         section("Background") {
             BackgroundInspector(coordinator: coordinator, target: .slide(slide.id, presentationID: presentation.id))
         }
-        section("Go To Next") {
+        section(String(localized: "Go To Next")) {
             GoToNextControls(timer: Binding(
                 get: { slide.goToNext },
                 set: { coordinator.setGoToNext($0, forSlides: [slide.id], inPresentation: presentation.id) }
@@ -329,7 +329,7 @@ struct EditorInspector: View {
                     set: { coordinator.setAudioCue($0, slideID: slide.id, inPresentation: presentation.id) }
                 ))
             }
-            section("Actions") {
+            section(String(localized: "Actions")) {
                 ActionListEditor(project: coordinator.project, actions: slide.actions) { actions in
                     coordinator.setSlideActions(actions, slideID: slide.id, inPresentation: presentation.id)
                 }
@@ -339,7 +339,7 @@ struct EditorInspector: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        section("Presenter Notes") {
+        section(String(localized: "Presenter Notes")) {
             TextEditor(text: Binding(
                 get: { slide.notes ?? "" },
                 set: { coordinator.setNotes($0, slideID: slide.id, inPresentation: presentation.id) }
@@ -361,7 +361,7 @@ struct EditorInspector: View {
 
     @ViewBuilder
     private func arrange(_ element: SlideElement, slide: SlideDocument) -> some View {
-        section("Arrange") {
+        section(String(localized: "Arrange")) {
             if let frame = element.frame {
                 Grid(alignment: .leading, horizontalSpacing: Spacing.sm, verticalSpacing: Spacing.sm) {
                     GridRow {
@@ -469,7 +469,7 @@ struct EditorInspector: View {
                             set: { coordinator.setTransition(transition.with(edge: $0), slideID: slide.id, inPresentation: presentation.id) }
                         ))
                     }
-                    labeledSlider("Duration", value: Binding(
+                    labeledSlider(String(localized: "Duration"), value: Binding(
                         get: { transition.duration },
                         set: { coordinator.setTransition(transition.with(duration: $0), slideID: slide.id, inPresentation: presentation.id) }
                     ), in: PresenterCore.SlideTransition.durationRange, format: { String(format: "%.1f s", $0) })
@@ -485,7 +485,7 @@ struct EditorInspector: View {
                     coordinator.applyTransitionToAllSlides(from: slide.id, inPresentation: presentation.id)
                 }
             }
-            section("Element Transitions") {
+            section(String(localized: "Element Transitions")) {
                 if let element {
                     elementTransitionControls("In", phase: .in, element: element, slide: slide)
                     elementTransitionControls("Out", phase: .out, element: element, slide: slide)
@@ -499,7 +499,7 @@ struct EditorInspector: View {
                 }
             }
         } else {
-            placeholder("Select a slide to set its transition.")
+            placeholder(String(localized: "Select a slide to set its transition."))
         }
     }
 
@@ -543,7 +543,7 @@ struct EditorInspector: View {
                         }
                     ), phase: phase)
                 }
-                labeledSlider("Duration", value: Binding(
+                labeledSlider(String(localized: "Duration"), value: Binding(
                     get: { transition.duration },
                     set: { duration in
                         var updated = transition
@@ -552,7 +552,7 @@ struct EditorInspector: View {
                     }
                 ), in: ElementTransition.durationRange, format: { String(format: "%.1f s", $0) })
                 if phase == .in {
-                    labeledSlider("Delay", value: Binding(
+                    labeledSlider(String(localized: "Delay"), value: Binding(
                         get: { transition.delay },
                         set: { delay in
                             var updated = transition
@@ -569,7 +569,7 @@ struct EditorInspector: View {
 
     @ViewBuilder
     private var documentTab: some View {
-        section("Presentation") {
+        section(String(localized: "Presentation")) {
             TextField("Title", text: Binding(
                 get: { presentation.title },
                 set: { coordinator.renamePresentation(presentation.id, to: $0) }
@@ -596,7 +596,7 @@ struct EditorInspector: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            section("Soundtrack") {
+            section(String(localized: "Soundtrack")) {
                 SoundtrackControls(coordinator: coordinator, track: Binding(
                     get: { presentation.soundtrack },
                     set: { coordinator.setSoundtrack($0, presentationID: presentation.id) }
@@ -611,7 +611,7 @@ struct EditorInspector: View {
                 Text("None").tag(UUID?.none)
                 Divider()
                 ForEach(coordinator.project.themes) { theme in
-                    Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                    Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                 }
             }
             .labelsHidden()
@@ -712,7 +712,7 @@ struct EditorInspector: View {
     }
 
     private func replaceImage(_ image: ImageElement, slide: SlideDocument) {
-        guard let url = EditorImageImport.chooseImage(message: "Choose a replacement image") else { return }
+        guard let url = EditorImageImport.chooseImage(message: String(localized: "Choose a replacement image")) else { return }
         importError = nil
         Task {
             do {

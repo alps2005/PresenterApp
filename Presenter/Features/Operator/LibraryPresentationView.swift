@@ -17,7 +17,7 @@ struct LibraryPresentationView: View {
         [GridItem(.adaptive(minimum: thumbnailWidth, maximum: thumbnailWidth * 1.45), spacing: Spacing.lg)]
     }
 
-    private var title: String { presentation.title.isEmpty ? "Untitled" : presentation.title }
+    private var title: String { presentation.title.isEmpty ? String(localized: "Untitled") : presentation.title }
 
     var body: some View {
         VStack(spacing: 0) {

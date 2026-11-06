@@ -109,7 +109,7 @@ struct WelcomeView: View {
                 persistence.openProject()
             } label: {
                 Label("Open Project…", systemImage: "folder")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             }
             .help("Replace this project with one exported from Presenter")
             Button {
@@ -117,7 +117,7 @@ struct WelcomeView: View {
                 ui.isImportingSongs = true
             } label: {
                 Label("Import Songs…", systemImage: "music.note.list")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             }
             .help("Add OpenLyrics, ChordPro or SongSelect files to the open show")
             Menu {
@@ -129,7 +129,7 @@ struct WelcomeView: View {
                 }
             } label: {
                 Label("New Show", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             } primaryAction: {
                 isNamingNewShow = true
             }
@@ -142,7 +142,7 @@ struct WelcomeView: View {
     /// updater needs it, and About Presenter still shows it.
     static var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        return "Version \(version)"
+        return String(localized: "Version \(version)")
     }
 
     private func openOperatorWindow() {
@@ -167,4 +167,19 @@ private struct WelcomeWindowStyler: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+/// The welcome window's three actions: the icon above the words, so longer translations ("Importar canciones…")
+/// fit the narrow window without shrinking.
+private struct WelcomeActionLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(spacing: Spacing.xxs) {
+            configuration.icon
+            configuration.title
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxs)
+    }
 }

@@ -89,7 +89,7 @@ struct CCLIReportSheet: View {
             do {
                 entries = try await Task.detached(priority: .userInitiated) { try log.entries() }.value
             } catch {
-                problem = "The song usage log couldn't be read: \(error.localizedDescription)"
+                problem = String(localized: "The song usage log couldn't be read: \(error.localizedDescription)")
             }
         }
     }
@@ -106,12 +106,12 @@ struct CCLIReportSheet: View {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
-        panel.nameFieldStringValue = "CCLI Report \(formatter.string(from: start)) to \(formatter.string(from: end)).csv"
+        panel.nameFieldStringValue = String(localized: "CCLI Report \(formatter.string(from: start)) to \(formatter.string(from: end)).csv")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try SongUsageLog.csv(rows, dateFormatter: formatter).write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            problem = "The report couldn't be saved: \(error.localizedDescription)"
+            problem = String(localized: "The report couldn't be saved: \(error.localizedDescription)")
         }
     }
 }

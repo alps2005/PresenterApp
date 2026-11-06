@@ -116,8 +116,8 @@ struct ScriptureSheet: View {
             if let second, second != first { await library.open(second, keeping: Set([first].compactMap { $0 })) }
         }
         .confirmDeletion(
-            "Remove this Bible?",
-            message: "Slides already made from it stay as they are. You can import the file again later.",
+            String(localized: "Remove this Bible?"),
+            message: String(localized: "Slides already made from it stay as they are. You can import the file again later."),
             of: $translationPendingRemoval
         ) { entry in
             library.delete(entry.id)
@@ -130,9 +130,9 @@ struct ScriptureSheet: View {
     @ViewBuilder
     private var cuedSlideWarning: some View {
         if coordinator.previewSlide == nil {
-            WarningLabel("Nothing is cued. Cue the slide the verses should show on, then open this again.")
+            WarningLabel(String(localized: "Nothing is cued. Cue the slide the verses should show on, then open this again."))
         } else {
-            WarningLabel("The verses will show on top of the cued slide. Its words and pictures stay underneath, so check the preview before showing them.")
+            WarningLabel(String(localized: "The verses will show on top of the cued slide. Its words and pictures stay underneath, so check the preview before showing them."))
         }
     }
 
@@ -159,7 +159,7 @@ struct ScriptureSheet: View {
                 .disabled(translation == nil)
                 .help("Change the name and the abbreviation that slides show, like “KJV”")
                 .popover(isPresented: $isRenaming) {
-                    PopoverForm("Rename Bible", primary: "Rename", width: 280, onCancel: { isRenaming = false }) {
+                    PopoverForm(String(localized: "Rename Bible"), primary: String(localized: "Rename"), width: 280, onCancel: { isRenaming = false }) {
                         rename()
                         isRenaming = false
                     } fields: {
@@ -198,7 +198,7 @@ struct ScriptureSheet: View {
     private func importBible() {
         let types = [UTType.xml] + ["usx", "usfx"].compactMap { UTType(filenameExtension: $0) }
         let urls = MediaPanel.choose(types, multiple: true, folders: true,
-                                     message: "Choose a Bible file (Zefania, OSIS, USFX), or a USX Bible's folder or book files.")
+                                     message: String(localized: "Choose a Bible file (Zefania, OSIS, USFX), or a USX Bible's folder or book files."))
         guard !urls.isEmpty else { return }
         importError = nil
         Task {
@@ -347,7 +347,7 @@ struct ScriptureSheet: View {
                     Text("None").tag(UUID?.none)
                     Divider()
                     ForEach(coordinator.project.themes) { theme in
-                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                        Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                     }
                 }
                 .fixedSize()

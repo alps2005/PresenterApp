@@ -18,7 +18,7 @@ struct PresenterCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Presentation") {
-                coordinator.addPresentation(title: "Untitled")
+                coordinator.addPresentation(title: String(localized: "Untitled"))
             }
             .keyboardShortcut("n")
 
@@ -74,10 +74,10 @@ struct PresenterCommands: Commands {
         // Text fields and text editors undo their own typing while they have focus; everywhere else ⌘Z undoes
         // the last change to the project. Live commands (Take Live, Blackout…) are never undone.
         CommandGroup(replacing: .undoRedo) {
-            Button(coordinator.undoActionName.map { "Undo \($0)" } ?? "Undo") { undo() }
+            Button(coordinator.undoActionName.map { String(localized: "Undo \($0)") } ?? String(localized: "Undo")) { undo() }
                 .keyboardShortcut("z")
                 .disabled(!coordinator.canUndo && !focusedTextCanUndo)
-            Button(coordinator.redoActionName.map { "Redo \($0)" } ?? "Redo") { redo() }
+            Button(coordinator.redoActionName.map { String(localized: "Redo \($0)") } ?? String(localized: "Redo")) { redo() }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!coordinator.canRedo && !focusedTextCanRedo)
         }

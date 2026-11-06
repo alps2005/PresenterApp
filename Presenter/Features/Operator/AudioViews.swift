@@ -9,7 +9,7 @@ struct AudioTransport: View {
 
     var body: some View {
         if let missing = audio.missingAssetID {
-            WarningLabel("Audio file missing: \(coordinator.project.asset(withID: missing)?.originalFilename ?? "a track"). Nothing is playing.")
+            WarningLabel(String(localized: "Audio file missing: \(coordinator.project.asset(withID: missing)?.originalFilename ?? String(localized: "a track")). Nothing is playing."))
         } else if let live = coordinator.state.audio {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Label(title(of: live), systemImage: live.isPaused ? "pause.circle" : "speaker.wave.2")
@@ -54,7 +54,7 @@ struct AudioTransport: View {
     }
 
     private func title(of live: LiveAudio) -> String {
-        coordinator.project.asset(withID: live.track.assetID)?.originalFilename ?? "Audio"
+        coordinator.project.asset(withID: live.track.assetID)?.originalFilename ?? String(localized: "Audio")
     }
 }
 
@@ -84,7 +84,7 @@ struct AudioTrackOptions: View {
 
     var body: some View {
         Toggle("Loop", isOn: Binding(get: { track.loops }, set: { track.loops = $0 }))
-        FadeSlider(label: "Fade In", seconds: Binding(get: { track.fadeIn }, set: { track.fadeIn = $0 }))
+        FadeSlider(label: String(localized: "Fade In"), seconds: Binding(get: { track.fadeIn }, set: { track.fadeIn = $0 }))
     }
 }
 
@@ -149,7 +149,7 @@ struct AudioCueControls: View {
                 ))
                 AudioTrackOptions(track: Binding(get: { track }, set: { cue = .play($0) }))
             case .stop(let fadeOut):
-                FadeSlider(label: "Fade Out", seconds: Binding(get: { fadeOut }, set: { cue = .stop(fadeOut: $0) }))
+                FadeSlider(label: String(localized: "Fade Out"), seconds: Binding(get: { fadeOut }, set: { cue = .stop(fadeOut: $0) }))
             case nil:
                 EmptyView()
             }
@@ -178,12 +178,12 @@ struct AudioCueControls: View {
 
     private var caption: String {
         if coordinator.audioAssets.isEmpty {
-            return "Import music in the audio bin (⌥⌘U) to play it from a slide."
+            return String(localized: "Import music in the audio bin (⌥⌘U) to play it from a slide.")
         }
         return switch cue {
-        case .play: "Starts when the slide is taken live. A track already playing plays on."
-        case .stop: "Fades out whatever is playing when the slide is taken live."
-        case nil: "Whatever is playing carries on."
+        case .play: String(localized: "Starts when the slide is taken live. A track already playing plays on.")
+        case .stop: String(localized: "Fades out whatever is playing when the slide is taken live.")
+        case nil: String(localized: "Whatever is playing carries on.")
         }
     }
 }
@@ -228,7 +228,7 @@ enum AudioImport {
     /// Asks for audio files and imports them. Returns the names of files that couldn't be imported.
     @MainActor
     static func run(coordinator: PresentationCoordinator, mediaLibrary: MediaLibrary) async -> [String] {
-        let urls = MediaPanel.choose([.audio], multiple: true, message: "Choose music and sounds to add to the audio bin")
+        let urls = MediaPanel.choose([.audio], multiple: true, message: String(localized: "Choose music and sounds to add to the audio bin"))
         var failures: [String] = []
         for url in urls {
             do {

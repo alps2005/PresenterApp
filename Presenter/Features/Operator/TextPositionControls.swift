@@ -58,7 +58,7 @@ struct TextPositionControls: View {
                 .frame(width: 22, height: 14)
         }
         .buttonStyle(.plain)
-        .help("Place text \(anchor.label.lowercased())")
+        .help(String(localized: "Place text \(anchor.label.lowercased())"))
         .accessibilityLabel("Position \(anchor.label)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -71,15 +71,15 @@ struct TextPositionControls: View {
 private extension BoxAnchor {
     var label: String {
         switch self {
-        case .topLeading: "Top Left"
-        case .top: "Top"
-        case .topTrailing: "Top Right"
-        case .leading: "Left"
-        case .center: "Center"
-        case .trailing: "Right"
-        case .bottomLeading: "Bottom Left"
-        case .bottom: "Bottom"
-        case .bottomTrailing: "Bottom Right"
+        case .topLeading: String(localized: "Top Left")
+        case .top: String(localized: "Top")
+        case .topTrailing: String(localized: "Top Right")
+        case .leading: String(localized: "Left")
+        case .center: String(localized: "Center")
+        case .trailing: String(localized: "Right")
+        case .bottomLeading: String(localized: "Bottom Left")
+        case .bottom: String(localized: "Bottom")
+        case .bottomTrailing: String(localized: "Bottom Right")
         }
     }
 }

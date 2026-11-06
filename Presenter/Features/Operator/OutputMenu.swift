@@ -58,9 +58,9 @@ struct OutputMenu: View {
 
     private func hideTitle(_ role: OutputRole) -> String {
         switch role {
-        case .audience: "Hide Output"
-        case .secondAudience: "Hide Second Output"
-        case .stage: "Hide Stage Display"
+        case .audience: String(localized: "Hide Output")
+        case .secondAudience: String(localized: "Hide Second Output")
+        case .stage: String(localized: "Hide Stage Display")
         }
     }
 
@@ -75,10 +75,10 @@ struct OutputMenu: View {
             }
         }
         switch outputManager.status {
-        case .off: return ("Output Off", "display", false)
-        case .windowed: return ("Output: Window", "macwindow", false)
-        case .fullScreen(let name): return ("Output: \(name)", "display", false)
-        case .displayMissing, .displayHasOperatorWindow: return ("Output Off", "display", false)
+        case .off: return (String(localized: "Output Off"), "display", false)
+        case .windowed: return (String(localized: "Output: Window"), "macwindow", false)
+        case .fullScreen(let name): return (String(localized: "Output: \(name)"), "display", false)
+        case .displayMissing, .displayHasOperatorWindow: return (String(localized: "Output Off"), "display", false)
         }
     }
 

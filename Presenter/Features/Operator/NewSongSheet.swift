@@ -64,7 +64,7 @@ struct NewSongSheet: View {
                     Text("None").tag(UUID?.none)
                     Divider()
                     ForEach(coordinator.project.themes) { theme in
-                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                        Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                     }
                 }
                 .fixedSize()

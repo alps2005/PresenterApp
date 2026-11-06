@@ -16,7 +16,7 @@ struct MacrosTab: View {
                 }
             }
             Button {
-                editingID = coordinator.addMacro(named: "Macro \(coordinator.project.macros.count + 1)").id
+                editingID = coordinator.addMacro(named: String(localized: "Macro \(coordinator.project.macros.count + 1)")).id
             } label: {
                 Label("New Macro", systemImage: "plus")
             }
@@ -29,8 +29,8 @@ struct MacrosTab: View {
         .sheet(item: Binding(get: { editingID.map(EditedMacro.init) }, set: { editingID = $0?.id })) { edited in
             MacroEditorSheet(coordinator: coordinator, macroID: edited.id)
         }
-        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
-                         message: "Slides and macros that run it will skip it. You can undo this.",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.name ?? "")”?"),
+                         message: String(localized: "Slides and macros that run it will skip it. You can undo this."),
                          of: $pendingDeletion) { macro in
             coordinator.deleteMacro(macro.id)
         }
@@ -44,14 +44,14 @@ struct MacrosTab: View {
         Button {
             coordinator.runMacro(macro.id)
         } label: {
-            Text(macro.name.isEmpty ? "Untitled Macro" : macro.name)
+            Text(macro.name.isEmpty ? String(localized: "Untitled Macro") : macro.name)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 32)
         }
         .buttonStyle(.borderedProminent)
         .tint(macro.color?.color ?? Palette.panelRaised)
-        .help(macro.actions.isEmpty ? "No actions yet. Right-click to edit." : macro.actions
+        .help(macro.actions.isEmpty ? String(localized: "No actions yet. Right-click to edit.") : macro.actions
             .map { $0.summary(in: coordinator.project).text }.joined(separator: "\n"))
         .contextMenu {
             Button("Run") { coordinator.runMacro(macro.id) }

@@ -282,7 +282,7 @@ struct SlideWorkspace: View {
                 header(presentation: presentation, itemID: item.id)
                 grid(presentation: presentation, itemID: item.id)
             } else {
-                WarningLabel("Missing presentation")
+                WarningLabel(String(localized: "Missing presentation"))
                     .font(.ui(.body))
                     .padding(Spacing.lg)
             }
@@ -344,7 +344,7 @@ struct SlideWorkspace: View {
                 if focused != presentation.id { finishRenaming() }
             }
         } else {
-            Text(presentation.title.isEmpty ? "Untitled" : presentation.title)
+            Text(presentation.title.isEmpty ? String(localized: "Untitled") : presentation.title)
                 .font(.ui(.title2).bold())
                 .lineLimit(1)
                 .foregroundStyle(presentation.title.isEmpty ? .secondary : .primary)
@@ -492,7 +492,7 @@ struct SlideWorkspace: View {
             slideshowPopoverID = presentation.id
         } label: {
             // Filled while on, so the icon alone (in a narrow header) still says so.
-            Label(presentation.slideshowInterval.map { "Slideshow \(AdvanceTime.label($0))" } ?? "Slideshow",
+            Label(presentation.slideshowInterval.map { String(localized: "Slideshow \(AdvanceTime.label($0))") } ?? String(localized: "Slideshow"),
                   systemImage: presentation.slideshowInterval == nil ? "play.square.stack" : "play.square.stack.fill")
         }
         .help("Move through every slide by itself, looping. A slide's own Go To Next Timer comes first.")
@@ -511,11 +511,11 @@ struct SlideWorkspace: View {
                 )) {
                     Text("Off").tag(Double?.none)
                     ForEach(AdvanceTime.slideshowPresets, id: \.self) { seconds in
-                        Text("Every \(AdvanceTime.label(seconds))").tag(Optional(seconds))
+                        Text(String(localized: "Every \(AdvanceTime.label(seconds))")).tag(Optional(seconds))
                     }
                     // A custom interval still shows as chosen.
                     if let interval = presentation.slideshowInterval, !AdvanceTime.slideshowPresets.contains(interval) {
-                        Text("Every \(AdvanceTime.label(interval))").tag(Optional(interval))
+                        Text(String(localized: "Every \(AdvanceTime.label(interval))")).tag(Optional(interval))
                     }
                 }
                 .pickerStyle(.radioGroup)

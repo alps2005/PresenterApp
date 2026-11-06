@@ -14,6 +14,14 @@ struct SlideEditor: View {
         case background = "Background"
 
         var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .text: String(localized: "Text")
+            case .style: String(localized: "Style")
+            case .background: String(localized: "Background")
+            }
+        }
     }
 
     let coordinator: PresentationCoordinator
@@ -28,7 +36,7 @@ struct SlideEditor: View {
                 // Up here, not in the tab: the tab's height is fixed and the style controls fill it.
                 if tab == .style { revertToThemeButton }
                 Picker("Editor", selection: $tab) {
-                    ForEach(Tab.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(Tab.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()

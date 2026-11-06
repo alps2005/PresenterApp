@@ -67,7 +67,7 @@ struct StageOutputView: View {
 
             if let next {
                 VStack(alignment: .leading, spacing: 6 * scale) {
-                    Text("NEXT" + (next.label.map { " · \($0.uppercased())" } ?? ""))
+                    Text(String(localized: "NEXT") + (next.label.map { " · \($0.uppercased())" } ?? ""))
                         .font(.system(size: 26 * scale, weight: .bold))
                         .foregroundStyle(.gray)
                     Text(words(next, now: now))

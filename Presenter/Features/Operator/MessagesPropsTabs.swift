@@ -27,8 +27,8 @@ struct MessagesTab: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
-                         message: "If it's on screen, it stays until you clear messages. You can undo this.",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.name ?? "")”?"),
+                         message: String(localized: "If it's on screen, it stays until you clear messages. You can undo this."),
                          of: $pendingDeletion) { message in
             coordinator.deleteMessage(message.id)
         }
@@ -78,7 +78,7 @@ private struct MessageFieldsForm: View {
     @State private var values: [String: String] = [:]
 
     var body: some View {
-        PopoverForm(message.name, primary: "Show", onCancel: onDone, onSubmit: show) {
+        PopoverForm(message.name, primary: String(localized: "Show"), onCancel: onDone, onSubmit: show) {
             ForEach(message.fields, id: \.self) { field in
                 TextField(field, text: Binding(get: { values[field] ?? "" }, set: { values[field] = $0 }))
                     .textFieldStyle(.roundedBorder)
@@ -107,7 +107,7 @@ private struct MessageEditor: View {
     @State private var message = MessageDefinition(name: "", text: "")
 
     var body: some View {
-        PopoverForm(draft.message == nil ? "New Message" : "Edit Message", primary: draft.message == nil ? "Add" : "Save",
+        PopoverForm(draft.message == nil ? String(localized: "New Message") : String(localized: "Edit Message"), primary: draft.message == nil ? String(localized: "Add") : String(localized: "Save"),
                     width: 320, canSubmit: isValid, onCancel: onDone, onSubmit: save) {
             TextField("Name", text: $message.name).textFieldStyle(.roundedBorder)
             TextField("Text, e.g. Parent of child {Number}…", text: $message.text, axis: .vertical)
@@ -161,7 +161,7 @@ struct PropsTab: View {
             }
             HStack {
                 Button {
-                    let prop = coordinator.addProp(name: "Prop \(props.slides.count + 1)")
+                    let prop = coordinator.addProp(name: String(localized: "Prop \(props.slides.count + 1)"))
                     onEdit(prop.id)
                 } label: {
                     Label("New Prop", systemImage: "plus")
@@ -186,7 +186,7 @@ struct PropsTab: View {
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .tileFrame(TileState(isLive: isShowing), cornerRadius: Radius.badge)
             HStack(spacing: Spacing.xs) {
-                Text(prop.label ?? "Prop").font(.ui(.caption)).lineLimit(1)
+                Text(prop.label ?? String(localized: "Prop")).font(.ui(.caption)).lineLimit(1)
                 Spacer()
                 if isEdited { StateBadge(.edited) }
                 if isShowing { StateBadge(.live) }
@@ -209,7 +209,7 @@ struct PropsTab: View {
             Button("Delete", role: .destructive) { coordinator.deleteProp(prop.id) }
         }
         .popover(item: Binding(get: { renaming?.id == prop.id ? renaming : nil }, set: { renaming = $0 })) { prop in
-            PopoverForm("Rename Prop", primary: "Rename", width: 240, onCancel: { renaming = nil }) {
+            PopoverForm(String(localized: "Rename Prop"), primary: String(localized: "Rename"), width: 240, onCancel: { renaming = nil }) {
                 coordinator.renameProp(prop.id, to: name)
                 renaming = nil
             } fields: {

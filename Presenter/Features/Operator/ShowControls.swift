@@ -13,6 +13,17 @@ struct ShowControls: View {
         case macros = "Macros"
         var id: Self { self }
 
+        /// The raw value is kept in preferences, so it stays English; this is what the tab shows.
+        var title: String {
+            switch self {
+            case .timers: String(localized: "Timers")
+            case .messages: String(localized: "Messages")
+            case .props: String(localized: "Props")
+            case .stage: String(localized: "Stage")
+            case .macros: String(localized: "Macros")
+            }
+        }
+
         var systemImage: String {
             switch self {
             case .timers: "timer"
@@ -61,11 +72,11 @@ struct ShowControls: View {
             ForEach(Tab.allCases) { tab in
                 if iconsOnly {
                     Image(systemName: tab.systemImage)
-                        .help(tab.rawValue)
-                        .accessibilityLabel(tab.rawValue)
+                        .help(tab.title)
+                        .accessibilityLabel(tab.title)
                         .tag(tab)
                 } else {
-                    Text(tab.rawValue).tag(tab)
+                    Text(tab.title).tag(tab)
                 }
             }
         }
@@ -99,8 +110,8 @@ private struct TimersTab: View {
                 TimerEditor(coordinator: coordinator, draft: draft) { editing = nil }
             }
         }
-        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
-                         message: "Its running time is lost, and messages that use it show the blank instead. You can undo this.",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.name ?? "")”?"),
+                         message: String(localized: "Its running time is lost, and messages that use it show the blank instead. You can undo this."),
                          of: $pendingDeletion) { timer in
             coordinator.deleteTimer(timer.id)
         }
@@ -169,6 +180,14 @@ private struct TimerEditor: View {
         case countdownTo = "Count to Time"
         case elapsed = "Elapsed"
         var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .countdown: String(localized: "Countdown")
+            case .countdownTo: String(localized: "Count to Time")
+            case .elapsed: String(localized: "Elapsed")
+            }
+        }
     }
 
     let coordinator: PresentationCoordinator
@@ -182,11 +201,11 @@ private struct TimerEditor: View {
     @State private var time = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: .now) ?? .now
 
     var body: some View {
-        PopoverForm(draft.timer == nil ? "New Timer" : "Edit Timer", primary: draft.timer == nil ? "Add" : "Save",
+        PopoverForm(draft.timer == nil ? String(localized: "New Timer") : String(localized: "Edit Timer"), primary: draft.timer == nil ? String(localized: "Add") : String(localized: "Save"),
                     onCancel: onDone, onSubmit: save) {
             TextField("Name", text: $name).textFieldStyle(.roundedBorder)
             Picker("Type", selection: $kind) {
-                ForEach(Kind.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(Kind.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -251,9 +270,9 @@ extension TimerDefinition {
 
     var summary: String {
         switch kind {
-        case .countdown(let seconds): "Countdown · \(TimerDefinition.format(seconds))"
-        case .countdownTo(let hour, let minute): "Counts to \(String(format: "%d:%02d", hour, minute))"
-        case .elapsed: "Elapsed"
+        case .countdown(let seconds): String(localized: "Countdown · \(TimerDefinition.format(seconds))")
+        case .countdownTo(let hour, let minute): String(localized: "Counts to \(String(format: "%d:%02d", hour, minute))")
+        case .elapsed: String(localized: "Elapsed")
         }
     }
 }
@@ -299,7 +318,7 @@ private struct StageTab: View {
                     isComposing = true
                 }
                 .popover(isPresented: $isComposing) {
-                    PopoverForm("Message to the stage", primary: "Show on Stage", width: 320,
+                    PopoverForm(String(localized: "Message to the stage"), primary: String(localized: "Show on Stage"), width: 320,
                                 onCancel: { isComposing = false }) {
                         coordinator.showStageMessage(draftMessage)
                         isComposing = false
@@ -318,7 +337,7 @@ private struct StageTab: View {
                     set: { coordinator.setStageLayout($0) }
                 )) {
                     Text("Standard").tag(UUID?.none)
-                    ForEach(coordinator.project.stageLayouts) { Text($0.name.isEmpty ? "Untitled" : $0.name).tag(Optional($0.id)) }
+                    ForEach(coordinator.project.stageLayouts) { Text($0.name.isEmpty ? String(localized: "Untitled") : $0.name).tag(Optional($0.id)) }
                 }
                 Button("Edit…") { isEditingLayouts = true }
                     .help("Make and change stage layouts")
@@ -366,9 +385,9 @@ private struct StageTab: View {
 
     private var stageStatus: String {
         switch outputManager.status(.stage) {
-        case .off: "Stage display off"
-        case .windowed: "Stage display in a window"
-        case .fullScreen(let name): "Stage display on \(name)"
+        case .off: String(localized: "Stage display off")
+        case .windowed: String(localized: "Stage display in a window")
+        case .fullScreen(let name): String(localized: "Stage display on \(name)")
         case .displayMissing(let name): "\(name) disconnected"
         case .displayHasOperatorWindow(let name): "\(name) has the operator window"
         }

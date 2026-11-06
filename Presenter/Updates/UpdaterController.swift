@@ -46,9 +46,9 @@ final class UpdaterController: NSObject {
         guard isReadOnly || bundleURL.path.contains("/AppTranslocation/") else { return }
         Log.app.info("Running from a read-only place; updates can't install")
         let alert = NSAlert()
-        alert.messageText = "Move Presenter to Applications to get updates"
+        alert.messageText = String(localized: "Move Presenter to Applications to get updates")
         alert.informativeText = isReadOnly && !bundleURL.path.contains("/AppTranslocation/")
-            ? "Presenter is running from the disk image, so it can't update itself. Quit, drag Presenter onto the Applications shortcut, eject the disk image and open Presenter from Applications."
+            ? String(localized: "Presenter is running from the disk image, so it can't update itself. Quit, drag Presenter onto the Applications shortcut, eject the disk image and open Presenter from Applications.")
             : "macOS is running this copy from a temporary place, so it can't update itself. Quit, then in Finder drag Presenter into the Applications folder and open it from there."
         alert.runModal()
     }
@@ -77,8 +77,8 @@ extension UpdaterController: SPUUpdaterDelegate {
         guard isPresenting() else { return false }
         pendingRelaunch = installHandler
         let alert = NSAlert()
-        alert.messageText = "Presenter \(item.displayVersionString) will install when the service is over"
-        alert.informativeText = "Presenter restarts to install it once nothing is live and the outputs are off. What's on screen now stays as it is."
+        alert.messageText = String(localized: "Presenter \(item.displayVersionString) will install when the service is over")
+        alert.informativeText = String(localized: "Presenter restarts to install it once nothing is live and the outputs are off. What's on screen now stays as it is.")
         alert.runModal()
         relaunchWhenFree()
         return true

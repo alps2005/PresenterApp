@@ -50,7 +50,7 @@ struct ThemeEditorSheet: View {
 
     private var followersText: String {
         switch followers {
-        case 0: "No presentation uses this theme yet. Choose it in a presentation's Document settings in the editor."
+        case 0: String(localized: "No presentation uses this theme yet. Choose it in a presentation's Document settings in the editor.")
         case 1: "1 presentation uses this theme. Its slides change as you edit."
         default: "\(followers) presentations use this theme. Their slides change as you edit."
         }
@@ -117,7 +117,7 @@ struct ThemeEditorSheet: View {
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Edit the \(Self.name(of: each)) text")
+                    .accessibilityLabel(String(localized: "Edit the \(Self.name(of: each)) text"))
                     .accessibilityAddTraits(each == role ? .isSelected : [])
                 }
             }
@@ -130,9 +130,9 @@ struct ThemeEditorSheet: View {
 
     private static func name(of role: TextRole) -> String {
         switch role {
-        case .title: "Title"
-        case .body: "Body"
-        case .caption: "Caption"
+        case .title: String(localized: "Title")
+        case .body: String(localized: "Body")
+        case .caption: String(localized: "Caption")
         }
     }
 
@@ -141,9 +141,9 @@ struct ThemeEditorSheet: View {
         // Psalm 96:1 in the King James Version, which is in the public domain.
         let elements: [SlideElement] = roles.map { role in
             let text = switch role {
-            case .title: "Welcome"
-            case .body: "O sing unto the LORD a new song:\nsing unto the LORD, all the earth."
-            case .caption: "Psalm 96:1"
+            case .title: String(localized: "Welcome")
+            case .body: String(localized: "O sing unto the LORD a new song:\nsing unto the LORD, all the earth.")
+            case .caption: String(localized: "Psalm 96:1")
             }
             return .text(TextElement(text: text, role: role))
         }

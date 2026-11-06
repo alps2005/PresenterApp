@@ -10,9 +10,9 @@ enum PDFPages {
 
         var errorDescription: String? {
             switch self {
-            case .unreadable: "That PDF couldn't be opened. It may be damaged or password-protected."
-            case .noPages: "That PDF has no pages."
-            case .writeFailed: "The pages couldn't be saved as pictures."
+            case .unreadable: String(localized: "That PDF couldn't be opened. It may be damaged or password-protected.")
+            case .noPages: String(localized: "That PDF has no pages.")
+            case .writeFailed: String(localized: "The pages couldn't be saved as pictures.")
             }
         }
     }

@@ -15,7 +15,7 @@ struct AudioBin: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            PanelHeader(title: "Audio") {
+            PanelHeader(title: String(localized: "Audio")) {
                 if isImporting { ProgressView().controlSize(.small) }
                 Button {
                     importAudio()
@@ -25,7 +25,7 @@ struct AudioBin: View {
                 .disabled(isImporting)
             }
             if !importFailures.isEmpty {
-                WarningLabel("Couldn't import \(importFailures.joined(separator: ", ")).")
+                WarningLabel(String(localized: "Couldn't import \(importFailures.joined(separator: ", "))."))
                     .lineLimit(2)
             }
             if coordinator.audioAssets.isEmpty {
@@ -44,7 +44,7 @@ struct AudioBin: View {
         }
         .padding(Spacing.lg)
         .frame(height: Self.height)
-        .confirmDeletion("Delete “\(pendingDeletion?.originalFilename ?? "")”?",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.originalFilename ?? "")”?"),
                          message: pendingDeletion.map { deletionMessage(for: $0) } ?? "",
                          of: $pendingDeletion) { asset in
             coordinator.removeMediaAsset(asset.id)
@@ -99,12 +99,12 @@ struct AudioBin: View {
 
     /// Names what loses the track, so the operator knows which slides change.
     private func deletionMessage(for asset: MediaAsset) -> String {
-        let titles = coordinator.project.presentationsUsing(asset: asset.id).map { $0.title.isEmpty ? "Untitled" : $0.title }
-        let playing = "If it's playing, it plays on until you stop it."
+        let titles = coordinator.project.presentationsUsing(asset: asset.id).map { $0.title.isEmpty ? String(localized: "Untitled") : $0.title }
+        let playing = String(localized: "If it's playing, it plays on until you stop it.")
         guard !titles.isEmpty else { return "\(playing) You can undo this." }
         let users = titles.count > 3 ? Array(titles.prefix(2)) + ["\(titles.count - 2) other presentations"] : titles
         let list = users.count == 1 ? users[0] : users.dropLast().joined(separator: ", ") + " and " + users.last!
-        return "Used in \(list), which lose this audio. \(playing) You can undo this."
+        return String(localized: "Used in \(list), which lose this audio. \(playing) You can undo this.")
     }
 
     private func importAudio() {

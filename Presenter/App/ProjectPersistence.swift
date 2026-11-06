@@ -117,11 +117,11 @@ final class ProjectPersistence {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]
         panel.allowsMultipleSelection = false
-        panel.message = "Choose a Presenter project file."
+        panel.message = String(localized: "Choose a Presenter project file.")
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         let mediaDirectory = mediaDirectory
-        activity = "Opening “\(url.deletingPathExtension().lastPathComponent)”…"
+        activity = String(localized: "Opening “\(url.deletingPathExtension().lastPathComponent)”…")
         Task {
             // An exported project carries its media; it goes into the media folder so its slides show it.
             // (If the operator then cancels, the copied files are simply unused.) Reading and decoding a
@@ -157,7 +157,7 @@ final class ProjectPersistence {
 
         let project = coordinator.project
         let mediaDirectory = mediaDirectory
-        activity = "Exporting “\(project.name)”…"
+        activity = String(localized: "Exporting “\(project.name)”…")
         Task {
             // Media is embedded in the file, so a project with videos is large; encode and write off the main thread.
             let result = await Task.detached {
@@ -183,14 +183,14 @@ final class ProjectPersistence {
 
     private func confirmReplace(with project: ProjectDocument, backup: URL?) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Open “\(project.name)”?"
+        alert.messageText = String(localized: "Open “\(project.name)”?")
         alert.informativeText = if let backup {
-            "It replaces “\(coordinator.project.name)”. A backup of the current project was saved to \(backup.path). The audience output won't change."
+            String(localized: "It replaces “\(coordinator.project.name)”. A backup of the current project was saved to \(backup.path). The audience output won't change.")
         } else {
-            "It replaces “\(coordinator.project.name)”. The current project couldn't be backed up, so export it first if you need it."
+            String(localized: "It replaces “\(coordinator.project.name)”. The current project couldn't be backed up, so export it first if you need it.")
         }
-        alert.addButton(withTitle: "Open")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Open"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 }

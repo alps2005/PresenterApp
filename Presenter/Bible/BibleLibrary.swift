@@ -35,7 +35,7 @@ final class BibleLibrary {
         } catch let error as BibleFileParser.ParseError {
             throw ImportFailure(message: Self.message(for: error))
         } catch {
-            throw ImportFailure(message: "Couldn't read that file: \(error.localizedDescription)")
+            throw ImportFailure(message: String(localized: "Couldn't read that file: \(error.localizedDescription)"))
         }
     }
 
@@ -84,9 +84,9 @@ final class BibleLibrary {
 
     private static func message(for error: BibleFileParser.ParseError) -> String {
         switch error {
-        case .notABible: "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file."
-        case .malformed: "That Bible file is damaged or incomplete."
-        case .noVerses: "That Bible file has no verses Presenter can read."
+        case .notABible: String(localized: "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file.")
+        case .malformed: String(localized: "That Bible file is damaged or incomplete.")
+        case .noVerses: String(localized: "That Bible file has no verses Presenter can read.")
         }
     }
 }
