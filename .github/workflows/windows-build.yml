@@ -86,8 +86,10 @@ jobs:
       - name: Smoke test the engine from the app's folder
         run: |
           $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
-          dist/SmokeTest/Presenter.Windows.SmokeTest.exe
-          if ($LASTEXITCODE -ne 0) { throw "The smoke test failed." }
+          # Start-Process, because a windowed program started like this has no standard error, like the app.
+          $smoke = Start-Process dist/SmokeTest/Presenter.Windows.SmokeTest.exe -Wait -PassThru
+          if (Test-Path dist/SmokeTest/smoke-results.txt) { Get-Content dist/SmokeTest/smoke-results.txt }
+          if ($smoke.ExitCode -ne 0) { throw ("The smoke test failed (exit code 0x{0:X8})." -f $smoke.ExitCode) }
 
       # Starts the real app on a fresh folder and checks it's still running after a while, with no problem logged. With
       # saved settings, because a settings file that doesn't load is logged as a problem.

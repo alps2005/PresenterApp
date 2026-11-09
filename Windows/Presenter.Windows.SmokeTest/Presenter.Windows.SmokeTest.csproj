@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Checks, on Windows in CI, that the app can load PresenterBridge.dll and the Swift runtime and run a show. -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>Presenter.Windows.SmokeTest</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

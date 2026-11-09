@@ -1,19 +1,18 @@
-using System.Runtime.InteropServices;
 using Presenter.Windows.Core;
 
 // Runs the engine the way the app does, from a fresh folder, and exits 1 at the first thing that's wrong.
-
-// A program started by double-clicking has no standard error, and this console program does. The engine logs there, so
-// without this the test can't see a log line that brings the app down, as one did in betas 1 and 2.
-[DllImport("kernel32.dll")]
-static extern bool SetStdHandle(int handle, IntPtr value);
-const int StandardError = -12;
-SetStdHandle(StandardError, IntPtr.Zero);
+//
+// It's a windowed program, like the app, so it has no standard output or error, like an app started by double-clicking.
+// As a console program it couldn't see the engine's log line that brought the app down in betas 1 and 2. So it writes
+// its results to a file beside it, line by line, to show how far it got if it dies.
+var results = Path.Combine(AppContext.BaseDirectory, "smoke-results.txt");
+File.WriteAllText(results, "");
+void Report(string line) => File.AppendAllText(results, line + Environment.NewLine);
 
 var failures = 0;
 void Check(bool condition, string what)
 {
-    Console.WriteLine($"{(condition ? "ok  " : "FAIL")} {what}");
+    Report($"{(condition ? "ok  " : "FAIL")} {what}");
     if (!condition) failures++;
 }
 
@@ -91,7 +90,7 @@ try
 }
 catch (Exception error)
 {
-    Console.WriteLine($"FAIL {error}");
+    Report($"FAIL {error}");
     failures++;
 }
 finally
@@ -99,5 +98,5 @@ finally
     try { Directory.Delete(root, recursive: true); } catch (IOException) { }
 }
 
-Console.WriteLine(failures == 0 ? "All checks passed." : $"{failures} checks failed.");
+Report(failures == 0 ? "All checks passed." : $"{failures} checks failed.");
 return failures == 0 ? 0 : 1;
