@@ -73,4 +73,4 @@ jobs:
   windows-app:
     uses: ./.github/workflows/windows-build.yml
     with:
-      version: 0.0.0-ci.${{ github.run_number }}
+      version: 0.0.1-ci.${{ github.run_number }}
