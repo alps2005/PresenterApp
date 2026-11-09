@@ -1,3 +1,5 @@
+> ⚠️ **Windows Defender may block this download.** It reports the installer as `Trojan:Win32/Wacatac.C!ml` and removes it, so the browser ends with "Couldn't download". We believe this is a false alarm: `!ml` is Defender's machine-learning guess about a file that isn't code-signed yet, not a match with known malware, and the installer is built by GitHub Actions from the code in this repository. We're working on it. Please don't turn off Defender to get around it.
+
 The third beta of **Presenter for Windows**. **Please update if you have beta 1 or beta 2:** in those, Presenter could close as soon as you added a song or clicked a slide to show it. This beta fixes that, and your settings now stay when Presenter closes.
 
 This is still an early beta. Please try it at a rehearsal before using it in a service, and [tell us](https://github.com/alps2005/PresenterApp/issues) what goes wrong or what you miss.

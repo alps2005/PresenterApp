@@ -1,7 +1,7 @@
 name: Windows release
 
-# Push a tag like windows-v0.1.0-beta.1 to build Presenter for Windows and publish it as a GitHub Release with the
-# installer attached. Mac releases use plain v tags (release.yml); the two never trigger each other.
+# Push a tag like windows-v0.1.0-beta.1 to build Presenter for Windows and make a draft GitHub Release with the
+# installer attached, to be tested and then published (see the last step). Mac releases use plain v tags (release.yml); the two never trigger each other.
 #
 # A Windows release is never marked as the repository's latest release: the Mac app finds its updates at
 # releases/latest (Sparkle's appcast.xml), so "latest" must stay a Mac release.
@@ -39,7 +39,12 @@ jobs:
           name: presenter-windows
 
       # Tags with a suffix (windows-v0.1.0-beta.1) are pre-releases. Notes come from docs/release-notes/<tag>.md.
-      - name: Publish GitHub Release
+      #
+      # The release is made as a draft: nobody sees it until it's published by hand, after its installer has been
+      # downloaded with a browser on Windows and installed. Windows Defender judges each installer file on its own
+      # (beta 3 was blocked as a false positive while the same code built in CI wasn't), so a passing build is no
+      # proof the published file installs. Publish with: gh release edit <tag> --draft=false --latest=false
+      - name: Make the draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           tag: ${{ github.ref_name }}
@@ -47,6 +52,6 @@ jobs:
         run: |
           notes="docs/release-notes/$tag.md"
           [[ -f "$notes" ]] || { echo "::error::Write the release notes in $notes first."; exit 1; }
-          args=(--title "Presenter for Windows $version" --notes-file "$notes" --latest=false)
+          args=(--title "Presenter for Windows $version" --notes-file "$notes" --latest=false --draft)
           if [[ "$version" == *-* ]]; then args+=(--prerelease); fi
           gh release create "$tag" "Presenter-Windows-$version-Setup.exe" "${args[@]}"
