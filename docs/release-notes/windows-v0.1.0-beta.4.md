@@ -6,9 +6,10 @@ This is still an early beta. Please try it at a rehearsal before using it in a s
 
 ## Install
 
-1. Download **Presenter-Windows-0.1.0-beta.4-Setup.exe** below and double-click it.
-2. The app isn't code-signed yet, so Windows may say **"Windows protected your PC"**. Click **More info**, then **Run anyway**.
-3. Presenter installs for the person signed in, adds itself to the Start menu and the Desktop, and opens.
+1. Download **Presenter-Windows-0.1.0-beta.4-Setup.exe** below.
+2. The app isn't code-signed yet, so Microsoft Edge may say the file **"isn't commonly downloaded"** and hold on to it. In Edge's Downloads list, point at the file, click **…** (More actions) and then **Keep**. Edge then asks you to make sure you trust the file: click the arrow next to **Delete** and choose **Keep anyway**.
+3. Double-click the file. If Windows says **"Windows protected your PC"**, click **More info**, then **Run anyway**.
+4. Presenter installs for the person signed in, adds itself to the Start menu and the Desktop, and opens.
 
 Needs Windows 10 or 11 (64-bit). Nothing else to install: the app carries what it needs.
 

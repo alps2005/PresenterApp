@@ -1,4 +1,4 @@
-> ⚠️ **Don't use this beta in a service.** Presenter can close as soon as you click a slide to show it. Your project isn't lost. **Fixed in [beta 3](https://github.com/alps2005/PresenterApp/releases/tag/windows-v0.1.0-beta.3): please use that instead.**
+> ⚠️ **Don't use this beta in a service.** Presenter can close as soon as you click a slide to show it. Your project isn't lost. **Fixed in [beta 4](https://github.com/alps2005/PresenterApp/releases/tag/windows-v0.1.0-beta.4): please use that instead.**
 
 The first beta of **Presenter for Windows**, for churches whose computers are PCs. It runs on the same engine as Presenter for Mac, so songs, shows and live control behave the same, and projects move between the two.
 
