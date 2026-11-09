@@ -1,3 +1,5 @@
+> ⚠️ **Don't use this beta in a service.** Presenter can close as soon as you click a slide to show it. Your project isn't lost. Settings also go back to their defaults each time Presenter opens, and Spanish can't be turned on from Settings. A fix is coming in beta 3.
+
 The second beta of **Presenter for Windows**. It now has a proper installer, the same icon as the Mac app, Settings and Spanish, and a fix for a bug that could close the audience output mid-song.
 
 This is still an early beta. Please try it at a rehearsal before using it in a service, and [tell us](https://github.com/alps2005/PresenterApp/issues) what goes wrong or what you miss.

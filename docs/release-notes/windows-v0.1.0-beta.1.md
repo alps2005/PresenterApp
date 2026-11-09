@@ -1,3 +1,5 @@
+> ⚠️ **Don't use this beta in a service.** Presenter can close as soon as you click a slide to show it. Your project isn't lost. A fix is coming in beta 3.
+
 The first beta of **Presenter for Windows**, for churches whose computers are PCs. It runs on the same engine as Presenter for Mac, so songs, shows and live control behave the same, and projects move between the two.
 
 This is an early beta. Please try it at a rehearsal before using it in a service, and [tell us](https://github.com/alps2005/PresenterApp/issues) what goes wrong or what you miss.
