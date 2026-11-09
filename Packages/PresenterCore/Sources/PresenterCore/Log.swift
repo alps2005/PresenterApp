@@ -25,7 +25,9 @@ struct Logger: Sendable {
     func fault(_ message: LogMessage) { write("fault", message) }
 
     private func write(_ level: String, _ message: LogMessage) {
-        FileHandle.standardError.write(Data("[\(category)] \(level): \(message.text)\n".utf8))
+        // Not write(_:), which ends the program if the write fails. A Windows app started by double-clicking has no
+        // standard error, so every write fails, and a log line must never stop a service.
+        try? FileHandle.standardError.write(contentsOf: Data("[\(category)] \(level): \(message.text)\n".utf8))
     }
 }
 
