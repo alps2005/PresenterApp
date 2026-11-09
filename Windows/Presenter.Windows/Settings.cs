@@ -29,16 +29,17 @@ public sealed class Settings
     /// <summary>Raised after any change, so open windows redraw.</summary>
     public static event Action? Changed;
 
-    public static Settings Current { get; private set; } = Load();
-
-    public static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Presenter", "settings.json");
-
+    // Before Current: static fields are set in the order they're written, and Load needs these.
     private static readonly JsonSerializerOptions Json = new()
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() },
     };
+
+    public static Settings Current { get; private set; } = Load();
+
+    public static string FilePath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Presenter", "settings.json");
 
     private static Settings Load()
     {

@@ -48,16 +48,18 @@ public sealed class SettingsWindow : Window
         var page = new StackPanel { Spacing = 10, Margin = new Thickness(24, 20) };
 
         page.Children.Add(Heading(T("APPEARANCE")));
-        page.Children.Add(Choice(
+        var appearance = Choice(
             [(AppearanceChoice.Dark, T("Dark")), (AppearanceChoice.Light, T("Light")), (AppearanceChoice.System, T("Same as Windows"))],
-            Settings.Current.Appearance, chosen => { Settings.Current.Appearance = chosen; Settings.Current.Save(); }));
+            Settings.Current.Appearance, chosen => { Settings.Current.Appearance = chosen; Settings.Current.Save(); });
+        page.Children.Add(appearance);
         page.Children.Add(Note(T("Presenter is dark unless you choose otherwise, so it stays quiet in a dark room.")));
 
         page.Children.Add(Heading(T("TEXT SIZE")));
-        page.Children.Add(Choice(
+        var textSize = Choice(
             [(TextSizeChoice.Small, T("Small")), (TextSizeChoice.Standard, T("Standard")), (TextSizeChoice.Large, T("Large")),
              (TextSizeChoice.ExtraLarge, T("Extra Large"))],
-            Settings.Current.TextSize, chosen => { Settings.Current.TextSize = chosen; Settings.Current.Save(); }));
+            Settings.Current.TextSize, chosen => { Settings.Current.TextSize = chosen; Settings.Current.Save(); });
+        page.Children.Add(textSize);
         page.Children.Add(Note(T("The text in Presenter's windows. Slides and the audience output keep their own sizes.")));
 
         page.Children.Add(Heading(T("LANGUAGE")));
@@ -82,7 +84,12 @@ public sealed class SettingsWindow : Window
         page.Children.Add(colourRows);
         page.Children.Add(Note(T("LIVE marks what's on the audience output now. Song sections colour the labels on slide thumbnails, such as Verse 1 or Coro.")));
 
-        resetButton.Click += (_, _) => Settings.Current.ResetLook();
+        resetButton.Click += (_, _) =>
+        {
+            Settings.Current.ResetLook();
+            ShowChoice(appearance, Settings.Current.Appearance);
+            ShowChoice(textSize, Settings.Current.TextSize);
+        };
         var footer = new DockPanel { Margin = new Thickness(0, 12, 0, 0) };
         DockPanel.SetDock(resetButton, Dock.Right);
         footer.Children.Add(resetButton);
@@ -201,13 +208,16 @@ public sealed class SettingsWindow : Window
     {
         var box = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
         foreach (var (value, title) in choices) box.Items.Add(new ComboBoxItem { Content = title, Tag = value });
-        box.SelectedItem = box.Items.OfType<ComboBoxItem>().FirstOrDefault(i => i.Tag is TChoice value && value.Equals(current));
+        ShowChoice(box, current);
         box.SelectionChanged += (_, _) =>
         {
             if (box.SelectedItem is ComboBoxItem { Tag: TChoice value }) choose(value);
         };
         return box;
     }
+
+    private static void ShowChoice<TChoice>(ComboBox box, TChoice current) where TChoice : struct, Enum =>
+        box.SelectedItem = box.Items.OfType<ComboBoxItem>().FirstOrDefault(i => i.Tag is TChoice value && value.Equals(current));
 
     private static TextBlock Heading(string text)
     {
