@@ -31,6 +31,7 @@ public sealed class SettingsWindow : Window
     {
         this.isPresenting = isPresenting;
         Title = T("Settings");
+        Icon = App.Icon;
         Width = 520;
         Height = 720;
         MinWidth = 440;

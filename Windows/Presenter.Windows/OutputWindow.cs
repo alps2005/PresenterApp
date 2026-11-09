@@ -16,6 +16,7 @@ public sealed class OutputWindow : Window
 {
     public OutputWindow(Screen? screen, Action<KeyEventArgs> keys)
     {
+        Icon = App.Icon;
         Background = Brushes.Black;
         Content = new SlideView(null);
         KeyDown += (_, e) => keys(e);

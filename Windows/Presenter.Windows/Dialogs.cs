@@ -95,6 +95,7 @@ public static class Dialogs
         var dialog = new Window
         {
             Title = heading,
+            Icon = App.Icon,
             Width = width,
             CanResize = height > 0,
             ShowInTaskbar = false,

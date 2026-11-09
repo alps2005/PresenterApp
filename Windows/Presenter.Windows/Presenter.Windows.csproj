@@ -7,6 +7,8 @@
     <AssemblyName>Presenter</AssemblyName>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AvaloniaVersion>11.3.2</AvaloniaVersion>
+    <!-- Presenter.exe's icon, also on its shortcuts and in the taskbar. Made by scripts/make-windows-icon.swift. -->
+    <ApplicationIcon>Assets\Presenter.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
@@ -16,6 +18,12 @@
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
     <!-- Avalonia's Linux D-Bus support, unused on Windows, pinned past GHSA-xrw6-gwf8-vvr9 (fixed in 0.21.3). -->
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
+    <!-- The installer. Same version as vpk in .github/workflows/windows-build.yml. -->
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The same icon for the windows' title bars. -->
+    <AvaloniaResource Include="Assets\Presenter.ico" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Presenter.Windows.Core\Presenter.Windows.Core.csproj" />

@@ -4,12 +4,15 @@ Presenter for Windows (beta)
 A free, open-source presentation app for church services and live events. This is an early beta: please try it
 before using it in a service, and tell us what goes wrong.
 
-Starting it
------------
-1. Unzip the whole download into a folder of its own (for example Documents\Presenter). Keep every file together.
-2. Double-click Presenter.exe.
-3. Windows may say "Windows protected your PC", because the app isn't signed yet. Click "More info", then
-   "Run anyway". It only asks the first time.
+Installing it
+-------------
+1. Double-click the installer you downloaded (Presenter-Windows-...-Setup.exe).
+2. Windows may say "Windows protected your PC", because the app isn't signed yet. Click "More info", then
+   "Run anyway".
+3. Presenter installs for the person signed in, adds itself to the Start menu and the Desktop, and opens.
+
+To move to a new version, close Presenter and run the new installer. To remove Presenter, use Windows Settings >
+Apps > Installed apps. Your project stays on the computer either way.
 
 If it says a file is missing, install the Microsoft Visual C++ Redistributable (x64) from Microsoft's website.
 
@@ -34,7 +37,8 @@ messages. Slides made on a Mac with those still show their words and pictures.
 Your project
 ------------
 Everything is saved as you go, in %LOCALAPPDATA%\Presenter (File > Open the Project Folder). Each time the app
-opens, it keeps a backup there, in Backups.
+opens, it keeps a backup there, in Backups. Uninstalling Presenter leaves this folder alone; delete it yourself if
+you want your project gone too.
 
 Problems and ideas
 ------------------

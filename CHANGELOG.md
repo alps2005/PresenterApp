@@ -17,6 +17,10 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 ### Windows
 - **Presenter for Windows, open beta:** a Windows app on the same engine, released on its own `windows-v` tags
   (first: windows-v0.1.0-beta.1, notes in [docs/release-notes](docs/release-notes)). Nothing changes in the Mac app.
+- **An installer instead of a zip:** double-click it and Presenter goes in the Start menu and on the Desktop, with
+  no folder to unzip. It's made with Velopack, which is free. Uninstalling leaves the project on the computer, and a
+  project from the zip version carries over.
+- **The same icon as the Mac app:** on Presenter.exe, its shortcuts, the installer, the taskbar and the title bars.
 
 ### Fixes
 - **Windows: Space after clicking a button:** Space moved to the next slide *and* pressed the button clicked last,

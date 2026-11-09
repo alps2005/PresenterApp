@@ -49,3 +49,6 @@ The views already only send commands to `PresentationCoordinator` and read its s
   releases.
 - Windows warns about apps that aren't code-signed, much as Gatekeeper does on a Mac. Free signing for open-source
   projects (SignPath Foundation) is the way to avoid that, and no paid certificate is planned.
+- The installer is made with Velopack (free, MIT), which can also bring automatic updates later. It installs to
+  `%LOCALAPPDATA%\PresenterApp` and uninstalling deletes that folder whole, so the app's files stay apart from the
+  project in `%LOCALAPPDATA%\Presenter`. CI installs and uninstalls on every run and fails if the project is touched.

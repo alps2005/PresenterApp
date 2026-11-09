@@ -69,7 +69,7 @@ jobs:
         working-directory: Packages/PresenterCore
         run: swift test
 
-  # The Windows app: the engine as a DLL, the Avalonia app, a smoke test on Windows, and the zip as a download.
+  # The Windows app: the engine as a DLL, the Avalonia app, a smoke test on Windows, and the installer as a download.
   windows-app:
     uses: ./.github/workflows/windows-build.yml
     with:

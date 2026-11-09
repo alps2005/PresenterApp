@@ -1,7 +1,7 @@
 name: Windows release
 
 # Push a tag like windows-v0.1.0-beta.1 to build Presenter for Windows and publish it as a GitHub Release with the
-# zip attached. Mac releases use plain v tags (release.yml); the two never trigger each other.
+# installer attached. Mac releases use plain v tags (release.yml); the two never trigger each other.
 #
 # A Windows release is never marked as the repository's latest release: the Mac app finds its updates at
 # releases/latest (Sparkle's appcast.xml), so "latest" must stay a Mac release.
@@ -49,4 +49,4 @@ jobs:
           [[ -f "$notes" ]] || { echo "::error::Write the release notes in $notes first."; exit 1; }
           args=(--title "Presenter for Windows $version" --notes-file "$notes" --latest=false)
           if [[ "$version" == *-* ]]; then args+=(--prerelease); fi
-          gh release create "$tag" "Presenter-Windows-$version.zip" "${args[@]}"
+          gh release create "$tag" "Presenter-Windows-$version-Setup.exe" "${args[@]}"

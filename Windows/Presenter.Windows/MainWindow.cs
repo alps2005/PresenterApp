@@ -68,6 +68,7 @@ public sealed class MainWindow : Window
         this.engine = engine;
         state = engine.State();
         Title = "Presenter";
+        Icon = App.Icon;
         Width = 1400;
         Height = 860;
         MinWidth = 1000;

@@ -39,7 +39,7 @@ The release needs the repository secret `SPARKLE_ED_PRIVATE_KEY` (the update sig
 
 Presenter for Windows runs on the same engine as the Mac app, and projects move between them (**File › Export Project…** on one, **File › Open Project File…** on the other). The beta does songs (typed, pasted or imported), shows, live control and the audience output on a second display; videos, audio, Bibles and the slide editor come later. Each beta's notes list what it does.
 
-Download `Presenter-Windows-<version>.zip` from the Windows release on the [Releases](https://github.com/alps2005/PresenterApp/releases) page, unzip the whole folder and run **Presenter.exe**. The app isn't code-signed yet, so the first time Windows says "Windows protected your PC": click **More info**, then **Run anyway**. Needs Windows 10 or 11 (64-bit). There are no automatic updates in the beta: replace the folder with the new one. The project stays in `%LOCALAPPDATA%\Presenter`.
+Download `Presenter-Windows-<version>-Setup.exe` from the Windows release on the [Releases](https://github.com/alps2005/PresenterApp/releases) page and double-click it. It installs Presenter for the person signed in, adds it to the Start menu and the Desktop, and opens it. The app isn't code-signed yet, so Windows says "Windows protected your PC": click **More info**, then **Run anyway**. Needs Windows 10 or 11 (64-bit). There are no automatic updates in the beta: close Presenter and run the new version's installer. The project stays in `%LOCALAPPDATA%\Presenter`, also if you uninstall Presenter.
 
 To publish a Windows release, write its notes in `docs/release-notes/windows-v<version>.md` and push a `windows-v` tag:
 
@@ -48,7 +48,7 @@ git tag windows-v0.1.0-beta.1
 git push origin windows-v0.1.0-beta.1
 ```
 
-`.github/workflows/windows-release.yml` builds it, tests it on Windows and attaches the zip. Windows releases are never marked as the latest release, because the Mac app looks for its updates there. Every CI run also builds the zip, as a download on the run's page.
+`.github/workflows/windows-release.yml` builds it, tests it on Windows and attaches the installer, made with [Velopack](https://velopack.io) (free, MIT). Windows releases are never marked as the latest release, because the Mac app looks for its updates there. Every CI run also builds the installer, and tries installing and uninstalling it, with the installer as a download on the run's page. The icon is made from the Mac app's by `scripts/make-windows-icon.swift`: run it again if the Mac icon changes.
 
 ## Requirements
 

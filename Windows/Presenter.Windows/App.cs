@@ -7,10 +7,12 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Presenter.Windows.Core;
+using Velopack;
 using static Presenter.Windows.Strings;
 
 namespace Presenter.Windows;
@@ -21,6 +23,9 @@ internal static class Program
     public static int Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, e) => CrashLog.Write(e.ExceptionObject as Exception);
+        // The installer and uninstaller run Presenter.exe with their own arguments: this deals with them and exits,
+        // before any window opens. In a normal start it carries on.
+        VelopackApp.Build().Run();
         var result = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         // Settings › Restart Presenter Now: started again once this copy has saved and closed its project.
         if (App.RestartWhenClosed && Environment.ProcessPath is { } path)
@@ -60,6 +65,10 @@ public sealed class App : Application
         control.Bind(property, control.GetResourceObservable(key));
 
     private Styles? lookStyles;
+    private static WindowIcon? icon;
+
+    /// <summary>The app's icon, for each window's title bar.</summary>
+    public static WindowIcon Icon => icon ??= new WindowIcon(AssetLoader.Open(new Uri("avares://Presenter/Assets/Presenter.ico")));
 
     /// <summary>"0.1.0-beta.1", from the build.</summary>
     public static string Version
@@ -177,9 +186,9 @@ public sealed class App : Application
     private static Window StartupProblem(Exception error, string dataDirectory)
     {
         var advice = error is DllNotFoundException or BadImageFormatException
-            ? T("Part of Presenter is missing or couldn't load. Unzip the whole download again, keeping every file " +
-                "together in one folder, and run Presenter.exe from there. If it still doesn't start, install the " +
-                "Microsoft Visual C++ Redistributable (x64) from Microsoft's website and try again.")
+            ? T("Part of Presenter is missing or couldn't load. Run the installer again: your project is kept. If it " +
+                "still doesn't start, install the Microsoft Visual C++ Redistributable (x64) from Microsoft's website " +
+                "and try again.")
             : T("Presenter couldn't open its project folder, {0}.", dataDirectory);
         var body = new StackPanel { Spacing = 14, Margin = new Thickness(24) };
         body.Children.Add(new TextBlock { Text = T("Presenter couldn't start"), FontSize = 20, FontWeight = FontWeight.SemiBold });
@@ -188,7 +197,7 @@ public sealed class App : Application
         var report = new Button { Content = T("Report the problem"), HorizontalAlignment = HorizontalAlignment.Left };
         report.Click += (_, _) => OpenInShell(IssuesURL);
         body.Children.Add(report);
-        return new Window { Title = "Presenter", Width = 560, SizeToContent = SizeToContent.Height, Content = body };
+        return new Window { Title = "Presenter", Icon = App.Icon, Width = 560, SizeToContent = SizeToContent.Height, Content = body };
     }
 }
 

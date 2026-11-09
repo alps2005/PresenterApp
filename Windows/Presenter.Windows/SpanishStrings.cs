@@ -9,7 +9,7 @@ public static class SpanishStrings
 {
     public static readonly IReadOnlyDictionary<string, string> Table = new Dictionary<string, string>
     {
-        ["Part of Presenter is missing or couldn't load. Unzip the whole download again, keeping every file together in one folder, and run Presenter.exe from there. If it still doesn't start, install the Microsoft Visual C++ Redistributable (x64) from Microsoft's website and try again."] = "Falta una parte de Presenter o no se pudo cargar. Vuelve a descomprimir toda la descarga, con todos los archivos juntos en una carpeta, y ejecuta Presenter.exe desde ahí. Si aun así no se abre, instala Microsoft Visual C++ Redistributable (x64) desde el sitio web de Microsoft y vuelve a intentarlo.",
+        ["Part of Presenter is missing or couldn't load. Run the installer again: your project is kept. If it still doesn't start, install the Microsoft Visual C++ Redistributable (x64) from Microsoft's website and try again."] = "Falta una parte de Presenter o no se pudo cargar. Vuelve a ejecutar el instalador: tu proyecto se conserva. Si aun así no se abre, instala Microsoft Visual C++ Redistributable (x64) desde el sitio web de Microsoft y vuelve a intentarlo.",
         ["Presenter couldn't open its project folder, {0}."] = "Presenter no pudo abrir la carpeta de su proyecto, {0}.",
         ["Presenter couldn't start"] = "Presenter no pudo iniciarse",
         ["Report the problem"] = "Informar del problema",
