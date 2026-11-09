@@ -11,7 +11,7 @@ Installing it
    "Run anyway".
 3. Presenter installs for the person signed in, adds itself to the Start menu and the Desktop, and opens.
 
-To move to a new version, close Presenter and run the new installer. To remove Presenter, use Windows Settings >
+To move to a new version, close Presenter, run the new installer and click Update. To remove Presenter, use Windows Settings >
 Apps > Installed apps. Your project stays on the computer either way.
 
 If it says a file is missing, install the Microsoft Visual C++ Redistributable (x64) from Microsoft's website.

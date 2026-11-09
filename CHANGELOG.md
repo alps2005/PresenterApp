@@ -23,6 +23,10 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
 - **The same icon as the Mac app:** on Presenter.exe, its shortcuts, the installer, the taskbar and the title bars.
 
 ### Fixes
+- **Windows: Presenter closing by itself:** started by double-clicking, it closed as soon as the engine wrote a log
+  line, such as when adding a song or taking a slide live (betas 1 and 2; fixed in windows-v0.1.0-beta.3).
+- **Windows: settings:** they now load when Presenter opens, so the theme, text size, colours and Spanish stay, and
+  Restore Defaults updates its lists (beta 2; fixed in windows-v0.1.0-beta.3).
 - **Windows: Space after clicking a button:** Space moved to the next slide *and* pressed the button clicked last,
   which could close the audience output mid-song. Space now only moves on.
 - **Welcome window:** shows just the version (Version 1.5.0), without the build number. About Presenter still shows
