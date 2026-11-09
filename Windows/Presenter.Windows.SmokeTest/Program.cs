@@ -1,6 +1,15 @@
+using System.Runtime.InteropServices;
 using Presenter.Windows.Core;
 
 // Runs the engine the way the app does, from a fresh folder, and exits 1 at the first thing that's wrong.
+
+// A program started by double-clicking has no standard error, and this console program does. The engine logs there, so
+// without this the test can't see a log line that brings the app down, as one did in betas 1 and 2.
+[DllImport("kernel32.dll")]
+static extern bool SetStdHandle(int handle, IntPtr value);
+const int StandardError = -12;
+SetStdHandle(StandardError, IntPtr.Zero);
+
 var failures = 0;
 void Check(bool condition, string what)
 {

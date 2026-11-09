@@ -89,10 +89,14 @@ jobs:
           dist/SmokeTest/Presenter.Windows.SmokeTest.exe
           if ($LASTEXITCODE -ne 0) { throw "The smoke test failed." }
 
-      # Starts the real app on a fresh folder and checks it's still running after a while, with no problem logged.
+      # Starts the real app on a fresh folder and checks it's still running after a while, with no problem logged. With
+      # saved settings, because a settings file that doesn't load is logged as a problem.
       - name: Check the app starts
         run: |
           $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          $settings = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'Presenter\settings.json'
+          New-Item -ItemType Directory -Force (Split-Path $settings) | Out-Null
+          '{"Appearance":"Light","TextSize":"Large","Language":"Spanish","LiveColor":"#112233","SectionColors":{"verse":"#445566"}}' | Set-Content $settings
           $data = Join-Path $env:RUNNER_TEMP 'presenter-start'
           $app = Start-Process "$env:APP_DIR\Presenter.exe" -ArgumentList '--data', $data -PassThru
           Start-Sleep -Seconds 15
@@ -101,6 +105,7 @@ jobs:
           if ($app.HasExited) { throw "Presenter.exe quit on its own (exit code $($app.ExitCode))." }
           Stop-Process -Id $app.Id
           if ((Test-Path $logs) -and (Get-ChildItem $logs).Count -gt 0) { throw "Presenter.exe logged a problem." }
+          Remove-Item $settings
 
       # Velopack is free and open source (MIT): https://velopack.io. Keep vpk at the same version as the Velopack
       # package in Presenter.Windows.csproj.
