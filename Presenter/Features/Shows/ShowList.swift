@@ -68,7 +68,7 @@ struct ShowList: View {
             Button("Cancel", role: .cancel) {}
         }
         .confirmDeletion(
-            "Delete this show?",
+            String(localized: "Delete this show?"),
             message: deletionMessage,
             of: $showPendingDeletion
         ) { show in
@@ -95,15 +95,15 @@ struct ShowList: View {
         let isOpen = show.id == coordinator.project.activePlaylistID
         return HStack(spacing: Spacing.md) {
             Image(systemName: "rectangle.stack")
-                .font(.title2)
+                .font(.ui(.title2))
                 .foregroundStyle(.secondary)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(show.title)
-                    .font(.headline)
+                    .font(.ui(.headline))
                 Text(detail(for: show))
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -111,7 +111,7 @@ struct ShowList: View {
             if isOpen {
                 Label("Open", systemImage: "checkmark.circle")
                     .labelStyle(.titleAndIcon)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -120,14 +120,14 @@ struct ShowList: View {
     }
 
     private func detail(for show: PlaylistDocument) -> String {
-        let count = show.items.count == 1 ? "1 item" : "\(show.items.count) items"
+        let count = show.items.count == 1 ? String(localized: "1 item") : String(localized: "\(show.items.count) items")
         guard let opened = show.lastOpenedAt else { return count }
-        return "\(count) · Opened \(opened.formatted(.relative(presentation: .named)))"
+        return String(localized: "\(count) · Opened \(opened.formatted(.relative(presentation: .named)))")
     }
 
     private var deletionMessage: String {
         guard let show = showPendingDeletion else { return "" }
-        let library = "Its presentations stay in the library."
+        let library = String(localized: "Its presentations stay in the library.")
         guard show.id == coordinator.project.activePlaylistID else {
             return "\(library) You can undo this with ⌘Z."
         }

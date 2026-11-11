@@ -5,40 +5,40 @@ extension ShowAction {
     /// What the action does, in words, with an icon. `isMissing` when what it points at is gone, so it does nothing.
     func summary(in project: ProjectDocument) -> (text: String, systemImage: String, isMissing: Bool) {
         func timer(_ id: UUID) -> String? { project.timers.first { $0.id == id }?.name }
-        func quoted(_ name: String?) -> String { name.map { "“\($0)”" } ?? "(deleted)" }
+        func quoted(_ name: String?) -> String { name.map { "“\($0)”" } ?? String(localized: "(deleted)") }
         switch self {
-        case .startTimer(let id): return ("Start \(quoted(timer(id)))", "play.fill", timer(id) == nil)
-        case .stopTimer(let id): return ("Pause \(quoted(timer(id)))", "pause.fill", timer(id) == nil)
-        case .resetTimer(let id): return ("Reset \(quoted(timer(id)))", "arrow.counterclockwise", timer(id) == nil)
-        case .restartTimer(let id): return ("Restart \(quoted(timer(id)))", "arrow.clockwise", timer(id) == nil)
+        case .startTimer(let id): return (String(localized: "Start \(quoted(timer(id)))"), "play.fill", timer(id) == nil)
+        case .stopTimer(let id): return (String(localized: "Pause \(quoted(timer(id)))"), "pause.fill", timer(id) == nil)
+        case .resetTimer(let id): return (String(localized: "Reset \(quoted(timer(id)))"), "arrow.counterclockwise", timer(id) == nil)
+        case .restartTimer(let id): return (String(localized: "Restart \(quoted(timer(id)))"), "arrow.clockwise", timer(id) == nil)
         case .showMessage(let id, _):
             let name = project.message(withID: id)?.name
-            return ("Show message \(quoted(name))", "text.bubble", name == nil)
-        case .clearMessages: return ("Clear messages", "xmark.circle", false)
+            return (String(localized: "Show message \(quoted(name))"), "text.bubble", name == nil)
+        case .clearMessages: return (String(localized: "Clear messages"), "xmark.circle", false)
         case .showProp(let id):
-            let name = project.prop(withID: id).map { $0.label ?? "Prop" }
-            return ("Show prop \(quoted(name))", "square.on.square", name == nil)
+            let name = project.prop(withID: id).map { $0.label ?? String(localized: "Prop") }
+            return (String(localized: "Show prop \(quoted(name))"), "square.on.square", name == nil)
         case .hideProp(let id):
-            let name = project.prop(withID: id).map { $0.label ?? "Prop" }
-            return ("Hide prop \(quoted(name))", "square.on.square.dashed", name == nil)
-        case .clearProps: return ("Clear props", "xmark.circle", false)
-        case .showStageMessage: return ("Stage message", "rectangle.on.rectangle", false)
-        case .hideStageMessage: return ("Hide the stage message", "rectangle.on.rectangle.slash", false)
+            let name = project.prop(withID: id).map { $0.label ?? String(localized: "Prop") }
+            return (String(localized: "Hide prop \(quoted(name))"), "square.on.square.dashed", name == nil)
+        case .clearProps: return (String(localized: "Clear props"), "xmark.circle", false)
+        case .showStageMessage: return (String(localized: "Stage message"), "rectangle.on.rectangle", false)
+        case .hideStageMessage: return (String(localized: "Hide the stage message"), "rectangle.on.rectangle.slash", false)
         case .setStageLayout(let id?):
-            let name = project.stageLayout(withID: id).map { $0.name.isEmpty ? "Untitled" : $0.name }
-            return ("Stage layout \(quoted(name))", "rectangle.3.group", name == nil)
-        case .setStageLayout(nil): return ("Stage layout “Standard”", "rectangle.3.group", false)
+            let name = project.stageLayout(withID: id).map { $0.name.isEmpty ? String(localized: "Untitled") : $0.name }
+            return (String(localized: "Stage layout \(quoted(name))"), "rectangle.3.group", name == nil)
+        case .setStageLayout(nil): return (String(localized: "Stage layout “Standard”"), "rectangle.3.group", false)
         case .playAudio(let track):
             let name = project.asset(withID: track.assetID)?.originalFilename
-            return ("Play \(quoted(name))", "music.note", name == nil)
-        case .stopAudio: return ("Stop audio", "speaker.slash", false)
-        case .clearSlide: return ("Clear slide", "xmark.rectangle", false)
-        case .clearBackground: return ("Clear background", "xmark.rectangle", false)
-        case .clearAll: return ("Clear all", "xmark.rectangle.fill", false)
-        case .blackout: return ("Blackout", "moon.fill", false)
+            return (String(localized: "Play \(quoted(name))"), "music.note", name == nil)
+        case .stopAudio: return (String(localized: "Stop audio"), "speaker.slash", false)
+        case .clearSlide: return (String(localized: "Clear slide"), "xmark.rectangle", false)
+        case .clearBackground: return (String(localized: "Clear background"), "xmark.rectangle", false)
+        case .clearAll: return (String(localized: "Clear all"), "xmark.rectangle.fill", false)
+        case .blackout: return (String(localized: "Blackout"), "moon.fill", false)
         case .runMacro(let id):
             let name = project.macro(withID: id)?.name
-            return ("Run macro \(quoted(name))", "square.grid.2x2", name == nil)
+            return (String(localized: "Run macro \(quoted(name))"), "square.grid.2x2", name == nil)
         }
     }
 }
@@ -78,7 +78,7 @@ struct ActionListEditor: View {
                     .frame(width: 18)
                 Text(summary.text)
                     .lineLimit(2)
-                    .help(summary.isMissing ? "What this pointed at was deleted, so it does nothing." : summary.text)
+                    .help(summary.isMissing ? String(localized: "What this pointed at was deleted, so it does nothing.") : summary.text)
                 Spacer(minLength: 0)
                 RowMenuButton(subject: summary.text) {
                     Button("Move Up") { move(index, by: -1) }
@@ -176,7 +176,7 @@ struct AddActionMenu: View {
             }
             Menu("Prop") {
                 ForEach(project.props.slides) { prop in
-                    Menu(prop.label ?? "Prop") {
+                    Menu(prop.label ?? String(localized: "Prop")) {
                         Button("Show") { onAdd(.showProp(propID: prop.id)) }
                         Button("Hide") { onAdd(.hideProp(propID: prop.id)) }
                     }
@@ -190,7 +190,7 @@ struct AddActionMenu: View {
                 Divider()
                 Button("Layout: Standard") { onAdd(.setStageLayout(layoutID: nil)) }
                 ForEach(project.stageLayouts) { layout in
-                    Button("Layout: \(layout.name.isEmpty ? "Untitled" : layout.name)") { onAdd(.setStageLayout(layoutID: layout.id)) }
+                    Button("Layout: \(layout.name.isEmpty ? String(localized: "Untitled") : layout.name)") { onAdd(.setStageLayout(layoutID: layout.id)) }
                 }
             }
             Menu("Audio") {

@@ -29,7 +29,7 @@ struct CCLIReportSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("CCLI Report").font(.title2.bold())
+            Text("CCLI Report").font(.ui(.title2).bold())
 
             Form {
                 TextField("Church CCLI License #", text: $licenseDraft, prompt: Text("e.g. 1234567"))
@@ -69,7 +69,7 @@ struct CCLIReportSheet: View {
 
             HStack {
                 Text("Songs count when they go live, on this Mac. Submit the counts at reporting.ccli.com.")
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Export CSV…") { exportCSV() }
@@ -89,7 +89,7 @@ struct CCLIReportSheet: View {
             do {
                 entries = try await Task.detached(priority: .userInitiated) { try log.entries() }.value
             } catch {
-                problem = "The song usage log couldn't be read: \(error.localizedDescription)"
+                problem = String(localized: "The song usage log couldn't be read: \(error.localizedDescription)")
             }
         }
     }
@@ -106,12 +106,12 @@ struct CCLIReportSheet: View {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
-        panel.nameFieldStringValue = "CCLI Report \(formatter.string(from: start)) to \(formatter.string(from: end)).csv"
+        panel.nameFieldStringValue = String(localized: "CCLI Report \(formatter.string(from: start)) to \(formatter.string(from: end)).csv")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try SongUsageLog.csv(rows, dateFormatter: formatter).write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            problem = "The report couldn't be saved: \(error.localizedDescription)"
+            problem = String(localized: "The report couldn't be saved: \(error.localizedDescription)")
         }
     }
 }

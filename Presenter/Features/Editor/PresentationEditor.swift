@@ -25,7 +25,7 @@ enum EditorZoom: Hashable {
 
     var label: String {
         switch self {
-        case .fit: "Fit"
+        case .fit: String(localized: "Fit")
         case .percent(let percent): "\(percent)%"
         }
     }
@@ -61,10 +61,10 @@ struct PresentationEditor: View {
     }
 
     private var liveHelp: String {
-        guard session.itemID == nil else { return "Take this slide live on the audience output" }
+        guard session.itemID == nil else { return String(localized: "Take this slide live on the audience output") }
         return session.presentationID == coordinator.project.props.id
-            ? "Props are shown from Show Controls, not sent live"
-            : "Opened from the Library. Add it to the show to take it live."
+            ? String(localized: "Props are shown from Show Controls, not sent live")
+            : String(localized: "Opened from the Library. Add it to the show to take it live.")
     }
 
     private var slide: SlideDocument? {
@@ -135,7 +135,7 @@ struct PresentationEditor: View {
                 )
             }
         }
-        .navigationTitle(presentation.title.isEmpty ? "Untitled" : presentation.title)
+        .navigationTitle(presentation.title.isEmpty ? String(localized: "Untitled") : presentation.title)
         .toolbar { toolbar }
         .solidToolbar()
         .onAppear {
@@ -292,7 +292,7 @@ struct PresentationEditor: View {
     }
 
     private func addImage() {
-        guard let url = EditorImageImport.chooseImage(message: "Choose an image to add to the slide") else { return }
+        guard let url = EditorImageImport.chooseImage(message: String(localized: "Choose an image to add to the slide")) else { return }
         Task {
             do {
                 let asset = try await mediaLibrary.importImage(at: url)

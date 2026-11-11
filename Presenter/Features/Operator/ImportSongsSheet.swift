@@ -38,13 +38,13 @@ struct ImportSongsSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Import Songs").font(.title2.bold())
+            Text("Import Songs").font(.ui(.title2).bold())
 
             list
                 .frame(minHeight: 240)
 
             Text("Reads ProPresenter 7 (.pro), OpenLyrics (.xml), ChordPro (.cho, .chordpro, .pro), SongSelect lyrics (.txt) and SongPro (.usr) files, and plain lyrics in text files. Chords are left out. Writers, copyright and CCLI numbers are kept with each song.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -60,7 +60,7 @@ struct ImportSongsSheet: View {
                     Text("None").tag(UUID?.none)
                     Divider()
                     ForEach(coordinator.project.themes) { theme in
-                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                        Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                     }
                 }
                 .fixedSize()
@@ -133,16 +133,16 @@ struct ImportSongsSheet: View {
                 Toggle(song.title, isOn: file.isIncluded)
                     .labelsHidden()
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(song.title).font(.headline)
-                    Text(detail(song)).font(.caption).foregroundStyle(.secondary)
+                    Text(song.title).font(.ui(.headline))
+                    Text(detail(song)).font(.ui(.caption)).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(file.wrappedValue.fileName).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                Text(file.wrappedValue.fileName).font(.ui(.caption)).foregroundStyle(.tertiary).lineLimit(1)
             case .failure(let error):
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Palette.warning)
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(file.wrappedValue.fileName).font(.headline)
-                    Text(message(error)).font(.caption).foregroundStyle(.secondary)
+                    Text(file.wrappedValue.fileName).font(.ui(.headline))
+                    Text(message(error)).font(.ui(.caption)).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -160,15 +160,15 @@ struct ImportSongsSheet: View {
 
     private func message(_ error: SongImporter.ImportError) -> String {
         switch error {
-        case .unreadable: "Not a song file Presenter can read."
-        case .malformed: "The file is damaged or incomplete."
-        case .noLyrics: "No words found."
+        case .unreadable: String(localized: "Not a song file Presenter can read.")
+        case .malformed: String(localized: "The file is damaged or incomplete.")
+        case .noLyrics: String(localized: "No words found.")
         }
     }
 
     private func chooseFiles() {
         let types = SongImporter.fileExtensions.compactMap { UTType(filenameExtension: $0) }
-        let urls = MediaPanel.choose(types, multiple: true, message: "Choose song files to import.")
+        let urls = MediaPanel.choose(types, multiple: true, message: String(localized: "Choose song files to import."))
         read(urls)
     }
 

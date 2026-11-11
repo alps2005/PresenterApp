@@ -17,7 +17,7 @@ struct LibraryPresentationView: View {
         [GridItem(.adaptive(minimum: thumbnailWidth, maximum: thumbnailWidth * 1.45), spacing: Spacing.lg)]
     }
 
-    private var title: String { presentation.title.isEmpty ? "Untitled" : presentation.title }
+    private var title: String { presentation.title.isEmpty ? String(localized: "Untitled") : presentation.title }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,7 +58,7 @@ struct LibraryPresentationView: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             HStack {
                 Text(title)
-                    .font(.title2.bold())
+                    .font(.ui(.title2).bold())
                     .lineLimit(1)
                     .layoutPriority(1)
                 Spacer(minLength: 8)
@@ -76,7 +76,7 @@ struct LibraryPresentationView: View {
                 .help("Open this presentation in the slide editor")
             }
             Text("From the Library. Add it to the show to take it live.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
         }
         .padding(Spacing.lg)

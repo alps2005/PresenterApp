@@ -18,7 +18,7 @@ struct MediaBin: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            PanelHeader(title: "Media") {
+            PanelHeader(title: String(localized: "Media")) {
                 if isImporting { ProgressView().controlSize(.small) }
                 Button {
                     importMedia()
@@ -47,7 +47,7 @@ struct MediaBin: View {
         }
         .padding(Spacing.lg)
         .frame(height: Self.height)
-        .confirmDeletion("Delete “\(pendingDeletion?.originalFilename ?? "")”?",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.originalFilename ?? "")”?"),
                          message: pendingDeletion.map(deletionMessage) ?? "",
                          of: $pendingDeletion) { asset in
             coordinator.removeMediaAsset(asset.id)
@@ -61,14 +61,13 @@ struct MediaBin: View {
 
     /// Names what loses the file, so the operator knows which slides change.
     private func deletionMessage(for asset: MediaAsset) -> String {
-        let titles = coordinator.project.presentationsUsing(asset: asset.id).map { $0.title.isEmpty ? "Untitled" : $0.title }
+        let titles = coordinator.project.presentationsUsing(asset: asset.id).map { $0.title.isEmpty ? String(localized: "Untitled") : $0.title }
         let themeCount = coordinator.project.themesUsing(asset: asset.id).count
         var users = titles.count > 3 ? Array(titles.prefix(2)) + ["\(titles.count - 2) other presentations"] : titles
         if themeCount > 0 { users.append(themeCount == 1 ? "1 theme" : "\(themeCount) themes") }
-        guard !users.isEmpty else { return "You can undo this." }
+        guard !users.isEmpty else { return String(localized: "You can undo this.") }
         let list = users.count == 1 ? users[0] : users.dropLast().joined(separator: ", ") + " and " + users.last!
-        return "Used in \(list). Those slides lose this background or image. If it's on screen, it stays until "
-            + "you change it. You can undo this."
+        return String(localized: "Used in \(list). Those slides lose this background or image. If it's on screen, it stays until you change it. You can undo this.")
     }
 
     private func tile(_ asset: MediaAsset) -> some View {
@@ -93,7 +92,7 @@ struct MediaBin: View {
                                 Text(TimeText.format(duration)).monospacedDigit()
                             }
                         }
-                        .font(.caption2.bold())
+                        .font(.ui(.caption2).bold())
                         .foregroundStyle(.white)
                         .padding(Spacing.xs)
                         .background(.black.opacity(0.5))
@@ -106,7 +105,7 @@ struct MediaBin: View {
                 if isLive { StateBadge(.live).padding(Spacing.xs) }
             }
             Text(asset.originalFilename)
-                .font(.caption2)
+                .font(.ui(.caption2))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(width: 160, alignment: .leading)
@@ -144,7 +143,7 @@ struct MediaBin: View {
     }
 
     private func importMedia() {
-        let urls = MediaPanel.choose([.image, .movie], multiple: true, message: "Choose images and videos to add to the media bin")
+        let urls = MediaPanel.choose([.image, .movie], multiple: true, message: String(localized: "Choose images and videos to add to the media bin"))
         guard !urls.isEmpty else { return }
         isImporting = true
         importErrors = []
@@ -156,7 +155,7 @@ struct MediaBin: View {
                     let asset = isMovie ? try await mediaLibrary.importVideo(at: url) : try await mediaLibrary.importImage(at: url)
                     coordinator.addMediaAsset(asset)
                 } catch {
-                    importErrors.append("Couldn't import \(url.lastPathComponent).")
+                    importErrors.append(String(localized: "Couldn't import \(url.lastPathComponent)."))
                 }
             }
         }

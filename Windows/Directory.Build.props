@@ -1,0 +1,14 @@
+<Project>
+  <!-- Shared by the Windows app's projects. CI passes the version from the tag (-p:Version=0.1.0-beta.1). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Version>0.1.0-dev</Version>
+    <Product>Presenter</Product>
+    <Company>Presenter</Company>
+    <Copyright>Presenter contributors, GPL-3.0</Copyright>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,170 @@
+name: Windows build
+
+# Builds Presenter for Windows (docs/adr/0003-windows-shared-engine.md): the engine as PresenterBridge.dll, the
+# Avalonia app around it, and an installer with everything it needs. Used by CI and by Windows releases.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version the app shows, like 0.1.0-beta.1'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      APP_DIR: ${{ github.workspace }}\dist\Presenter
+      SETUP_NAME: Presenter-Windows-${{ inputs.version }}-Setup.exe
+    steps:
+      # Keep the files' own line endings, as on the Mac.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+
+      # Pinned to a commit (v0.5.1) and the same Swift as Xcode 26.6 (6.4.2). Update them together, and with ci.yml.
+      - uses: compnerd/gha-setup-swift@9ff1ee4c44888c5817fc14d1b257ac8cabb4935f # v0.5.1
+        with:
+          swift-version: swift-6.4.2-release
+          swift-build: 6.4.2-RELEASE
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check the Spanish translation
+        run: python scripts/check-windows-strings.py
+
+      - name: Test the bridge
+        working-directory: Packages/PresenterBridge
+        run: swift test
+
+      - name: Build the engine library
+        working-directory: Packages/PresenterBridge
+        run: |
+          swift build -c release --product PresenterBridge
+          $bin = swift build -c release --show-bin-path
+          "BRIDGE_BIN=$bin" >> $env:GITHUB_ENV
+          Get-ChildItem $bin -Filter *.dll | Format-Table Name, Length
+
+      - name: Build the app
+        run: |
+          dotnet publish Windows/Presenter.Windows/Presenter.Windows.csproj -c Release -r win-x64 --self-contained true `
+            -p:Version=${{ inputs.version }} -o $env:APP_DIR
+          dotnet publish Windows/Presenter.Windows.SmokeTest/Presenter.Windows.SmokeTest.csproj -c Release -r win-x64 `
+            --self-contained true -o dist/SmokeTest
+
+      # The app runs on PCs without Swift or Visual Studio, so it carries the engine, the Swift runtime and the
+      # Microsoft C++ runtime (which Microsoft allows apps to include) in its own folder.
+      - name: Add the engine and its runtimes
+        run: |
+          Copy-Item "$env:BRIDGE_BIN\PresenterBridge.dll" $env:APP_DIR
+
+          $runtime = $env:Path -split ';' | Where-Object { $_ -and (Test-Path (Join-Path $_ 'swiftCore.dll')) } | Select-Object -First 1
+          if (-not $runtime) { throw "Couldn't find the Swift runtime (swiftCore.dll) on PATH." }
+          Write-Host "Swift runtime: $runtime"
+          Copy-Item "$runtime\*.dll" $env:APP_DIR
+
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -property installationPath
+          $crt = Get-ChildItem "$vs\VC\Redist\MSVC\*\x64\Microsoft.VC14*.CRT" -Directory | Sort-Object FullName | Select-Object -Last 1
+          if (-not $crt) { throw "Couldn't find the Microsoft C++ runtime to include." }
+          Write-Host "C++ runtime: $($crt.FullName)"
+          Copy-Item "$($crt.FullName)\*.dll" $env:APP_DIR
+
+          Copy-Item LICENSE "$env:APP_DIR\LICENSE.txt"
+          Copy-Item Windows/README.txt "$env:APP_DIR\README.txt"
+
+          # The smoke test loads the same files.
+          Get-ChildItem $env:APP_DIR -Filter *.dll | Where-Object { -not (Test-Path (Join-Path dist/SmokeTest $_.Name)) } |
+            Copy-Item -Destination dist/SmokeTest
+
+      # With Swift taken off PATH, so this passes only if the app's folder has everything the engine needs.
+      - name: Smoke test the engine from the app's folder
+        run: |
+          $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          # Start-Process, because a windowed program started like this has no standard error, like the app.
+          $smoke = Start-Process dist/SmokeTest/Presenter.Windows.SmokeTest.exe -Wait -PassThru
+          if (Test-Path dist/SmokeTest/smoke-results.txt) { Get-Content dist/SmokeTest/smoke-results.txt }
+          if ($smoke.ExitCode -ne 0) { throw ("The smoke test failed (exit code 0x{0:X8})." -f $smoke.ExitCode) }
+
+      # Starts the real app on a fresh folder and checks it's still running after a while, with no problem logged. With
+      # saved settings, because a settings file that doesn't load is logged as a problem.
+      - name: Check the app starts
+        run: |
+          $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          $settings = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'Presenter\settings.json'
+          New-Item -ItemType Directory -Force (Split-Path $settings) | Out-Null
+          '{"Appearance":"Light","TextSize":"Large","Language":"Spanish","LiveColor":"#112233","SectionColors":{"verse":"#445566"}}' | Set-Content $settings
+          $data = Join-Path $env:RUNNER_TEMP 'presenter-start'
+          $app = Start-Process "$env:APP_DIR\Presenter.exe" -ArgumentList '--data', $data -PassThru
+          Start-Sleep -Seconds 15
+          $logs = Join-Path $env:LOCALAPPDATA 'Presenter\Logs'
+          if (Test-Path $logs) { Get-ChildItem $logs | ForEach-Object { Get-Content $_.FullName } }
+          if ($app.HasExited) { throw "Presenter.exe quit on its own (exit code $($app.ExitCode))." }
+          Stop-Process -Id $app.Id
+          if ((Test-Path $logs) -and (Get-ChildItem $logs).Count -gt 0) { throw "Presenter.exe logged a problem." }
+          Remove-Item $settings
+
+      # Velopack is free and open source (MIT): https://velopack.io. Keep vpk at the same version as the Velopack
+      # package in Presenter.Windows.csproj.
+      #
+      # The id names the install folder, %LOCALAPPDATA%\PresenterApp, and uninstalling deletes that folder whole. It must
+      # never be "Presenter": that's where the project lives (App.DataDirectory), and uninstalling would delete it.
+      - name: Make the installer
+        run: |
+          dotnet tool install vpk --version 1.2.161 --tool-path dist/tools
+          dist/tools/vpk pack --packId PresenterApp --packVersion ${{ inputs.version }} --packDir $env:APP_DIR `
+            --mainExe Presenter.exe --packTitle Presenter --packAuthors "Presenter contributors" `
+            --icon Windows/Presenter.Windows/Assets/Presenter.ico --runtime win-x64 --noPortable --outputDir dist/Installer
+          if ($LASTEXITCODE -ne 0) { throw "vpk couldn't make the installer." }
+          Move-Item dist/Installer/*-Setup.exe $env:SETUP_NAME
+          Get-Item $env:SETUP_NAME | Format-Table Name, Length
+
+      # Does what a church's PC will do: install, run from the installed folder, install again over it (how a new version
+      # goes on), uninstall. The project must come through all of it untouched.
+      - name: Check the installer
+        timeout-minutes: 5
+        run: |
+          $env:Path = ($env:Path -split ';' | Where-Object { $_ -notmatch 'Swift' }) -join ';'
+          $installed = Join-Path $env:LOCALAPPDATA 'PresenterApp'
+          $exe = Join-Path $installed 'current\Presenter.exe'
+          $project = Join-Path $env:LOCALAPPDATA 'Presenter'
+          $keep = Join-Path $project 'must-survive-the-installer.txt'
+          New-Item -ItemType Directory -Force $project | Out-Null
+          Set-Content $keep 'the project'
+
+          function Install-Presenter {
+            $setup = Start-Process (Resolve-Path $env:SETUP_NAME) -ArgumentList '--silent' -Wait -PassThru
+            if ($setup.ExitCode -ne 0) { throw "The installer failed (exit code $($setup.ExitCode))." }
+            if (-not (Test-Path $exe)) { throw "The installer didn't put Presenter.exe in $installed." }
+          }
+
+          Install-Presenter
+          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Presenter.lnk'
+          if (-not (Test-Path $shortcut)) { throw "No Start menu shortcut at $shortcut." }
+
+          $data = Join-Path $env:RUNNER_TEMP 'presenter-installed'
+          $app = Start-Process $exe -ArgumentList '--data', $data -PassThru
+          Start-Sleep -Seconds 15
+          if ($app.HasExited) { throw "The installed Presenter.exe quit on its own (exit code $($app.ExitCode))." }
+          Stop-Process -Id $app.Id
+          Start-Sleep -Seconds 2
+
+          Install-Presenter
+          if (-not (Test-Path $keep)) { throw "Installing again deleted the project." }
+
+          $uninstall = Start-Process (Join-Path $installed 'Update.exe') -ArgumentList '--silent', 'uninstall' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstalling failed (exit code $($uninstall.ExitCode))." }
+          if (Test-Path $exe) { throw "Uninstalling left Presenter.exe behind." }
+          if (Test-Path $shortcut) { throw "Uninstalling left the Start menu shortcut behind." }
+          if (-not (Test-Path $keep)) { throw "Uninstalling deleted the project." }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: presenter-windows
+          path: ${{ env.SETUP_NAME }}
+          if-no-files-found: error

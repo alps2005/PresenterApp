@@ -16,21 +16,21 @@ struct MacrosTab: View {
                 }
             }
             Button {
-                editingID = coordinator.addMacro(named: "Macro \(coordinator.project.macros.count + 1)").id
+                editingID = coordinator.addMacro(named: String(localized: "Macro \(coordinator.project.macros.count + 1)")).id
             } label: {
                 Label("New Macro", systemImage: "plus")
             }
             .buttonStyle(.borderless)
             Text("A macro does several things at one click: show a prop, start a timer, play music, change the stage display. Slides can run them too, in the slide editor.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .sheet(item: Binding(get: { editingID.map(EditedMacro.init) }, set: { editingID = $0?.id })) { edited in
             MacroEditorSheet(coordinator: coordinator, macroID: edited.id)
         }
-        .confirmDeletion("Delete “\(pendingDeletion?.name ?? "")”?",
-                         message: "Slides and macros that run it will skip it. You can undo this.",
+        .confirmDeletion(String(localized: "Delete “\(pendingDeletion?.name ?? "")”?"),
+                         message: String(localized: "Slides and macros that run it will skip it. You can undo this."),
                          of: $pendingDeletion) { macro in
             coordinator.deleteMacro(macro.id)
         }
@@ -44,14 +44,14 @@ struct MacrosTab: View {
         Button {
             coordinator.runMacro(macro.id)
         } label: {
-            Text(macro.name.isEmpty ? "Untitled Macro" : macro.name)
+            Text(macro.name.isEmpty ? String(localized: "Untitled Macro") : macro.name)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 32)
         }
         .buttonStyle(.borderedProminent)
         .tint(macro.color?.color ?? Palette.panelRaised)
-        .help(macro.actions.isEmpty ? "No actions yet. Right-click to edit." : macro.actions
+        .help(macro.actions.isEmpty ? String(localized: "No actions yet. Right-click to edit.") : macro.actions
             .map { $0.summary(in: coordinator.project).text }.joined(separator: "\n"))
         .contextMenu {
             Button("Run") { coordinator.runMacro(macro.id) }
@@ -73,7 +73,7 @@ struct MacroEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Edit Macro").font(.title2.bold())
+            Text("Edit Macro").font(.ui(.title2).bold())
             if let macro {
                 HStack {
                     TextField("Name", text: Binding(get: { macro.name }, set: { name in update { $0.name = name } }))
@@ -88,7 +88,7 @@ struct MacroEditorSheet: View {
                             .labelsHidden()
                     }
                 }
-                Text("Actions run in this order.").font(.subheadline.bold())
+                Text("Actions run in this order.").font(.ui(.subheadline).bold())
                 ScrollView {
                     ActionListEditor(project: coordinator.project, actions: macro.actions, isForMacro: true, macroID: macro.id) { actions in
                         update { $0.actions = actions }

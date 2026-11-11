@@ -62,11 +62,12 @@ enum Radius {
 
 /// Semantic colours. Each state has one colour that never depends on the system accent, so CUED can never
 /// look like LIVE.
+@MainActor
 enum Palette {
-    /// On the audience output now.
-    static let live = Color(red: 0.92, green: 0.20, blue: 0.18)
-    /// Ready to go live next.
-    static let cued = Color(red: 0.16, green: 0.48, blue: 0.96)
+    /// On the audience output now. Settings › Appearance can change it.
+    static var live: Color { AppSettings.shared.liveColor }
+    /// Ready to go live next. Settings › Appearance can change it.
+    static var cued: Color { AppSettings.shared.cuedColor }
     /// Something needs the operator's attention: missing media, a problem with an output.
     static let warning = Color(
         light: NSColor(srgbRed: 0.70, green: 0.40, blue: 0.0, alpha: 1),
@@ -89,13 +90,15 @@ enum Palette {
     static let hairline = Color.secondary.opacity(0.4)
 }
 
+/// At the operator's text size (Settings › Appearance).
+@MainActor
 enum Typography {
     /// LIVE, CUED and the other state badges.
-    static let badge = Font.caption.bold()
+    static var badge: Font { .ui(.caption).bold() }
     /// Live panel slot titles: Up Next, Cued.
-    static let sectionHeader = Font.subheadline.bold()
+    static var sectionHeader: Font { .ui(.subheadline).bold() }
     /// A timer's running value in Show Controls.
-    static let timerValue = Font.title3.monospacedDigit().weight(.semibold)
+    static var timerValue: Font { .ui(.title3).monospacedDigit().weight(.semibold) }
 }
 
 /// Times shown to the operator, e.g. a clip's length or a timer: "4:05", or "1:02:03" past an hour.

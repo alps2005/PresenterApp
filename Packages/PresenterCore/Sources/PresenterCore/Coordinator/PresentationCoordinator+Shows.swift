@@ -24,7 +24,7 @@ extension PresentationCoordinator {
     @discardableResult
     public func addPlaylist(title: String) -> PlaylistDocument {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
-        let playlist = PlaylistDocument(title: trimmed.isEmpty ? "Untitled Show" : trimmed)
+        let playlist = PlaylistDocument(title: trimmed.isEmpty ? Localization.text("Untitled Show") : trimmed)
         project.playlists.append(playlist)
         openPlaylist(playlist.id)
         return playlist

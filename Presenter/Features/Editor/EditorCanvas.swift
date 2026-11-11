@@ -356,7 +356,7 @@ struct EditorCanvas: View {
         let x = min(max(rect.maxX + 10, 4), stageSize.width - tagSize.width - 4)
         let y = min(max(rect.minY, 4), stageSize.height - tagSize.height - 4)
         return Text(text)
-            .font(.caption.monospacedDigit())
+            .font(.ui(.caption).monospacedDigit())
             .foregroundStyle(.white)
             .padding(.horizontal, Spacing.md)
             .frame(height: tagSize.height)
@@ -540,9 +540,9 @@ struct SelectionChrome: View {
 private extension SlideElement {
     var helpText: String {
         switch self {
-        case .text: "Text: drag to move, double-click to edit"
-        case .shape: "Shape: drag to move"
-        case .image: "Image: drag to move"
+        case .text: String(localized: "Text: drag to move, double-click to edit")
+        case .shape: String(localized: "Shape: drag to move")
+        case .image: String(localized: "Image: drag to move")
         }
     }
 }

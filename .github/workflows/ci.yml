@@ -36,7 +36,41 @@ jobs:
         working-directory: Packages/PresenterCore
         run: swift test
 
+      # The library the Windows app loads; its tests run on a Mac too.
+      - name: Test PresenterBridge
+        working-directory: Packages/PresenterBridge
+        run: swift test
+
       - name: Build app
         run: |
           xcodebuild -project Presenter.xcodeproj -scheme Presenter -configuration Debug \
             -destination 'platform=macOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+  # The engine on Windows, for the Windows version (docs/adr/0003-windows-shared-engine.md). Tests that make real
+  # media files with Apple's frameworks are left out there; everything else runs.
+  core-windows:
+    runs-on: windows-latest
+    steps:
+      # Keep the files' own line endings, as on the Mac.
+      - run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+
+      # Pinned to a commit (v0.5.1) and the same Swift as Xcode 26.6 (6.4.2). Update them together.
+      - uses: compnerd/gha-setup-swift@9ff1ee4c44888c5817fc14d1b257ac8cabb4935f # v0.5.1
+        with:
+          swift-version: swift-6.4.2-release
+          swift-build: 6.4.2-RELEASE
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Test PresenterCore
+        working-directory: Packages/PresenterCore
+        run: swift test
+
+  # The Windows app: the engine as a DLL, the Avalonia app, a smoke test on Windows, and the installer as a download.
+  windows-app:
+    uses: ./.github/workflows/windows-build.yml
+    with:
+      version: 0.0.1-ci.${{ github.run_number }}

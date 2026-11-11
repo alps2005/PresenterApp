@@ -1,4 +1,6 @@
+#if canImport(AVFoundation)
 import AVFoundation
+#endif
 import Foundation
 import XCTest
 @testable import PresenterCore
@@ -46,6 +48,7 @@ final class AudioPlanTests: XCTestCase {
         XCTAssertLessThan(AudioPlan.fadeVolume(from: 0, to: 1, elapsed: 0.2, duration: 2), 0.1)
     }
 
+#if canImport(AVFoundation)
     func testImportAudioCopiesAndDescribesItAndRejectsOtherFiles() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("AudioTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -76,6 +79,7 @@ final class AudioPlanTests: XCTestCase {
             XCTAssertEqual(error as? MediaImportError, .unplayableAudio)
         }
     }
+#endif
 }
 
 @MainActor

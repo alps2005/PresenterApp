@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationXML)
+// XMLParser lives in its own module off Apple platforms.
+import FoundationXML
+#endif
 
 /// Reads OpenLyrics XML (openlyrics.org), the open song format OpenLP, Worship Extreme and others export:
 /// `<song><properties>` with titles, authors, copyright, `ccliNo` and `verseOrder`, then `<lyrics>` with one `<verse>`
@@ -20,7 +24,7 @@ enum OpenLyricsParser {
         parser.shouldResolveExternalEntities = false
         parser.shouldProcessNamespaces = true
         parser.delegate = delegate
-        guard parser.parse() else {
+        guard parser.parseStrictly() else {
             throw .malformed(parser.parserError?.localizedDescription ?? "Unknown error")
         }
         var song = ImportedSong(

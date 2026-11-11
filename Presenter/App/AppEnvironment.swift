@@ -48,6 +48,8 @@ final class AppEnvironment {
     let updater: UpdaterController
 
     init() {
+        // The engine names things and explains itself in the language the app's screens loaded in.
+        Localization.language = LanguageChoice.running
         let store = ProjectStore(fileURL: ProjectPersistence.defaultFileURL)
         let initial = ProjectPersistence.loadInitialProject(from: store)
         // Live and cued state always start empty: nothing reaches the audience until the operator takes it live.

@@ -15,13 +15,13 @@ struct LivePanel: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xl) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    PanelHeader(title: "Audience") { liveBadge }
+                    PanelHeader(title: String(localized: "Audience")) { liveBadge }
                     // In words, here, because the toolbar's output menu shows only a warning icon.
                     ForEach(waitingOutputs, id: \.role) { output in
-                        WarningLabel("\(output.role.title): \(output.message)", font: .callout.bold())
+                        WarningLabel("\(output.role.title): \(output.message)", font: .ui(.callout).bold())
                     }
                     if audioOutput.isChosenMissing {
-                        WarningLabel("Sound: \(audioOutput.chosenName ?? "the chosen output") isn't connected, so sound plays through the Mac's output.",
+                        WarningLabel(String(localized: "Sound: \(audioOutput.chosenName ?? String(localized: "the chosen output")) isn't connected, so sound plays through the Mac's output."),
                                      font: .callout.bold())
                     }
                     // The output's own view, so slide and element transitions play here too.
@@ -43,28 +43,28 @@ struct LivePanel: View {
                     if coordinator.clearedBackgroundReturnsWithNextSlide {
                         Label("Background cleared for now. Slides with their own background bring one back. To remove it for good, use the slide's Background button.",
                               systemImage: "info.circle")
-                            .font(.callout)
+                            .font(.ui(.callout))
                             .foregroundStyle(.secondary)
                     }
                     if let notes = coordinator.liveNotes {
                         Label(notes, systemImage: "note.text")
-                            .font(.callout)
+                            .font(.ui(.callout))
                             .foregroundStyle(.secondary)
                             .help("This slide's notes. The audience never sees them.")
                     }
                     if coordinator.liveSlideHasPendingEdits {
                         Label("This slide was edited after going live. Take it live again to show the changes.",
                               systemImage: "pencil.circle.fill")
-                            .font(.caption)
+                            .font(.ui(.caption))
                             .foregroundStyle(Palette.edited)
                     }
                 }
 
                 // Shown as it will appear: a transparent slide over the background that's on screen.
-                slot(title: "Up Next", slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
+                slot(title: String(localized: "Up Next"), slide: coordinator.upNextSlide.map { coordinator.outputPreview(of: $0) },
                      placeholder: upNextPlaceholder, tile: .idle)
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    slot(title: "Cued", slide: coordinator.previewSlide, placeholder: "Nothing cued", tile: .cued)
+                    slot(title: String(localized: "Cued"), slide: coordinator.previewSlide, placeholder: String(localized: "Nothing cued"), tile: .cued)
                     Button { onShowScripture() } label: {
                         Label("Scripture…", systemImage: "book")
                     }
@@ -107,7 +107,7 @@ struct LivePanel: View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Label("\(overlay.caption) · \(overlay.index + 1) of \(overlay.pages.count) over the slide. Next steps through the verses.",
                   systemImage: "book")
-                .font(.callout)
+                .font(.ui(.callout))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
             Button("Remove Verses") { coordinator.endScripture() }
@@ -118,7 +118,7 @@ struct LivePanel: View {
 
     private func missingMediaWarning(_ background: SlideBackground?) -> some View {
         let kind = if case .video = background { "video" } else { "image" }
-        return WarningLabel("Background \(kind) missing. The default background is showing.")
+        return WarningLabel(String(localized: "Background \(kind) missing. The default background is showing."))
     }
 
     /// The background's image or video is missing or unreadable, so the default background shows instead.
@@ -128,10 +128,10 @@ struct LivePanel: View {
     }
 
     private var upNextPlaceholder: String {
-        guard let live = coordinator.state.live else { return "Nothing live" }
+        guard let live = coordinator.state.live else { return String(localized: "Nothing live") }
         // The live slide (or its playlist item) was deleted, so there is no sequence to follow.
-        if coordinator.project.slide(at: live.position) == nil { return "The live slide isn't in this show" }
-        return "End of show"
+        if coordinator.project.slide(at: live.position) == nil { return String(localized: "The live slide isn't in this show") }
+        return String(localized: "End of show")
     }
 
     @ViewBuilder
@@ -163,7 +163,7 @@ struct LivePanel: View {
                 }
             } else {
                 Text(placeholder)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
             }
         }

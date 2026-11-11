@@ -19,7 +19,7 @@ struct TransportControls: View {
                 .accessibilityLabel("Video position")
 
             Text("-" + TimeText.format(playback.duration - playback.currentTime))
-                .font(.caption.monospacedDigit())
+                .font(.ui(.caption).monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(width: Widths.valueLabel, alignment: .trailing)
                 .help("Time left in the clip")

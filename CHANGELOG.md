@@ -3,6 +3,35 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.6.0 (2026-11-10)
+
+### Settings and Spanish
+- **Settings › Appearance (Mac) and File › Settings… (Windows):** dark, light or the same as the system; text size
+  for the operator screen (slides and outputs keep theirs); and the colours for LIVE, CUED (Mac) and each kind of
+  song section, with Restore Defaults. Changes show straight away and are kept on that computer, not in the project.
+  View › Follow System Appearance is now the "Same as macOS" appearance; a Mac that had it on keeps it.
+- **Presenter in Spanish:** every window, menu and message on both apps, and the engine's own messages, undo names
+  and the names new things get. Settings › Language chooses English, Español or the system's language; it applies
+  the next time Presenter opens, and Restart Now does that when nothing is on the audience output.
+
+### Windows
+- **Presenter for Windows, open beta:** a Windows app on the same engine, released on its own `windows-v` tags
+  (first: windows-v0.1.0-beta.1, notes in [docs/release-notes](docs/release-notes)). Nothing changes in the Mac app.
+- **An installer instead of a zip:** double-click it and Presenter goes in the Start menu and on the Desktop, with
+  no folder to unzip. It's made with Velopack, which is free. Uninstalling leaves the project on the computer, and a
+  project from the zip version carries over.
+- **The same icon as the Mac app:** on Presenter.exe, its shortcuts, the installer, the taskbar and the title bars.
+
+### Fixes
+- **Windows: Presenter closing by itself:** started by double-clicking, it closed as soon as the engine wrote a log
+  line, such as when adding a song or taking a slide live (betas 1 and 2; fixed in windows-v0.1.0-beta.3).
+- **Windows: settings:** they now load when Presenter opens, so the theme, text size, colours and Spanish stay, and
+  Restore Defaults updates its lists (beta 2; fixed in windows-v0.1.0-beta.3).
+- **Windows: Space after clicking a button:** Space moved to the next slide *and* pressed the button clicked last,
+  which could close the audience output mid-song. Space now only moves on.
+- **Welcome window:** shows just the version (Version 1.6.0), without the build number. About Presenter still shows
+  the build.
+
 ## v1.5.0 (2026-10-31)
 
 ### Scripture

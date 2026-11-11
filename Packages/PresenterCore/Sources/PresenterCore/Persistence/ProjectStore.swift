@@ -9,10 +9,10 @@ public enum ProjectStoreError: Error, Equatable, Sendable {
 
     public var message: String {
         switch self {
-        case .unreadable(let detail): "The project file couldn't be read. \(detail)"
+        case .unreadable(let detail): Localization.text("The project file couldn't be read. {0}", detail)
         case .newerSchema(let found, let supported):
-            "The project was saved by a newer version of Presenter (format \(found); this version reads up to \(supported))."
-        case .writeFailed(let detail): "The project couldn't be saved. \(detail)"
+            Localization.text("The project was saved by a newer version of Presenter (format {0}; this version reads up to {1}).", String(found), String(supported))
+        case .writeFailed(let detail): Localization.text("The project couldn't be saved. {0}", detail)
         }
     }
 }

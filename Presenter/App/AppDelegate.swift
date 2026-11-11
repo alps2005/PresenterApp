@@ -35,13 +35,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         persistence.problem = nil
         let alert = NSAlert()
         alert.alertStyle = .critical
-        alert.messageText = "Your changes couldn't be saved"
-        alert.informativeText = """
+        alert.messageText = String(localized: "Your changes couldn't be saved")
+        alert.informativeText = String(localized: """
             \(problem) If you quit now, changes since the last save are lost. \
             To keep them, cancel and use Export Project… to save a copy somewhere else.
-            """
-        alert.addButton(withTitle: "Cancel")
-        let quit = alert.addButton(withTitle: "Quit Anyway")
+            """)
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        let quit = alert.addButton(withTitle: String(localized: "Quit Anyway"))
         quit.hasDestructiveAction = true
         guard alert.runModal() == .alertSecondButtonReturn else { return .terminateCancel }
         Log.app.error("Quit without saving after a failed save")

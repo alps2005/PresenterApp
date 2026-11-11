@@ -70,7 +70,7 @@ extension PresentationCoordinator {
     public func addMessage(_ definition: MessageDefinition) -> MessageDefinition {
         recordingUndo("Add Message") {
             var message = definition
-            if message.name.isEmpty { message.name = "Message" }
+            if message.name.isEmpty { message.name = Localization.text("Message") }
             project.messages.append(message)
             lastRejection = nil
             return message
@@ -101,11 +101,11 @@ extension PresentationCoordinator {
     public func addProp(name: String) -> SlideDocument {
         recordingUndo("Add Prop") {
             var prop = SlideDocument(
-                elements: [.text(TextElement(text: name.isEmpty ? "Prop" : name, role: .caption,
+                elements: [.text(TextElement(text: name.isEmpty ? Localization.text("Prop") : name, role: .caption,
                                              box: TextBox(frame: .centered(width: 0.4, height: 0.15))))],
                 background: .transparent
             )
-            prop.label = name.isEmpty ? "Prop" : name
+            prop.label = name.isEmpty ? Localization.text("Prop") : name
             project.props.slides.append(prop)
             lastRejection = nil
             return prop
@@ -139,7 +139,7 @@ extension PresentationCoordinator {
     @discardableResult
     public func addTimer(name: String, kind: TimerDefinition.Kind) -> TimerDefinition {
         recordingUndo("Add Timer") {
-            let timer = TimerDefinition(name: name.isEmpty ? "Timer" : name, kind: kind)
+            let timer = TimerDefinition(name: name.isEmpty ? Localization.text("Timer") : name, kind: kind)
             project.timers.append(timer)
             lastRejection = nil
             return timer

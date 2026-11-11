@@ -28,8 +28,6 @@ struct OperatorView: View {
     @AppStorage("quickEditVisible") private var isQuickEditVisible = false
     @AppStorage("mediaBinVisible") private var isMediaBinVisible = false
     @AppStorage("audioBinVisible") private var isAudioBinVisible = false
-    /// Off by default: the console is dark for booths. View › Follow System Appearance turns it on.
-    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
 
     var body: some View {
         Group {
@@ -39,7 +37,7 @@ struct OperatorView: View {
                 showView
             }
         }
-        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
+        .operatorLook()
         .background(WindowScreenReader { outputManager.operatorWindowMoved(to: $0) })
         #if DEBUG
         .onAppear { openEditorIfAsked() }
@@ -140,11 +138,11 @@ struct OperatorView: View {
     /// Turns a PDF's pages into a presentation, one picture per slide, added to the show. Keynote and PowerPoint decks
     /// come in this way after File › Export To › PDF.
     private func importPDF() {
-        guard let url = MediaPanel.choose([.pdf], message: "Choose a PDF. Export a Keynote or PowerPoint deck as a PDF first.").first
+        guard let url = MediaPanel.choose([.pdf], message: String(localized: "Choose a PDF. Export a Keynote or PowerPoint deck as a PDF first.")).first
         else { return }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("PDF-\(UUID().uuidString)", isDirectory: true)
         let title = url.deletingPathExtension().lastPathComponent
-        pdfImportStatus = "Reading “\(title)”…"
+        pdfImportStatus = String(localized: "Reading “\(title)”…")
         Task {
             defer {
                 pdfImportStatus = nil
@@ -158,7 +156,7 @@ struct OperatorView: View {
                 }.value
                 var assetIDs: [UUID] = []
                 for (index, page) in pages.enumerated() {
-                    pdfImportStatus = "Importing page \(index + 1) of \(pages.count)…"
+                    pdfImportStatus = String(localized: "Importing page \(index + 1) of \(pages.count)…")
                     let asset = try await mediaLibrary.importImage(at: page)
                     coordinator.addMediaAsset(asset)
                     assetIDs.append(asset.id)

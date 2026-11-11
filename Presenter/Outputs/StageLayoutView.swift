@@ -45,7 +45,7 @@ struct StageRegionView: View {
             if let next = coordinator.upNextSlide?.slide {
                 VStack(alignment: region.alignment.horizontalAlignment, spacing: size * 0.1) {
                     if region.showsLabel {
-                        label("NEXT" + (next.label.map { " · \($0.uppercased())" } ?? ""))
+                        label(String(localized: "NEXT") + (next.label.map { " · \($0.uppercased())" } ?? ""))
                     }
                     words(StageText.words(next, coordinator: coordinator, at: now))
                 }

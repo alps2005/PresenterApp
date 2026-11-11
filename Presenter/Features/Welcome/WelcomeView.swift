@@ -20,7 +20,6 @@ struct WelcomeView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     @AppStorage(Self.showAtLaunchKey) private var showsAtLaunch = true
-    @AppStorage(PresenterCommands.followSystemAppearanceKey) private var followsSystemAppearance = false
     @State private var selectedID: UUID?
     @State private var isNamingNewShow = false
     /// Set when this window closes because the operator window is taking over, so closing it doesn't quit.
@@ -48,7 +47,7 @@ struct WelcomeView: View {
             HStack {
                 Toggle("Show this window when Presenter opens", isOn: $showsAtLaunch)
                     .toggleStyle(.checkbox)
-                    .font(.callout)
+                    .font(.ui(.callout))
                 Spacer()
                 Button("Open") {
                     if let selectedID, coordinator.openPlaylist(selectedID).isApplied { openOperatorWindow() }
@@ -64,7 +63,7 @@ struct WelcomeView: View {
         .frame(width: Self.size.width, height: Self.size.height)
         .background(Palette.sidebar)
         .background(WelcomeWindowStyler())
-        .preferredColorScheme(followsSystemAppearance ? nil : .dark)
+        .operatorLook()
         .onAppear {
             selectedID = coordinator.project.activePlaylistID
             // With the checkbox off, Presenter starts in the operator window. Only at launch: reopened later
@@ -98,7 +97,7 @@ struct WelcomeView: View {
             Text("Presenter")
                 .font(.system(size: 30, weight: .bold))
             Text(Self.versionText)
-                .font(.callout)
+                .font(.ui(.callout))
                 .foregroundStyle(.secondary)
         }
     }
@@ -110,7 +109,7 @@ struct WelcomeView: View {
                 persistence.openProject()
             } label: {
                 Label("Open Project…", systemImage: "folder")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             }
             .help("Replace this project with one exported from Presenter")
             Button {
@@ -118,7 +117,7 @@ struct WelcomeView: View {
                 ui.isImportingSongs = true
             } label: {
                 Label("Import Songs…", systemImage: "music.note.list")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             }
             .help("Add OpenLyrics, ChordPro or SongSelect files to the open show")
             Menu {
@@ -130,7 +129,7 @@ struct WelcomeView: View {
                 }
             } label: {
                 Label("New Show", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
+                    .labelStyle(WelcomeActionLabelStyle())
             } primaryAction: {
                 isNamingNewShow = true
             }
@@ -139,12 +138,11 @@ struct WelcomeView: View {
         .controlSize(.large)
     }
 
-    /// "Version 1.2 (build 15)", from the bundle (CI sets both from the tag and the run number).
+    /// "Version 1.5.0", from the bundle (CI sets it from the tag). The build number stays out of sight: only the
+    /// updater needs it, and About Presenter still shows it.
     static var versionText: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "Version \(version) (build \(build))"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        return String(localized: "Version \(version)")
     }
 
     private func openOperatorWindow() {
@@ -169,4 +167,19 @@ private struct WelcomeWindowStyler: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+/// The welcome window's three actions: the icon above the words, so longer translations ("Importar canciones…")
+/// fit the narrow window without shrinking.
+private struct WelcomeActionLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(spacing: Spacing.xxs) {
+            configuration.icon
+            configuration.title
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxs)
+    }
 }

@@ -4,7 +4,7 @@ extension ProjectDocument {
     /// What a new install starts with: the starting themes and nothing else. No presentations, media, timers,
     /// messages or props, so the operator's library holds only what they add.
     public static func starter() -> ProjectDocument {
-        ProjectDocument(name: "My Show", timers: [], messages: [], props: .propsLibrary(slides: []))
+        ProjectDocument(name: Localization.text("My Show"), timers: [], messages: [], props: .propsLibrary(slides: []))
     }
 
     /// Demo content for tests, previews and layout checks; never opened for operators. Contains no third-party

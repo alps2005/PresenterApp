@@ -7,8 +7,8 @@ extension PresentationCoordinator {
     public var canUndo: Bool { !undoStack.isEmpty }
     public var canRedo: Bool { !redoStack.isEmpty }
     /// What Undo would revert, e.g. "Typing", for the Edit menu.
-    public var undoActionName: String? { undoStack.last?.actionName }
-    public var redoActionName: String? { redoStack.last?.actionName }
+    public var undoActionName: String? { undoStack.last.map { Localization.text($0.actionName) } }
+    public var redoActionName: String? { redoStack.last.map { Localization.text($0.actionName) } }
 
     /// Restores the project to before the last edit. The audience output never changes: the live slide is a
     /// snapshot, and only editing commands are recorded.

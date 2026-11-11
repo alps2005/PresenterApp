@@ -51,7 +51,7 @@ struct SlideThumbnailSidebar: View {
         let isCued = position != nil && coordinator.state.preview == position
         return HStack(alignment: .top, spacing: Spacing.sm) {
             Text("\(index + 1)")
-                .font(.caption)
+                .font(.ui(.caption))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .trailing)

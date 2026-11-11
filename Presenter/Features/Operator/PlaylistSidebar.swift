@@ -102,7 +102,7 @@ struct PlaylistSidebar: View {
                         themeRow(theme)
                     }
                     Button {
-                        if let theme = coordinator.addTheme(named: "New Theme") { editingThemeID = theme.id }
+                        if let theme = coordinator.addTheme(named: String(localized: "New Theme")) { editingThemeID = theme.id }
                     } label: {
                         Label("New Theme…", systemImage: "plus")
                     }
@@ -124,7 +124,7 @@ struct PlaylistSidebar: View {
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Button {
-                    coordinator.addPresentation(title: "Untitled")
+                    coordinator.addPresentation(title: String(localized: "Untitled"))
                 } label: {
                     Label("New Presentation", systemImage: PresentationKind.presentation.systemImage)
                 }
@@ -157,8 +157,8 @@ struct PlaylistSidebar: View {
             Button("Cancel", role: .cancel) {}
         }
         .confirmDeletion(
-            "Delete this folder?",
-            message: "Its presentations aren't deleted: they move to the top of the library. You can undo this with ⌘Z.",
+            String(localized: "Delete this folder?"),
+            message: String(localized: "Its presentations aren't deleted: they move to the top of the library. You can undo this with ⌘Z."),
             of: $folderPendingDeletion
         ) { folder in
             coordinator.deleteFolder(folder.id)
@@ -183,8 +183,8 @@ struct PlaylistSidebar: View {
             }
         }
         .confirmDeletion(
-            "Delete this theme?",
-            message: "Presentations that use it keep their look. You can undo this with ⌘Z.",
+            String(localized: "Delete this theme?"),
+            message: String(localized: "Presentations that use it keep their look. You can undo this with ⌘Z."),
             of: $themePendingDeletion
         ) { theme in
             coordinator.deleteTheme(theme.id)
@@ -368,7 +368,7 @@ struct PlaylistSidebar: View {
             }
             .buttonStyle(.borderless)
             .help("Add to Show")
-            .accessibilityLabel("Add \(presentation.title.isEmpty ? "Untitled" : presentation.title) to Show")
+            .accessibilityLabel("Add \(presentation.title.isEmpty ? String(localized: "Untitled") : presentation.title) to Show")
         }
         .contentShape(Rectangle())
         .contextMenu {
@@ -390,7 +390,7 @@ struct PlaylistSidebar: View {
             if isDefault {
                 Label("Default", systemImage: "star.fill")
                     .labelStyle(.titleAndIcon)
-                    .font(.caption)
+                    .font(.ui(.caption))
                     .foregroundStyle(.secondary)
                     .help("New songs and presentations use this theme")
             }
@@ -437,7 +437,7 @@ struct PlaylistSidebar: View {
                     .foregroundStyle(.secondary)
             }
         } else {
-            WarningLabel("Missing presentation")
+            WarningLabel(String(localized: "Missing presentation"))
         }
     }
 }
@@ -449,15 +449,15 @@ private enum FolderNaming {
 
     var title: String {
         switch self {
-        case .new: "New Folder"
-        case .rename: "Rename Folder"
+        case .new: String(localized: "New Folder")
+        case .rename: String(localized: "Rename Folder")
         }
     }
 
     var confirmTitle: String {
         switch self {
-        case .new: "Create"
-        case .rename: "Rename"
+        case .new: String(localized: "Create")
+        case .rename: String(localized: "Rename")
         }
     }
 }
@@ -474,9 +474,9 @@ extension PresentationKind {
 
     var title: String {
         switch self {
-        case .presentation: "Presentation"
-        case .song: "Song"
-        case .scripture: "Scripture"
+        case .presentation: String(localized: "Presentation")
+        case .song: String(localized: "Song")
+        case .scripture: String(localized: "Scripture")
         }
     }
 }

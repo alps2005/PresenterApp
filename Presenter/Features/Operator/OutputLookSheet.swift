@@ -13,7 +13,7 @@ struct OutputLookSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("\(role.title) Look").font(.title2.bold())
+            Text("\(role.title) Look").font(.ui(.title2).bold())
             AudienceOutputView(coordinator: coordinator) { outputManager.look(role) }
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 6))

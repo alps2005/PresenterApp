@@ -18,8 +18,8 @@ struct SongDetailsFields: View {
 
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: Spacing.sm, verticalSpacing: Spacing.sm) {
-            row("Writers", text: $authors, prompt: "Separated by commas", field: .authors)
-            row("Copyright", text: $copyright, prompt: "Year and holder", field: .copyright)
+            row(String(localized: "Writers"), text: $authors, prompt: String(localized: "Separated by commas"), field: .authors)
+            row(String(localized: "Copyright"), text: $copyright, prompt: String(localized: "Year and holder"), field: .copyright)
             row("CCLI #", text: $ccliNumber, prompt: "Song number", field: .ccliNumber)
         }
         .textFieldStyle(.roundedBorder)

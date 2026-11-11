@@ -21,14 +21,14 @@ struct NewSongSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("New Song").font(.title2.bold())
+            Text("New Song").font(.ui(.title2).bold())
 
             TextField("Title", text: $title)
                 .textFieldStyle(.roundedBorder)
 
             HStack(alignment: .top, spacing: Spacing.md) {
                 TextEditor(text: $lyrics)
-                    .font(.body.monospaced())
+                    .font(.ui(.body).monospaced())
                     .scrollContentBackground(.hidden)
                     .padding(Spacing.sm)
                     .background(Palette.panelRaised, in: RoundedRectangle(cornerRadius: Radius.card))
@@ -48,7 +48,7 @@ struct NewSongSheet: View {
             }
 
             Text("A blank line starts a new slide. A line with only a section name (Verse 1, Chorus, Bridge, Verso, Coro, Puente…) isn't shown; it labels the slides after it.")
-                .font(.caption)
+                .font(.ui(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -64,7 +64,7 @@ struct NewSongSheet: View {
                     Text("None").tag(UUID?.none)
                     Divider()
                     ForEach(coordinator.project.themes) { theme in
-                        Text(theme.name.isEmpty ? "Untitled Theme" : theme.name).tag(Optional(theme.id))
+                        Text(theme.name.isEmpty ? String(localized: "Untitled Theme") : theme.name).tag(Optional(theme.id))
                     }
                 }
                 .fixedSize()
@@ -91,7 +91,7 @@ struct NewSongSheet: View {
     private var preview: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(slides.count == 1 ? "1 slide" : "\(slides.count) slides")
-                .font(.caption.bold())
+                .font(.ui(.caption).bold())
                 .foregroundStyle(.secondary)
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -101,9 +101,9 @@ struct NewSongSheet: View {
                                 Text("\(index + 1)").monospacedDigit().foregroundStyle(.secondary)
                                 if let label = slide.label { GroupLabelTag(label: label) }
                             }
-                            .font(.caption2)
+                            .font(.ui(.caption2))
                             Text(slide.primaryText)
-                                .font(.caption)
+                                .font(.ui(.caption))
                                 .lineLimit(4)
                         }
                         .padding(Spacing.sm)
@@ -122,27 +122,11 @@ struct GroupLabelTag: View {
 
     var body: some View {
         Text(label)
-            .font(.caption2.bold())
+            .font(.ui(.caption2).bold())
             .lineLimit(1)
             .padding(.horizontal, Spacing.sm)
             .padding(.vertical, Spacing.xxs)
-            .background(SongSectionKind(label: label).color, in: Capsule())
+            .background(AppSettings.shared.color(for: SongSectionKind(label: label)), in: Capsule())
             .foregroundStyle(.white)
-    }
-}
-
-extension SongSectionKind {
-    /// Kept clear of red LIVE, blue CUED and amber warnings. (EDITED shares purple with Chorus, but it's a
-    /// badge with a pencil icon, not a capsule.)
-    var color: Color {
-        switch self {
-        case .verse: .indigo
-        case .preChorus: .teal
-        case .chorus: .purple
-        case .bridge: .brown
-        case .tag, .ending: .pink
-        case .intro, .interlude: .cyan
-        case .other: .gray
-        }
     }
 }

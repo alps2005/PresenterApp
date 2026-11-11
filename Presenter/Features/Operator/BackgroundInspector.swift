@@ -42,9 +42,9 @@ struct BackgroundInspector: View {
 
     private var inheritLabel: String {
         switch target {
-        case .slide: "Presentation"
-        case .presentation: hasThemeBackground ? "Theme" : "Default"
-        case .theme: "Default"
+        case .slide: String(localized: "Presentation")
+        case .presentation: hasThemeBackground ? String(localized: "Theme") : String(localized: "Default")
+        case .theme: String(localized: "Default")
         }
     }
 
@@ -57,9 +57,9 @@ struct BackgroundInspector: View {
 
     private var inheritedText: String {
         switch target {
-        case .slide: "This slide uses its presentation's background."
-        case .presentation: hasThemeBackground ? "Slides use the theme's background." : "Slides use the app's default background."
-        case .theme: "Slides use their presentation's background, or the app's default."
+        case .slide: String(localized: "This slide uses its presentation's background.")
+        case .presentation: hasThemeBackground ? String(localized: "Slides use the theme's background.") : String(localized: "Slides use the app's default background.")
+        case .theme: String(localized: "Slides use their presentation's background, or the app's default.")
         }
     }
 
@@ -128,7 +128,7 @@ struct BackgroundInspector: View {
     @ViewBuilder
     private func imageControls(_ image: ImageBackground) -> some View {
         HStack {
-            Label(coordinator.project.asset(withID: image.assetID)?.originalFilename ?? "Unknown image",
+            Label(coordinator.project.asset(withID: image.assetID)?.originalFilename ?? String(localized: "Unknown image"),
                   systemImage: "photo")
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -136,7 +136,7 @@ struct BackgroundInspector: View {
                 .disabled(isImporting)
         }
         if mediaLibrary.isMissing(image.assetID) {
-            WarningLabel("The image file is missing or unreadable. Slides show the default background instead.")
+            WarningLabel(String(localized: "The image file is missing or unreadable. Slides show the default background instead."))
         }
         let scaling = Binding(
             get: { image.scaling },
@@ -174,7 +174,7 @@ struct BackgroundInspector: View {
     @ViewBuilder
     private func videoControls(_ video: VideoBackground) -> some View {
         HStack {
-            Label(coordinator.project.asset(withID: video.assetID)?.originalFilename ?? "Unknown video",
+            Label(coordinator.project.asset(withID: video.assetID)?.originalFilename ?? String(localized: "Unknown video"),
                   systemImage: "film")
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -182,7 +182,7 @@ struct BackgroundInspector: View {
                 .disabled(isImporting)
         }
         if mediaLibrary.isMissing(video.assetID) {
-            WarningLabel("The video file is missing or unreadable. Slides show the default background instead.")
+            WarningLabel(String(localized: "The video file is missing or unreadable. Slides show the default background instead."))
         }
         let scaling = Binding(get: { video.scaling }, set: { value in
             var updated = video
@@ -244,7 +244,7 @@ struct BackgroundInspector: View {
 
     /// Asks for a video, checks it plays, copies it into the media library and uses it.
     private func chooseVideo() {
-        guard let url = MediaPanel.choose([.movie], message: "Choose a background video").first else { return }
+        guard let url = MediaPanel.choose([.movie], message: String(localized: "Choose a background video")).first else { return }
 
         let previous = background
         isImporting = true
@@ -263,14 +263,14 @@ struct BackgroundInspector: View {
                 }
                 apply(.video(video))
             } catch {
-                importError = "Couldn't import \(url.lastPathComponent). Choose a video this Mac can play (MP4, MOV, M4V…)."
+                importError = String(localized: "Couldn't import \(url.lastPathComponent). Choose a video this Mac can play (MP4, MOV, M4V…).")
             }
         }
     }
 
     /// Asks for an image, copies it into the media library and uses it. Cancelling changes nothing.
     private func chooseImage() {
-        guard let url = MediaPanel.choose([.image], message: "Choose a background image").first else { return }
+        guard let url = MediaPanel.choose([.image], message: String(localized: "Choose a background image")).first else { return }
 
         let previous = background
         isImporting = true
@@ -288,7 +288,7 @@ struct BackgroundInspector: View {
                 }
                 apply(.image(image))
             } catch {
-                importError = "Couldn't import \(url.lastPathComponent). Choose a JPEG, PNG, HEIC or other image file."
+                importError = String(localized: "Couldn't import \(url.lastPathComponent). Choose a JPEG, PNG, HEIC or other image file.")
             }
         }
     }

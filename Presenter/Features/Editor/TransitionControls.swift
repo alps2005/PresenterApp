@@ -4,11 +4,11 @@ import PresenterCore
 extension PresenterCore.SlideTransition.Kind {
     var title: String {
         switch self {
-        case .dissolve: "Dissolve"
-        case .fadeThroughBlack: "Fade Through Black"
-        case .push: "Push"
-        case .wipe: "Wipe"
-        case .zoom: "Zoom"
+        case .dissolve: String(localized: "Dissolve")
+        case .fadeThroughBlack: String(localized: "Fade Through Black")
+        case .push: String(localized: "Push")
+        case .wipe: String(localized: "Wipe")
+        case .zoom: String(localized: "Zoom")
         }
     }
 }
@@ -16,10 +16,10 @@ extension PresenterCore.SlideTransition.Kind {
 extension ElementTransition.Kind {
     var title: String {
         switch self {
-        case .fade: "Fade"
-        case .push: "Push"
-        case .wipe: "Wipe"
-        case .zoom: "Zoom"
+        case .fade: String(localized: "Fade")
+        case .push: String(localized: "Push")
+        case .wipe: String(localized: "Wipe")
+        case .zoom: String(localized: "Zoom")
         }
     }
 }
@@ -62,13 +62,17 @@ struct TransitionEdgePicker: View {
     }
 
     private func label(for edge: TransitionEdge) -> String {
-        let side = switch edge {
-        case .left: "left"
-        case .right: "right"
-        case .top: "top"
-        case .bottom: "bottom"
+        // Whole sentences, so each language can word the direction its own way.
+        switch (phase == .out, edge) {
+        case (true, .left): String(localized: "Out through the left")
+        case (true, .right): String(localized: "Out through the right")
+        case (true, .top): String(localized: "Out through the top")
+        case (true, .bottom): String(localized: "Out through the bottom")
+        case (false, .left): String(localized: "In from the left")
+        case (false, .right): String(localized: "In from the right")
+        case (false, .top): String(localized: "In from the top")
+        case (false, .bottom): String(localized: "In from the bottom")
         }
-        return phase == .out ? "Out through the \(side)" : "In from the \(side)"
     }
 }
 

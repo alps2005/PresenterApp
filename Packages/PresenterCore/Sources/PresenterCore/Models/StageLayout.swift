@@ -45,15 +45,15 @@ public struct StageRegion: Identifiable, Codable, Hashable, Sendable {
 
         public var title: String {
             switch self {
-            case .liveText: "Live Words"
-            case .nextText: "Next Words"
-            case .liveSlide: "Live Slide"
-            case .nextSlide: "Next Slide"
-            case .clock: "Clock"
-            case .timer: "Timer"
-            case .notes: "Notes"
-            case .message: "Stage Message"
-            case .text: "Text"
+            case .liveText: Localization.text("Live Words")
+            case .nextText: Localization.text("Next Words")
+            case .liveSlide: Localization.text("Live Slide")
+            case .nextSlide: Localization.text("Next Slide")
+            case .clock: Localization.text("Clock")
+            case .timer: Localization.text("Timer")
+            case .notes: Localization.text("Notes")
+            case .message: Localization.text("Stage Message")
+            case .text: Localization.text("Text")
             }
         }
 
