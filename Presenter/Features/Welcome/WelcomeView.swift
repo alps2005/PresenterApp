@@ -128,14 +128,25 @@ struct WelcomeView: View {
                     }
                 }
             } label: {
-                Label("New Show", systemImage: "plus")
-                    .labelStyle(WelcomeActionLabelStyle())
-            } primaryAction: {
-                isNamingNewShow = true
+                // The chevron stands in for the menu indicator, which the custom button style doesn't draw.
+                Label {
+                    HStack(spacing: Spacing.xs) {
+                        Text("New Show")
+                        Image(systemName: "chevron.down")
+                            .font(.ui(.caption2).weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "plus")
+                }
+                .labelStyle(WelcomeActionLabelStyle())
             }
+            .menuStyle(.button)
+            .menuIndicator(.hidden)
             .help("Make a new show, or a copy of the selected one")
         }
-        .controlSize(.large)
+        .buttonStyle(WelcomeActionButtonStyle())
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     /// "Version 1.5.0", from the bundle (CI sets it from the tag). The build number stays out of sight: only the
@@ -167,6 +178,22 @@ private struct WelcomeWindowStyler: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+/// The welcome window's three actions as one shape. A system bordered button wouldn't do: macOS draws the New Show
+/// menu at a fixed height with the icon beside the words, so it came out thinner than the other two.
+private struct WelcomeActionButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.vertical, Spacing.sm)
+            .padding(.horizontal, Spacing.sm)
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .background(
+                Color.primary.opacity(configuration.isPressed ? 0.2 : 0.1),
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+    }
 }
 
 /// The welcome window's three actions: the icon above the words, so longer translations ("Importar canciones…")
