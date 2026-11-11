@@ -40,7 +40,7 @@ extension PresentationCoordinator {
         }
         return recordingUndo("Duplicate Show") {
             // New item IDs: an item belongs to one show, so a live slide or cue never points into two.
-            let copy = PlaylistDocument(title: "\(source.title) Copy",
+            let copy = PlaylistDocument(title: Localization.copyName(of: source.title),
                                         items: source.items.map { PresentationItem(presentationID: $0.presentationID) })
             let index = project.playlists.firstIndex { $0.id == playlistID } ?? project.playlists.endIndex - 1
             project.playlists.insert(copy, at: index + 1)

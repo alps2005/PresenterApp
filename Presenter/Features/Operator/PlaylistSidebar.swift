@@ -400,7 +400,7 @@ struct PlaylistSidebar: View {
         .contextMenu {
             Button("Edit Theme…") { editingThemeID = theme.id }
             Button("Duplicate") {
-                if let copy = coordinator.addTheme(named: "\(theme.name) Copy", basedOn: theme.id) { editingThemeID = copy.id }
+                if let copy = coordinator.addTheme(named: Localization.copyName(of: theme.name), basedOn: theme.id) { editingThemeID = copy.id }
             }
             if isDefault {
                 Button("Don't Use for New Songs") { coordinator.setDefaultTheme(nil) }

@@ -3,6 +3,14 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.6.1 (2026-11-10)
+
+### Fixes
+- **Welcome window:** New Show is the same size as the other two buttons, and "Nuevo programa" fits. A click opens
+  its menu (New Empty Show… or Duplicate the selected show).
+- **Copies named in the operator's language:** a duplicated show, macro, theme or stage layout is "Domingo (copia)"
+  in Spanish, not "Domingo Copy".
+
 ## v1.6.0 (2026-11-10)
 
 ### Settings and Spanish

@@ -37,6 +37,11 @@ public enum Localization {
         text(english, arguments: arguments, in: language)
     }
 
+    /// The name a duplicate gets: "Sunday Copy", "Sunday (copia)".
+    public static func copyName(of name: String) -> String {
+        text("{0} Copy", name)
+    }
+
     public static func text(_ english: String, arguments: [String] = [], in language: AppLanguage) -> String {
         var result = table(for: language)[english] ?? english
         for (index, argument) in arguments.enumerated() {

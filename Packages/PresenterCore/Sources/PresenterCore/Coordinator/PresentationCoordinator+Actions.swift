@@ -99,7 +99,7 @@ extension PresentationCoordinator {
         }
         return recordingUndo("Duplicate Macro") {
             let source = project.macros[index]
-            let copy = Macro(name: "\(source.name) Copy", color: source.color, actions: source.actions)
+            let copy = Macro(name: Localization.copyName(of: source.name), color: source.color, actions: source.actions)
             project.macros.insert(copy, at: index + 1)
             lastRejection = nil
             return copy
