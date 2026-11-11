@@ -3,7 +3,7 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
-## Unreleased
+## v1.6.0 (2026-11-10)
 
 ### Settings and Spanish
 - **Settings › Appearance (Mac) and File › Settings… (Windows):** dark, light or the same as the system; text size
@@ -29,7 +29,7 @@ Notable changes to Presenter. Versions follow the release tags; each release's f
   Restore Defaults updates its lists (beta 2; fixed in windows-v0.1.0-beta.3).
 - **Windows: Space after clicking a button:** Space moved to the next slide *and* pressed the button clicked last,
   which could close the audience output mid-song. Space now only moves on.
-- **Welcome window:** shows just the version (Version 1.5.0), without the build number. About Presenter still shows
+- **Welcome window:** shows just the version (Version 1.6.0), without the build number. About Presenter still shows
   the build.
 
 ## v1.5.0 (2026-10-31)
