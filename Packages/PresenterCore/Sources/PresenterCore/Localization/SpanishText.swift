@@ -81,6 +81,7 @@ enum SpanishText {
         "Untitled Show": "Programa sin título",
         "Untitled Song": "Canción sin título",
         "Untitled Macro": "Macro sin título",
+        "{0} Copy": "{0} (copia)",
         "New Folder": "Carpeta nueva",
         "Stage Layout": "Diseño de escenario",
         "Arrangement": "Arreglo",

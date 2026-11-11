@@ -142,7 +142,7 @@ struct StageLayoutEditor: View {
     }
 
     private func duplicate(_ layout: StageLayout) {
-        if let copy = coordinator.addStageLayout(named: "\(layout.name) Copy", basedOn: layout.id) { layoutID = copy.id }
+        if let copy = coordinator.addStageLayout(named: Localization.copyName(of: layout.name), basedOn: layout.id) { layoutID = copy.id }
     }
 
     private func addRegion(_ kind: StageRegion.Kind) {

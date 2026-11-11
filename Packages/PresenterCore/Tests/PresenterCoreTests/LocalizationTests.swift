@@ -75,4 +75,18 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(coordinator.undoActionName, "Agregar canción")
         XCTAssertEqual(CommandRejection.nothingLive.message, "No hay nada en vivo.")
     }
+
+    @MainActor
+    func testDuplicatesAreNamedInTheLanguage() {
+        let coordinator = PresentationCoordinator(project: ProjectDocument(name: "T"))
+        let show = coordinator.addPlaylist(title: "Domingo")
+        let macro = coordinator.addMacro(named: "Inicio")
+        Localization.language = .spanish
+        defer { Localization.language = .english }
+        XCTAssertEqual(coordinator.duplicatePlaylist(show.id)?.title, "Domingo (copia)")
+        XCTAssertEqual(coordinator.duplicateMacro(macro.id)?.name, "Inicio (copia)")
+        XCTAssertEqual(Localization.copyName(of: "Sunday"), "Sunday (copia)")
+        Localization.language = .english
+        XCTAssertEqual(Localization.copyName(of: "Sunday"), "Sunday Copy")
+    }
 }
