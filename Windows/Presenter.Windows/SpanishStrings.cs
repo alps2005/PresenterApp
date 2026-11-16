@@ -58,6 +58,7 @@ public static class SpanishStrings
         ["AUDIENCE"] = "PÚBLICO",
         ["OUTPUT"] = "SALIDA",
         ["LIVE"] = "EN VIVO",
+        ["{0} colour"] = "Color de {0}",
         ["◀ Previous"] = "◀ Anterior",
         ["Next ▶"] = "Siguiente ▶",
         ["→ or Space"] = "→ o Espacio",

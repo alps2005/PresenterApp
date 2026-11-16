@@ -141,15 +141,15 @@ public sealed class SettingsWindow : Window
     {
         resetButton.IsEnabled = Settings.Current.IsLookCustomized;
         colourRows.Children.Clear();
-        colourRows.Children.Add(ColourRow(LiveTag(), Settings.Current.Live, colour => Settings.Current.SetLiveColor(colour)));
+        colourRows.Children.Add(ColourRow(LiveTag(), T("LIVE"), Settings.Current.Live, colour => Settings.Current.SetLiveColor(colour)));
         foreach (var (key, name) in Settings.SectionKinds)
         {
-            colourRows.Children.Add(ColourRow(MainWindow.SectionTag(T(name), key), Settings.Current.SectionColor(key, App.IsDark),
+            colourRows.Children.Add(ColourRow(MainWindow.SectionTag(T(name), key), T(name), Settings.Current.SectionColor(key, App.IsDark),
                 colour => Settings.Current.SetSectionColor(key, colour)));
         }
     }
 
-    private Control ColourRow(Control label, Color colour, Action<Color> keep)
+    private Control ColourRow(Control label, string name, Color colour, Action<Color> keep)
     {
         var picker = new ColorPicker
         {
@@ -157,6 +157,15 @@ public sealed class SettingsWindow : Window
             IsAlphaEnabled = false,
             IsAlphaVisible = false,
             HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        // Screen readers say which colour this is, not the panel the swatch is drawn in. The button they reach is
+        // inside the picker's template, so it's named once the template is in place.
+        var spoken = T("{0} colour", name);
+        Avalonia.Automation.AutomationProperties.SetName(picker, spoken);
+        picker.TemplateApplied += (_, _) =>
+        {
+            foreach (var button in Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(picker).OfType<Button>())
+                Avalonia.Automation.AutomationProperties.SetName(button, spoken);
         };
         picker.ColorChanged += (_, e) =>
         {
