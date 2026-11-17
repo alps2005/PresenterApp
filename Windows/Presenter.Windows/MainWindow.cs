@@ -247,6 +247,7 @@ public sealed class MainWindow : Window
                 Run(new { type = "openShow", showID = id });
         };
         AddRow(grid, Heading(T("SHOW")), 0);
+        Avalonia.Automation.AutomationProperties.SetName(showPicker, T("Show"));
         AddRow(grid, showPicker, 1);
         itemList.Margin = new Thickness(0, 8, 0, 0);
         itemList.SelectionChanged += (_, _) =>
@@ -291,6 +292,7 @@ public sealed class MainWindow : Window
         panel.Children.Add(audiencePreview);
 
         panel.Children.Add(Heading(T("OUTPUT")));
+        Avalonia.Automation.AutomationProperties.SetName(displayPicker, T("Audience output screen"));
         displayPicker.DropDownOpened += (_, _) => FillDisplays();
         panel.Children.Add(displayPicker);
         outputButton.Click += (_, _) => ToggleOutput();

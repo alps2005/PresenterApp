@@ -48,14 +48,14 @@ public sealed class SettingsWindow : Window
         var page = new StackPanel { Spacing = 10, Margin = new Thickness(24, 20) };
 
         page.Children.Add(Heading(T("APPEARANCE")));
-        var appearance = Choice(
+        var appearance = Choice(T("Appearance"),
             [(AppearanceChoice.Dark, T("Dark")), (AppearanceChoice.Light, T("Light")), (AppearanceChoice.System, T("Same as Windows"))],
             Settings.Current.Appearance, chosen => { Settings.Current.Appearance = chosen; Settings.Current.Save(); });
         page.Children.Add(appearance);
         page.Children.Add(Note(T("Presenter is dark unless you choose otherwise, so it stays quiet in a dark room.")));
 
         page.Children.Add(Heading(T("TEXT SIZE")));
-        var textSize = Choice(
+        var textSize = Choice(T("Text size"),
             [(TextSizeChoice.Small, T("Small")), (TextSizeChoice.Standard, T("Standard")), (TextSizeChoice.Large, T("Large")),
              (TextSizeChoice.ExtraLarge, T("Extra Large"))],
             Settings.Current.TextSize, chosen => { Settings.Current.TextSize = chosen; Settings.Current.Save(); });
@@ -64,7 +64,7 @@ public sealed class SettingsWindow : Window
 
         page.Children.Add(Heading(T("LANGUAGE")));
         // Each language by its own name, so it can be found whatever language the screen is in.
-        page.Children.Add(Choice(
+        page.Children.Add(Choice(T("Language"),
             [(LanguageChoice.System, T("Same as Windows")), (LanguageChoice.English, "English"), (LanguageChoice.Spanish, "Español")],
             Settings.Current.Language, chosen =>
             {
@@ -212,10 +212,12 @@ public sealed class SettingsWindow : Window
         (Owner as Window)?.Close();
     }
 
-    private static ComboBox Choice<TChoice>((TChoice Value, string Title)[] choices, TChoice current, Action<TChoice> choose)
+    private static ComboBox Choice<TChoice>(string name, (TChoice Value, string Title)[] choices, TChoice current, Action<TChoice> choose)
         where TChoice : struct, Enum
     {
         var box = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+        // Screen readers say what the list is for; the heading above it is only seen.
+        Avalonia.Automation.AutomationProperties.SetName(box, name);
         foreach (var (value, title) in choices) box.Items.Add(new ComboBoxItem { Content = title, Tag = value });
         ShowChoice(box, current);
         box.SelectionChanged += (_, _) =>

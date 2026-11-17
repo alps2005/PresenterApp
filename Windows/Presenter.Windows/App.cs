@@ -109,6 +109,18 @@ public sealed class App : Application
         {
             Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"),
         });
+        // Scroll bar buttons show only an arrow, so screen readers read their type name; give them words.
+        Styles.Add(new Styles
+        {
+            ScrollButton(Orientation.Vertical, "PART_LineUpButton", T("Scroll up")),
+            ScrollButton(Orientation.Vertical, "PART_LineDownButton", T("Scroll down")),
+            ScrollButton(Orientation.Vertical, "PART_PageUpButton", T("Page up")),
+            ScrollButton(Orientation.Vertical, "PART_PageDownButton", T("Page down")),
+            ScrollButton(Orientation.Horizontal, "PART_LineUpButton", T("Scroll left")),
+            ScrollButton(Orientation.Horizontal, "PART_LineDownButton", T("Scroll right")),
+            ScrollButton(Orientation.Horizontal, "PART_PageUpButton", T("Page left")),
+            ScrollButton(Orientation.Horizontal, "PART_PageDownButton", T("Page right")),
+        });
         Resources.ThemeDictionaries[ThemeVariant.Dark] = new ResourceDictionary
         {
             [PanelBrushKey] = new SolidColorBrush(Color.FromRgb(28, 28, 32)),
@@ -150,6 +162,13 @@ public sealed class App : Application
         };
         Styles.Add(lookStyles);
     }
+
+    private static Style ScrollButton(Orientation orientation, string part, string name) =>
+        new(x => x.OfType<ScrollBar>().PropertyEquals(ScrollBar.OrientationProperty, orientation)
+            .Template().OfType<RepeatButton>().Name(part))
+        {
+            Setters = { new Setter(Avalonia.Automation.AutomationProperties.NameProperty, name) },
+        };
 
     private static Style FontSize(Func<Selector?, Selector> selector, AvaloniaProperty property, double size) =>
         new(selector) { Setters = { new Setter(property, size) } };
