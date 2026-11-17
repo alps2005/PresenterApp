@@ -15,7 +15,8 @@ final class UpdaterController: NSObject {
     /// Whether this build updates at all: Debug builds and builds without a public key don't.
     let isAvailable: Bool
 
-    @ObservationIgnored private var controller: SPUStandardUpdaterController?
+    @ObservationIgnored private(set) var updater: SPUUpdater?
+    @ObservationIgnored private var userDriver: PresenterUserDriver?
     @ObservationIgnored private let isPresenting: () -> Bool
     @ObservationIgnored private var pendingRelaunch: (() -> Void)?
     @ObservationIgnored private var observation: NSKeyValueObservation?
@@ -29,14 +30,20 @@ final class UpdaterController: NSObject {
             Log.app.info("Updates are off in this build")
             return
         }
-        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: self)
-        self.controller = controller
-        observation = controller.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
+        // What SPUStandardUpdaterController does, with Presenter's own wording for a check that can't reach GitHub.
+        let userDriver = PresenterUserDriver(hostBundle: .main, delegate: self)
+        let updater = SPUUpdater(hostBundle: .main, applicationBundle: .main, userDriver: userDriver, delegate: self)
+        self.userDriver = userDriver
+        self.updater = updater
+        observation = updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
             MainActor.assumeIsolated { self?.canCheckForUpdates = updater.canCheckForUpdates }
         }
+        do {
+            try updater.start()
+        } catch {
+            Log.app.error("The updater couldn't start: \(error.localizedDescription, privacy: .public)")
+        }
     }
-
-    var updater: SPUUpdater? { controller?.updater }
 
     /// Sparkle can't replace a copy running from the disk image, or one macOS moved to a hidden read-only place
     /// because it wasn't dragged into a folder in Finder ("App Translocation"). Says so once per launch.
@@ -54,7 +61,7 @@ final class UpdaterController: NSObject {
     }
 
     func checkForUpdates() {
-        controller?.checkForUpdates(nil)
+        updater?.checkForUpdates()
     }
 
     /// Runs the postponed relaunch once nothing is live and every output is off.
@@ -105,4 +112,39 @@ extension UpdaterController: SPUStandardUserDriverDelegate {
     func standardUserDriverWillFinishUpdateSession() {
         availableVersion = nil
     }
+}
+
+/// Sparkle's standard windows, except when a check can't reach GitHub: Sparkle then says only "An error occurred in
+/// retrieving update information", which reads like something is wrong with Presenter. The error is reworded and
+/// Sparkle still shows it, so its "Checking for updates" window closes as usual.
+final class PresenterUserDriver: SPUStandardUserDriver {
+    override func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+        guard Self.isConnectionProblem(error) else {
+            super.showUpdaterError(error, acknowledgement: acknowledgement)
+            return
+        }
+        Log.app.info("Update check couldn't reach the server: \(String(describing: error), privacy: .public)")
+        let reworded = NSError(domain: (error as NSError).domain, code: (error as NSError).code, userInfo: [
+            NSLocalizedDescriptionKey: String(localized: "Presenter couldn't reach the update server"),
+            NSLocalizedRecoverySuggestionErrorKey: String(localized: "Check that this Mac is connected to the internet, then choose Presenter › Check for Updates… to try again. Nothing is wrong with Presenter or your project."),
+            NSUnderlyingErrorKey: error,
+        ])
+        super.showUpdaterError(reworded, acknowledgement: acknowledgement)
+    }
+
+    /// True when the error, or one under it, says the network couldn't be reached: offline, timed out, no DNS.
+    static func isConnectionProblem(_ error: any Error) -> Bool {
+        var current: NSError? = error as NSError
+        while let error = current {
+            if error.domain == NSURLErrorDomain, connectionCodes.contains(error.code) { return true }
+            current = error.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return false
+    }
+
+    private static let connectionCodes: Set<Int> = [
+        NSURLErrorNotConnectedToInternet, NSURLErrorTimedOut, NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost,
+        NSURLErrorNetworkConnectionLost, NSURLErrorDNSLookupFailed, NSURLErrorInternationalRoamingOff,
+        NSURLErrorDataNotAllowed, NSURLErrorSecureConnectionFailed,
+    ]
 }

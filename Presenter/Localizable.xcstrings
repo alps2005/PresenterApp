@@ -1200,6 +1200,16 @@
         }
       }
     },
+    "Check that this Mac is connected to the internet, then choose Presenter › Check for Updates… to try again. Nothing is wrong with Presenter or your project." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprueba que este Mac esté conectado a internet y luego elige Presenter › Buscar actualizaciones… para intentarlo de nuevo. Presenter y tu proyecto están bien."
+          }
+        }
+      }
+    },
     "Choose" : {
       "localizations" : {
         "es" : {
@@ -5188,6 +5198,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Presenter cambiará de idioma la próxima vez que se abra."
+          }
+        }
+      }
+    },
+    "Presenter couldn't reach the update server" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presenter no pudo conectarse al servidor de actualizaciones"
           }
         }
       }

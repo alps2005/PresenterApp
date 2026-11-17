@@ -48,14 +48,14 @@ public sealed class SettingsWindow : Window
         var page = new StackPanel { Spacing = 10, Margin = new Thickness(24, 20) };
 
         page.Children.Add(Heading(T("APPEARANCE")));
-        var appearance = Choice(
+        var appearance = Choice(T("Appearance"),
             [(AppearanceChoice.Dark, T("Dark")), (AppearanceChoice.Light, T("Light")), (AppearanceChoice.System, T("Same as Windows"))],
             Settings.Current.Appearance, chosen => { Settings.Current.Appearance = chosen; Settings.Current.Save(); });
         page.Children.Add(appearance);
         page.Children.Add(Note(T("Presenter is dark unless you choose otherwise, so it stays quiet in a dark room.")));
 
         page.Children.Add(Heading(T("TEXT SIZE")));
-        var textSize = Choice(
+        var textSize = Choice(T("Text size"),
             [(TextSizeChoice.Small, T("Small")), (TextSizeChoice.Standard, T("Standard")), (TextSizeChoice.Large, T("Large")),
              (TextSizeChoice.ExtraLarge, T("Extra Large"))],
             Settings.Current.TextSize, chosen => { Settings.Current.TextSize = chosen; Settings.Current.Save(); });
@@ -64,7 +64,7 @@ public sealed class SettingsWindow : Window
 
         page.Children.Add(Heading(T("LANGUAGE")));
         // Each language by its own name, so it can be found whatever language the screen is in.
-        page.Children.Add(Choice(
+        page.Children.Add(Choice(T("Language"),
             [(LanguageChoice.System, T("Same as Windows")), (LanguageChoice.English, "English"), (LanguageChoice.Spanish, "Español")],
             Settings.Current.Language, chosen =>
             {
@@ -141,15 +141,15 @@ public sealed class SettingsWindow : Window
     {
         resetButton.IsEnabled = Settings.Current.IsLookCustomized;
         colourRows.Children.Clear();
-        colourRows.Children.Add(ColourRow(LiveTag(), Settings.Current.Live, colour => Settings.Current.SetLiveColor(colour)));
+        colourRows.Children.Add(ColourRow(LiveTag(), T("LIVE"), Settings.Current.Live, colour => Settings.Current.SetLiveColor(colour)));
         foreach (var (key, name) in Settings.SectionKinds)
         {
-            colourRows.Children.Add(ColourRow(MainWindow.SectionTag(T(name), key), Settings.Current.SectionColor(key, App.IsDark),
+            colourRows.Children.Add(ColourRow(MainWindow.SectionTag(T(name), key), T(name), Settings.Current.SectionColor(key, App.IsDark),
                 colour => Settings.Current.SetSectionColor(key, colour)));
         }
     }
 
-    private Control ColourRow(Control label, Color colour, Action<Color> keep)
+    private Control ColourRow(Control label, string name, Color colour, Action<Color> keep)
     {
         var picker = new ColorPicker
         {
@@ -157,6 +157,15 @@ public sealed class SettingsWindow : Window
             IsAlphaEnabled = false,
             IsAlphaVisible = false,
             HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        // Screen readers say which colour this is, not the panel the swatch is drawn in. The button they reach is
+        // inside the picker's template, so it's named once the template is in place.
+        var spoken = T("{0} colour", name);
+        Avalonia.Automation.AutomationProperties.SetName(picker, spoken);
+        picker.TemplateApplied += (_, _) =>
+        {
+            foreach (var button in Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(picker).OfType<Button>())
+                Avalonia.Automation.AutomationProperties.SetName(button, spoken);
         };
         picker.ColorChanged += (_, e) =>
         {
@@ -203,10 +212,12 @@ public sealed class SettingsWindow : Window
         (Owner as Window)?.Close();
     }
 
-    private static ComboBox Choice<TChoice>((TChoice Value, string Title)[] choices, TChoice current, Action<TChoice> choose)
+    private static ComboBox Choice<TChoice>(string name, (TChoice Value, string Title)[] choices, TChoice current, Action<TChoice> choose)
         where TChoice : struct, Enum
     {
         var box = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch };
+        // Screen readers say what the list is for; the heading above it is only seen.
+        Avalonia.Automation.AutomationProperties.SetName(box, name);
         foreach (var (value, title) in choices) box.Items.Add(new ComboBoxItem { Content = title, Tag = value });
         ShowChoice(box, current);
         box.SelectionChanged += (_, _) =>
