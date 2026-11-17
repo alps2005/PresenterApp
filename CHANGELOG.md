@@ -3,6 +3,17 @@
 Notable changes to Presenter. Versions follow the release tags; each release's full notes are in
 [docs/release-notes](docs/release-notes).
 
+## v1.6.2 (2026-11-17)
+
+### Fixes
+- **Update check without a connection:** "Presenter couldn't reach the update server", with a suggestion to check
+  the connection and try again, instead of Sparkle's "An error occurred in retrieving update information". Other
+  update errors are shown as before.
+
+### Windows
+- **Screen readers (betas 5 and 6, windows-v0.1.0-beta.5 and beta.6):** the colour buttons, the lists in Settings
+  and the main window, and the scroll bar buttons say what they are, instead of nothing or "Avalonia.Controls…".
+
 ## v1.6.1 (2026-11-10)
 
 ### Fixes
