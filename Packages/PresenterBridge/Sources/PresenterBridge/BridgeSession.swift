@@ -12,6 +12,10 @@ public final class BridgeSession {
     let store: ProjectStore
     let backups: ProjectBackups
     let mediaDirectory: URL
+    /// The imported Bibles, in `Bibles/` beside the project, as the Mac app keeps them.
+    let bibles: BibleStore
+    /// The Bibles the Scripture window has open, so typing a reference doesn't read a whole Bible each time.
+    var openBibles: [UUID: BibleTranslation] = [:]
     /// What went wrong loading or saving, for the operator to read. Cleared when they dismiss it.
     public private(set) var problem: String?
     /// Goes up each time the project changes, so the app redraws its lists only when there's something new.
@@ -25,6 +29,7 @@ public final class BridgeSession {
         store = ProjectStore(fileURL: dataDirectory.appendingPathComponent("Project.json"))
         backups = ProjectBackups(projectFileURL: store.fileURL)
         mediaDirectory = dataDirectory.appendingPathComponent("Media", isDirectory: true)
+        bibles = BibleStore(directory: dataDirectory.appendingPathComponent("Bibles", isDirectory: true))
         let outcome = ProjectLoader.loadInitialProject(from: store, backups: backups)
         coordinator = PresentationCoordinator(project: outcome.project)
         problem = outcome.problem
@@ -151,6 +156,20 @@ public final class BridgeSession {
         case "renameShow": return try result(coordinator.renamePlaylist(command.require(\.showID), to: command.require(\.title)))
         case "deleteShow": return try result(coordinator.deletePlaylist(command.require(\.showID)))
 
+        // Scripture (BridgeSession+Scripture.swift)
+        case "bibles": return biblesList()
+        case "importBible": return try importBible(at: command.require(\.paths))
+        case "renameBible":
+            return try renameBible(command.require(\.bibleID), name: command.require(\.title), abbreviation: command.abbreviation)
+        case "removeBible": return try removeBible(command.require(\.bibleID))
+        case "lookUpScripture":
+            return try lookUpScripture(command.require(\.bibleID), reference: command.require(\.text), second: command.secondBibleID,
+                                       options: scriptureOptions(command))
+        case "searchBible": return try searchBible(command.require(\.bibleID), for: command.require(\.text))
+        case "addScripture":
+            return try addScripture(command.require(\.bibleID), reference: command.require(\.text), second: command.secondBibleID,
+                                    options: scriptureOptions(command), themeID: command.themeID)
+
         // The project
         case "undo":
             guard coordinator.canUndo else { throw BridgeError(Localization.text("There's nothing to undo.")) }
@@ -271,6 +290,13 @@ struct BridgeCommand: Decodable {
     var index: Int?
     var path: String?
     var paths: [String]?
+    var bibleID: UUID?
+    var secondBibleID: UUID?
+    var abbreviation: String?
+    var themeID: UUID?
+    var versesPerSlide: Int?
+    var showsVerseNumbers: Bool?
+    var showsReference: Bool?
 
     func require<Value>(_ field: KeyPath<BridgeCommand, Value?>) throws -> Value {
         guard let value = self[keyPath: field] else {

@@ -44,7 +44,7 @@ public sealed class ItemInfo
     public Guid ID { get; set; }
     public Guid PresentationID { get; set; }
     public string Title { get; set; } = "";
-    /// <summary>"presentation", "song" or "bible".</summary>
+    /// <summary>"presentation", "song" or "scripture".</summary>
     public string Kind { get; set; } = "";
     public int SlideCount { get; set; }
 }

@@ -184,6 +184,7 @@ public sealed class MainWindow : Window
                 Submenu(T("_Show"),
                     Item(T("_New Song…"), NewSong, new KeyGesture(Key.N, KeyModifiers.Control)),
                     Item(T("_Import Songs…"), ImportSongs, new KeyGesture(Key.I, KeyModifiers.Control)),
+                    Item(T("Scrip_ture…"), ShowScripture, new KeyGesture(Key.B, KeyModifiers.Control)),
                     new Separator(),
                     Item(T("New _Show…"), NewShow),
                     Item(T("_Rename Show…"), RenameShow),
@@ -364,6 +365,14 @@ public sealed class MainWindow : Window
         return heading;
     }
 
+    /// <summary>The mark before a show item or library entry: a note for songs, lines for scripture.</summary>
+    private static string KindMark(string kind) => kind switch
+    {
+        "song" => "♪  ",
+        "scripture" => "▤  ",
+        _ => "▭  ",
+    };
+
     private static void AddRow(Grid grid, Control control, int row)
     {
         Grid.SetRow(control, row);
@@ -419,6 +428,7 @@ public sealed class MainWindow : Window
         {
             (Key.N, KeyModifiers.Control) => NewSong,
             (Key.I, KeyModifiers.Control) => ImportSongs,
+            (Key.B, KeyModifiers.Control) => ShowScripture,
             (Key.O, KeyModifiers.Control) => OpenProjectFile,
             (Key.E, KeyModifiers.Control) => ExportProject,
             (Key.F11, KeyModifiers.None) => ToggleOutput,
@@ -476,6 +486,11 @@ public sealed class MainWindow : Window
         var lines = string.Join("\n", failures.Select(f => $"• {f.File}: {f.Reason}"));
         await Dialogs.Inform(this, T("Some files weren't imported"),
             (added == 1 ? T("1 song was added.") : T("{0} songs were added.", added)) + " " + T("These files weren't:") + "\n\n" + lines);
+    }
+
+    private async void ShowScripture()
+    {
+        await new ScriptureWindow(engine, Run).ShowDialog(this);
     }
 
     private async void RenamePresentation(Guid presentationID, string title)
@@ -567,6 +582,7 @@ public sealed class MainWindow : Window
             T("F11 — show or hide the audience output"),
             T("Ctrl+N — new song"),
             T("Ctrl+I — import songs"),
+            T("Ctrl+B — scripture"),
             T("Ctrl+Z / Ctrl+Y — undo / redo"),
             T("Ctrl+O / Ctrl+E — open / export a project file"),
             T("Ctrl+, — settings")));
@@ -716,7 +732,7 @@ public sealed class MainWindow : Window
             var count = new TextBlock { Text = item.SlideCount.ToString(), Opacity = 0.5, Margin = new Thickness(8, 0, 0, 0) };
             DockPanel.SetDock(count, Dock.Right);
             row.Children.Add(count);
-            row.Children.Add(new TextBlock { Text = (item.Kind == "song" ? "♪  " : "▭  ") + item.Title, TextTrimming = TextTrimming.CharacterEllipsis });
+            row.Children.Add(new TextBlock { Text = KindMark(item.Kind) + item.Title, TextTrimming = TextTrimming.CharacterEllipsis });
 
             var position = index;
             var listItem = new ListBoxItem { Content = row, Tag = item };
@@ -737,7 +753,7 @@ public sealed class MainWindow : Window
         libraryList.Items.Clear();
         foreach (var entry in state.Library)
         {
-            var row = new TextBlock { Text = (entry.Kind == "song" ? "♪  " : "▭  ") + entry.Title, TextTrimming = TextTrimming.CharacterEllipsis };
+            var row = new TextBlock { Text = KindMark(entry.Kind) + entry.Title, TextTrimming = TextTrimming.CharacterEllipsis };
             var listItem = new ListBoxItem { Content = row, Tag = entry };
             listItem.DoubleTapped += (_, _) => Run(new { type = "addToShow", presentationID = entry.ID });
             listItem.ContextMenu = PopupMenu(

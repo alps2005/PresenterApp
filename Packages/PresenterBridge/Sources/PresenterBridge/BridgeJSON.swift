@@ -6,6 +6,7 @@ struct BridgeReply: Encodable {
         case string(String)
         case int(Int)
         case list([[String: String]])
+        case bool(Bool)
 
         func encode(to encoder: any Encoder) throws {
             var container = encoder.singleValueContainer()
@@ -13,6 +14,7 @@ struct BridgeReply: Encodable {
             case .string(let value): try container.encode(value)
             case .int(let value): try container.encode(value)
             case .list(let value): try container.encode(value)
+            case .bool(let value): try container.encode(value)
             }
         }
     }

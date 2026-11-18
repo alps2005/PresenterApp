@@ -25,6 +25,8 @@ public sealed class Settings
     public string? LiveColor { get; set; }
     /// <summary>Colours the operator chose, by section key ("verse", "preChorus"…). Missing keys use the default.</summary>
     public Dictionary<string, string> SectionColors { get; set; } = [];
+    /// <summary>The Scripture window's last choices, so the next passage starts from them.</summary>
+    public ScriptureChoices Scripture { get; set; } = new();
 
     /// <summary>Raised after any change, so open windows redraw.</summary>
     public static event Action? Changed;
@@ -59,6 +61,13 @@ public sealed class Settings
     /// <summary>Saves and tells open windows. A failure to save is written to the problem log and otherwise ignored.</summary>
     public void Save()
     {
+        SaveQuietly();
+        Changed?.Invoke();
+    }
+
+    /// <summary>Saves without telling open windows: for choices that change nothing on screen.</summary>
+    public void SaveQuietly()
+    {
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
@@ -68,7 +77,6 @@ public sealed class Settings
         {
             CrashLog.Write(error);
         }
-        Changed?.Invoke();
     }
 
     /// <summary>Puts appearance, text size and every colour back. The language is left as it is.</summary>
@@ -153,4 +161,15 @@ public sealed class Settings
     public static string Hex(Color color) => $"#{color.R:X2}{color.G:X2}{color.B:X2}";
 
     private static Color? Parse(string? hex) => hex is not null && Color.TryParse(hex, out var color) ? color : null;
+}
+
+/// <summary>What the Scripture window remembers, as the Mac app does.</summary>
+public sealed class ScriptureChoices
+{
+    public Guid? BibleID { get; set; }
+    /// <summary>A second Bible shown below the first on every slide, for bilingual services.</summary>
+    public Guid? SecondBibleID { get; set; }
+    public int VersesPerSlide { get; set; } = 2;
+    public bool ShowsVerseNumbers { get; set; } = true;
+    public bool ShowsReference { get; set; } = true;
 }

@@ -251,6 +251,84 @@ final class BridgeSessionTests: XCTestCase {
 
     // MARK: - The C interface
 
+    private static let zefania = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <XMLBIBLE biblename="Reina-Valera 1909">
+      <INFORMATION><title>Reina-Valera 1909</title><identifier>RVR1909</identifier><language>SPA</language></INFORMATION>
+      <BIBLEBOOK bnumber="43" bname="Juan">
+        <CHAPTER cnumber="3">
+          <VERS vnumber="16">Porque de tal manera amó Dios al mundo, que haya dado á su Hijo unigénito.</VERS>
+          <VERS vnumber="17">Porque no envió Dios á su Hijo al mundo, para que condene al mundo.</VERS>
+          <VERS vnumber="18">El que en él cree, no es condenado.</VERS>
+        </CHAPTER>
+      </BIBLEBOOK>
+    </XMLBIBLE>
+    """
+
+    func testABibleIsImportedLookedUpSearchedAndItsPassageAddedToTheShow() throws {
+        Localization.language = .english
+        let session = BridgeSession(dataDirectory: folder)
+        XCTAssertEqual((try ok(session, ["type": "bibles"])["bibles"] as? [Any])?.count, 0)
+
+        let file = folder.appendingPathComponent("rvr.xml")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Self.zefania.write(to: file, atomically: true, encoding: .utf8)
+        let bibleID = try XCTUnwrap(try ok(session, ["type": "importBible", "paths": [file.path]])["bibleID"] as? String)
+        let listed = try ok(session, ["type": "bibles"])
+        let entry = try XCTUnwrap((listed["bibles"] as? [[String: String]])?.first)
+        XCTAssertEqual(entry["abbreviation"], "RVR1909")
+        XCTAssertEqual(entry["language"], "es")
+        XCTAssertEqual(entry["verseCount"], "3")
+        XCTAssertFalse((listed["themes"] as? [Any] ?? []).isEmpty, "The themes a passage can use")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent("Bibles/index.json").path),
+                      "Kept beside the project, as on the Mac")
+
+        // A reference in Spanish, previewed; one that isn't there says why in the Bible's language.
+        let found = try ok(session, ["type": "lookUpScripture", "bibleID": bibleID, "text": "Juan 3:16-18", "versesPerSlide": 2])
+        XCTAssertEqual(found["caption"] as? String, "Juan 3:16-18 · RVR1909")
+        XCTAssertEqual((found["verses"] as? [[String: String]])?.map { $0["number"] }, ["16", "17", "18"])
+        XCTAssertEqual(found["slideCount"] as? Int, 2)
+        let missing = try reply(session, ["type": "lookUpScripture", "bibleID": bibleID, "text": "Juan 3:30"])
+        XCTAssertEqual(missing["ok"] as? Bool, false)
+        XCTAssertEqual(missing["error"] as? String, "Juan 3 no tiene versículo 30.")
+        XCTAssertEqual(try reply(session, ["type": "lookUpScripture", "bibleID": bibleID, "text": "  "])["error"] as? String,
+                       "Type a reference, like Juan 3:16-18.")
+
+        let hits = try ok(session, ["type": "searchBible", "bibleID": bibleID, "text": "mundo hijo"])["hits"] as? [[String: String]]
+        XCTAssertEqual(hits?.map { $0["reference"] }, ["Juan 3:16", "Juan 3:17"])
+
+        // Added to the library and the show, selected, as ordinary slides.
+        let added = try ok(session, ["type": "addScripture", "bibleID": bibleID, "text": "Juan 3:16", "versesPerSlide": 1,
+                                     "showsVerseNumbers": false, "showsReference": true])
+        let now = try state(session)
+        XCTAssertEqual(now["selectedItemID"] as? String, added["itemID"] as? String)
+        let item = try XCTUnwrap((now["items"] as? [[String: Any]])?.last)
+        XCTAssertEqual(item["title"] as? String, "Juan 3:16 · RVR1909")
+        XCTAssertEqual(item["kind"] as? String, "scripture")
+        XCTAssertTrue(texts(slides(now).first?["slide"] as? [String: Any]).contains { $0.contains("de tal manera amó Dios") })
+        XCTAssertNotNil(try ProjectStore(fileURL: projectFile).load()?.presentations.first { $0.kind == .scripture }, "Saved")
+
+        // Renamed and removed; the slides already made stay.
+        try ok(session, ["type": "renameBible", "bibleID": bibleID, "title": "Reina-Valera", "abbreviation": "RV"])
+        XCTAssertEqual((try ok(session, ["type": "bibles"])["bibles"] as? [[String: String]])?.first?["abbreviation"], "RV")
+        try ok(session, ["type": "removeBible", "bibleID": bibleID])
+        XCTAssertEqual((try ok(session, ["type": "bibles"])["bibles"] as? [Any])?.count, 0)
+        XCTAssertEqual(try reply(session, ["type": "lookUpScripture", "bibleID": bibleID, "text": "Juan 3:16"])["error"] as? String,
+                       "That Bible isn't there anymore. Import it again.")
+        XCTAssertEqual((try state(session)["items"] as? [Any])?.count, 1)
+    }
+
+    func testAFileThatIsntABibleIsTurnedDownWithASentence() throws {
+        Localization.language = .english
+        let session = BridgeSession(dataDirectory: folder)
+        let file = folder.appendingPathComponent("song.txt")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "Just some words".write(to: file, atomically: true, encoding: .utf8)
+        let answer = try reply(session, ["type": "importBible", "paths": [file.path]])
+        XCTAssertEqual(answer["ok"] as? Bool, false)
+        XCTAssertEqual(answer["error"] as? String, "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file.")
+    }
+
     func testTheCInterfaceOpensRunsAndCloses() throws {
         let handle = try XCTUnwrap(folder.path.withCString { presenter_open($0) })
         func call(_ result: UnsafeMutablePointer<CChar>?) throws -> [String: Any] {

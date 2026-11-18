@@ -177,5 +177,19 @@ enum SpanishText {
         "Transition": "Transición",
         "Typing": "Escritura",
         "Update Theme": "Actualizar tema",
+        // Scripture in the Windows app (BridgeSession+Scripture.swift).
+        "Untitled Theme": "Tema sin título",
+        "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file.": "Eso no es una Biblia que Presenter pueda leer: un archivo Zefania, OSIS, USFX o USX.",
+        "That Bible file is damaged or incomplete.": "Ese archivo de Biblia está dañado o incompleto.",
+        "That Bible file has no verses Presenter can read.": "Ese archivo de Biblia no tiene versículos que Presenter pueda leer.",
+        "Couldn't read that file: {0}": "No se pudo leer ese archivo: {0}",
+        "Type a name for the Bible.": "Escribe un nombre para la Biblia.",
+        "The Bible couldn't be saved. {0}": "No se pudo guardar la Biblia. {0}",
+        "The Bible couldn't be removed. {0}": "No se pudo quitar la Biblia. {0}",
+        "The second Bible doesn't have this passage, so only the first is shown.": "La segunda Biblia no tiene este pasaje, así que solo se muestra la primera.",
+        "That passage has no verses.": "Ese pasaje no tiene versículos.",
+        "Type a reference, like Juan 3:16-18.": "Escribe una referencia, como Juan 3:16-18.",
+        "That Bible isn't there anymore. Import it again.": "Esa Biblia ya no está. Vuelve a importarla.",
+        "That Bible couldn't be read. Import it again.": "No se pudo leer esa Biblia. Vuelve a importarla.",
     ]
 }

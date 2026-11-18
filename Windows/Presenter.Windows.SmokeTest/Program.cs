@@ -71,6 +71,37 @@ try
         Check(engine.State().Items.Count == 2, "the project is saved and opens again");
     }
 
+    using (var engine = Engine.Open(Path.Combine(root, "bibles")))
+    {
+        // Bible XML is read by Foundation on Windows too, which parses differently from the Mac's (XMLParsing.swift).
+        var bibleFile = Path.Combine(root, "rvr.xml");
+        File.WriteAllText(bibleFile, """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <XMLBIBLE biblename="Reina-Valera 1909">
+              <INFORMATION><title>Reina-Valera 1909</title><identifier>RVR1909</identifier><language>SPA</language></INFORMATION>
+              <BIBLEBOOK bnumber="43" bname="Juan"><CHAPTER cnumber="3">
+                <VERS vnumber="16">Porque de tal manera amó Dios al mundo.</VERS>
+                <VERS vnumber="17">Porque no envió Dios á su Hijo al mundo.</VERS>
+              </CHAPTER></BIBLEBOOK>
+            </XMLBIBLE>
+            """);
+        var bible = engine.Send(new { type = "importBible", paths = new[] { bibleFile } });
+        Check(bible.Ok, $"a Bible file imports ({bible.Error})");
+        var bibleID = bible.GetString("bibleID");
+        Check(File.Exists(Path.Combine(root, "bibles", "Bibles", "index.json")), "Bibles are kept beside the project");
+        var found = engine.Send(new { type = "lookUpScripture", bibleID, text = "Juan 3:16-17" });
+        Check(found.Ok && found.GetString("caption") == "Juan 3:16-17 · RVR1909", $"a reference is looked up ({found.GetString("caption") ?? found.Error})");
+        var missing = engine.Send(new { type = "lookUpScripture", bibleID, text = "Juan 3:40" });
+        Check(!missing.Ok && missing.Error == "Juan 3 no tiene versículo 40.", $"a verse that isn't there says why, in the Bible's language ({missing.Error})");
+        var broken = Path.Combine(root, "broken.xml");
+        File.WriteAllText(broken, "<XMLBIBLE><BIBLEBOOK bnumber=\"43\"><CHAPTER cnumber=\"3\"><VERS vnumber=\"16\">Sin cerrar");
+        Check(!engine.Send(new { type = "importBible", paths = new[] { broken } }).Ok, "a damaged Bible file is turned down");
+        Check(engine.Send(new { type = "addScripture", bibleID, text = "Juan 3:16-17", versesPerSlide = 1 }).Ok, "a passage is added to the show");
+        var state = engine.State();
+        Check(state.Items.Count == 1 && state.Items[0].Kind == "scripture" && state.Slides.Count == 2,
+            $"the passage is in the show, a verse per slide ({state.Slides.Count} slides)");
+    }
+
     Engine.SetLanguage("es");
     using (var engine = Engine.Open(Path.Combine(root, "spanish")))
     {
