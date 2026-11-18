@@ -93,12 +93,27 @@ try
         Check(found.Ok && found.GetString("caption") == "Juan 3:16-17 · RVR1909", $"a reference is looked up ({found.GetString("caption") ?? found.Error})");
         var missing = engine.Send(new { type = "lookUpScripture", bibleID, text = "Juan 3:40" });
         Check(!missing.Ok && missing.Error == "Juan 3 no tiene versículo 40.", $"a verse that isn't there says why, in the Bible's language ({missing.Error})");
+        // eBible.org's Reina-Valera 1909 starts with a UTF-8 byte-order mark, as files saved by Windows tools often do.
+        var marked = Path.Combine(root, "marked.xml");
+        File.WriteAllText(marked, File.ReadAllText(bibleFile), new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        var markedBible = engine.Send(new { type = "importBible", paths = new[] { marked } });
+        Check(markedBible.Ok, $"a Bible file that starts with a byte-order mark imports ({markedBible.Error})");
+        var song = Path.Combine(root, "marked-song.xml");
+        File.WriteAllText(song, """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <song xmlns="http://openlyrics.info/namespace/2009/song" version="0.8">
+              <properties><titles><title>Con marca</title></titles></properties>
+              <lyrics><verse name="v1"><lines>Primera línea</lines></verse></lyrics>
+            </song>
+            """, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        var markedSong = engine.Send(new { type = "importSongs", paths = new[] { song } });
+        Check(markedSong.Ok && markedSong.GetInt("added") == 1, $"an OpenLyrics song that starts with a byte-order mark imports ({string.Join("; ", markedSong.Failures().Select(f => f.Reason))})");
         var broken = Path.Combine(root, "broken.xml");
         File.WriteAllText(broken, "<XMLBIBLE><BIBLEBOOK bnumber=\"43\"><CHAPTER cnumber=\"3\"><VERS vnumber=\"16\">Sin cerrar");
         Check(!engine.Send(new { type = "importBible", paths = new[] { broken } }).Ok, "a damaged Bible file is turned down");
         Check(engine.Send(new { type = "addScripture", bibleID, text = "Juan 3:16-17", versesPerSlide = 1 }).Ok, "a passage is added to the show");
         var state = engine.State();
-        Check(state.Items.Count == 1 && state.Items[0].Kind == "scripture" && state.Slides.Count == 2,
+        Check(state.Items.Count(i => i.Kind == "scripture") == 1 && state.Slides.Count == 2,
             $"the passage is in the show, a verse per slide ({state.Slides.Count} slides)");
     }
 
