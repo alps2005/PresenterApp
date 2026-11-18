@@ -147,7 +147,7 @@ public sealed class ScriptureWindow : Window
         addButton.Click += (_, _) => Add();
 
         FillBibles(Choices.BibleID);
-        Opened += (_, _) => (bibles.Count == 0 ? importButton : referenceBox).Focus();
+        Opened += (_, _) => (bibles.Count == 0 ? (Control)importButton : referenceBox).Focus();
         Closed += (_, _) =>
         {
             lookupPause.Stop();
