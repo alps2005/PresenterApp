@@ -136,4 +136,20 @@ final class BibleFileParserTests: XCTestCase {
         }
         XCTAssertEqual(BiblePassageError.chapterMissing(BibleBook.number(43)!, 30).message(in: .spanish), "Juan no tiene capítulo 30.")
     }
+
+    /// A whole Bible is over 10 MB. On Windows, Foundation's parser used to turn down any document that big: every
+    /// full translation from eBible.org failed to import there in beta 7. This test runs on Windows CI too.
+    func testABibleOverTenMegabytesIsRead() throws {
+        let verse = String(repeating: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito. ", count: 5)
+        var xml = #"<?xml version="1.0" encoding="UTF-8"?><XMLBIBLE biblename="Grande"><BIBLEBOOK bnumber="1">"#
+        for chapter in 1...50 {
+            xml += #"<CHAPTER cnumber="\#(chapter)">"#
+            for number in 1...700 { xml += #"<VERS vnumber="\#(number)">\#(verse)</VERS>"# }
+            xml += "</CHAPTER>"
+        }
+        xml += "</BIBLEBOOK></XMLBIBLE>"
+        let data = Data(xml.utf8)
+        XCTAssertGreaterThan(data.count, 12_000_000)
+        XCTAssertEqual(try BibleFileParser.parse(data).verseCount, 35_000)
+    }
 }

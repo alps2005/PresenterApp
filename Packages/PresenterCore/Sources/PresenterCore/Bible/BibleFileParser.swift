@@ -28,7 +28,7 @@ public enum BibleFileParser {
         let delegate = Delegate()
         for data in documents {
             delegate.beginDocument()
-            let parser = XMLParser(data: data)
+            let parser = XMLParser.reading(data)
             parser.shouldResolveExternalEntities = false
             parser.shouldProcessNamespaces = false
             parser.delegate = delegate

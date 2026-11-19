@@ -20,7 +20,7 @@ enum OpenLyricsParser {
 
     static func parse(_ data: Data) throws(SongImporter.ImportError) -> ImportedSong {
         let delegate = Delegate()
-        let parser = XMLParser(data: data)
+        let parser = XMLParser.reading(data)
         parser.shouldResolveExternalEntities = false
         parser.shouldProcessNamespaces = true
         parser.delegate = delegate
