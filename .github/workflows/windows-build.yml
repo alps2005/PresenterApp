@@ -82,6 +82,24 @@ jobs:
           Get-ChildItem $env:APP_DIR -Filter *.dll | Where-Object { -not (Test-Path (Join-Path dist/SmokeTest $_.Name)) } |
             Copy-Item -Destination dist/SmokeTest
 
+      # Real public-domain Bibles from eBible.org, which the smoke test imports: beta 7 couldn't read the Reina-Valera
+      # 1909 on Windows though the Mac could. A failed download only skips those checks; CI doesn't depend on eBible.
+      - name: Download real Bibles for the smoke test
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP "bibles"
+          New-Item -ItemType Directory -Force $folder | Out-Null
+          $files = @()
+          foreach ($id in "spaRV1909", "engwebp") {
+            try {
+              Invoke-WebRequest "https://ebible.org/Scriptures/${id}_usfx.zip" -OutFile "$folder/$id.zip" -TimeoutSec 120
+              Expand-Archive "$folder/$id.zip" -DestinationPath "$folder/$id" -Force
+              $files += (Join-Path "$folder/$id" "${id}_usfx.xml")
+            } catch {
+              Write-Host "::warning::Couldn't download $id from eBible.org, so its smoke check is skipped: $($_.Exception.Message)"
+            }
+          }
+          "PRESENTER_SMOKE_BIBLES=$($files -join ';')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       # With Swift taken off PATH, so this passes only if the app's folder has everything the engine needs.
       - name: Smoke test the engine from the app's folder
         run: |

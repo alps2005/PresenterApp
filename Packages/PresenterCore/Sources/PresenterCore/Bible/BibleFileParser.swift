@@ -34,7 +34,10 @@ public enum BibleFileParser {
             parser.delegate = delegate
             let ok = parser.parseStrictly()
             guard delegate.format != nil else { continue }
-            guard ok else { throw .malformed(parser.parserError?.localizedDescription ?? "Unknown error") }
+            guard ok else {
+                let reason = parser.parserError.map { "\($0.localizedDescription) (\(($0 as NSError).domain) \(($0 as NSError).code))" }
+                throw .malformed("line \(parser.lineNumber), column \(parser.columnNumber): \(reason ?? "unknown error")")
+            }
             delegate.endDocument()
         }
         guard delegate.sawBible else { throw .notABible }

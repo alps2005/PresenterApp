@@ -180,7 +180,7 @@ enum SpanishText {
         // Scripture in the Windows app (BridgeSession+Scripture.swift).
         "Untitled Theme": "Tema sin título",
         "That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file.": "Eso no es una Biblia que Presenter pueda leer: un archivo Zefania, OSIS, USFX o USX.",
-        "That Bible file is damaged or incomplete.": "Ese archivo de Biblia está dañado o incompleto.",
+        "That Bible file is damaged or incomplete. {0}": "Ese archivo de Biblia está dañado o incompleto. {0}",
         "That Bible file has no verses Presenter can read.": "Ese archivo de Biblia no tiene versículos que Presenter pueda leer.",
         "Couldn't read that file: {0}": "No se pudo leer ese archivo: {0}",
         "Type a name for the Bible.": "Escribe un nombre para la Biblia.",

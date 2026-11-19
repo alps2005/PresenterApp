@@ -26,7 +26,7 @@ extension BridgeSession {
         } catch let error as BibleFileParser.ParseError {
             let message = switch error {
             case .notABible: Localization.text("That isn't a Bible Presenter can read: a Zefania, OSIS, USFX or USX file.")
-            case .malformed: Localization.text("That Bible file is damaged or incomplete.")
+            case .malformed(let detail): Localization.text("That Bible file is damaged or incomplete. {0}", detail)
             case .noVerses: Localization.text("That Bible file has no verses Presenter can read.")
             }
             throw BridgeError(message)

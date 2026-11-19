@@ -108,6 +108,19 @@ try
             """, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
         var markedSong = engine.Send(new { type = "importSongs", paths = new[] { song } });
         Check(markedSong.Ok && markedSong.GetInt("added") == 1, $"an OpenLyrics song that starts with a byte-order mark imports ({string.Join("; ", markedSong.Failures().Select(f => f.Reason))})");
+        // Real Bibles, when CI could download them (windows-build.yml): whole translations, as churches import them.
+        foreach (var real in (Environment.GetEnvironmentVariable("PRESENTER_SMOKE_BIBLES") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var name = Path.GetFileName(real);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var imported = engine.Send(new { type = "importBible", paths = new[] { real } });
+            var id = imported.GetString("bibleID");
+            var verses = 0;
+            if (imported.Values.TryGetProperty("ok", out _) && engine.Send(new { type = "bibles" }).Values.TryGetProperty("bibles", out var list))
+                foreach (var entry in list.EnumerateArray())
+                    if (entry.GetProperty("id").GetString() == id) verses = int.Parse(entry.GetProperty("verseCount").GetString() ?? "0");
+            Check(imported.Ok && verses > 30000, $"the real Bible {name} imports ({(imported.Ok ? $"{verses} verses" : imported.Error)}, {watch.Elapsed.TotalSeconds:0.0} s)");
+        }
         var broken = Path.Combine(root, "broken.xml");
         File.WriteAllText(broken, "<XMLBIBLE><BIBLEBOOK bnumber=\"43\"><CHAPTER cnumber=\"3\"><VERS vnumber=\"16\">Sin cerrar");
         Check(!engine.Send(new { type = "importBible", paths = new[] { broken } }).Ok, "a damaged Bible file is turned down");
